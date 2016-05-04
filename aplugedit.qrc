@@ -1,0 +1,27 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+   <file>images/trashcan_empty.png</file>
+   <file>images/filenew.png</file>
+   <file>images/fileopen.png</file>
+   <file>images/filesave.png</file>
+   <file>images/filesaveas.png</file>
+   <file>images/filegenerate.png</file>
+   <file>images/filegeneratepart.png</file>
+   <file>images/fileexit.png</file>
+   <file>images/hw.png</file>
+   <file>images/inp.png</file>
+   <file>images/null.png</file>
+   <file>images/file.png</file>
+   <file>images/route.png</file>
+   <file>images/rate.png</file>
+   <file>images/dmix.png</file>
+   <file>images/ladspa.png</file>
+   <file>images/linear.png</file>
+   <file>images/float.png</file>
+   <file>images/iec.png</file>
+   <file>images/mulaw.png</file>
+   <file>images/alaw.png</file>
+   <file>images/ima.png</file>
+   <file>images/meter.png</file>
+</qresource>
+</RCC>
