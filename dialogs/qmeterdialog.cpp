@@ -19,7 +19,7 @@
 ***************************************************************************/
 
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QtCore>
 #include "includes/qmeterdialog.h"
 

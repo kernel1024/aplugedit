@@ -65,7 +65,7 @@ QHWDialog::QHWDialog(QWidget *parent)
     }
     
     hwCnt.append(new tlCards);
-    hwCnt.last()->cardName=QString::fromAscii(snd_ctl_card_info_get_name(info));
+    hwCnt.last()->cardName=QString::fromUtf8(snd_ctl_card_info_get_name(info));
     hwCnt.last()->cardNum=card;
     dev = -1;
     while (1) {
