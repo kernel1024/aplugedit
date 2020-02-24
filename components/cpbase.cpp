@@ -369,7 +369,7 @@ void QCPInput::postLoadBind()
 
 void debugPrint(const QString &s)
 {
-  QByteArray a(s.toAscii());
+  QByteArray a(s.toUtf8());
   a+="\n";
   printf(a.data());
 }

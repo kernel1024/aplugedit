@@ -23,7 +23,7 @@
 *                                                                         *
 ***************************************************************************/
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QtCore>
 #include <sys/types.h>
 #include <unistd.h>
@@ -293,7 +293,7 @@ void QLADSPADialog::analysePlugin(int index)
       LADSPA_PortRangeHintDescriptor iHintDescriptor;
       LADSPA_Data fBound;
       LADSPA_Data fDefault;
-      const char * pcPluginLabel=lsPluginLabel[index].toAscii();
+      const char * pcPluginLabel=lsPluginLabel[index].toUtf8();
       bool foundPlugin=false;
 
       for (lPluginIndex = 0;; lPluginIndex++) {

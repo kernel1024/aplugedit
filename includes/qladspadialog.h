@@ -20,7 +20,7 @@
 
 #ifndef QLADSPADLG_H
 #define QLADSPADLG_H
-#include <QtGui>
+#include <QtWidgets>
 #include <QtCore>
 #include "ui_qladspadlg.h"
 

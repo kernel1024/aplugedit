@@ -286,7 +286,7 @@ bool QAPEWindow::saveFile(QString & fname)
   }
   catch (const char* p)
   {
-    QMessageBox::critical(this,"Error",QString::fromAscii(p));
+    QMessageBox::critical(this,"Error",QString::fromUtf8(p));
     allOk=false;
   }
   file.close();
@@ -315,7 +315,7 @@ void QAPEWindow::continueLoading()
   catch (const char* p)
   {
     renderArea->deleteComponents();
-    QMessageBox::critical(this,"Error",QString::fromAscii(p));
+    QMessageBox::critical(this,"Error",QString::fromUtf8(p));
   }
   file.close();
   repaintTimer=startTimer(500);
@@ -438,7 +438,7 @@ void QAPEWindow::generateConfigToFile(QTextStream & stream)
   }
   catch (const char* p)
   {
-    QMessageBox::critical(this,tr("File generation error"),QString::fromAscii(p));
+    QMessageBox::critical(this,tr("File generation error"),QString::fromUtf8(p));
   }
 }
 

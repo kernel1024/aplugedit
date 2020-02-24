@@ -1,3 +1,5 @@
+TEMPLATE += app
+QT += widgets
 HEADERS       = includes/cpbase.h \
 		includes/ladspa.h \
                 includes/renderarea.h \

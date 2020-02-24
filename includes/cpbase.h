@@ -22,7 +22,7 @@
 #define CPBASE_H 1
 
 #include <QtCore>
-#include <QtGui>
+#include <QtWidgets>
 
 #define QPT_INPUT     1
 #define QPT_OUTPUT    2
