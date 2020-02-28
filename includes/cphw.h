@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -25,28 +24,38 @@
 #include <QtGui>
 #include "cpbase.h"
 
-class QCPHW : public QCPBase
+class ZCPHW : public ZCPBase
 {
-  Q_OBJECT
+    Q_OBJECT
+private:
+    ZCPInput* fInp;
+    int m_card { 0 };      // link to card
+    int m_device { -1 };    // device number (default 0)
+    int m_subdevice { -1 }; // subdevice number (default -1: first available)
+    int m_mmap_emulation { -1 }; // enable mmap emulation for ro/wo devices
+    int m_sync_ptr_ioctl { -1 }; // use SYNC_PTR ioctl rather than the direct mmap access for control structures
+    int m_nonblock { -1 };   // force non-blocking open mode
+    int m_channels { -1 }; // restrict only to the given channels
+    int m_rate { -1 }; // restrict only to the given rate
+    QString m_format; // restrict only to the given format
+
 public:
-  void realignPins(QPainter & painter);
-  void doInfoGenerate(QTextStream & stream);
-  void showSettingsDlg();
-  QCPInput* fInp;
-  QSize minimumSizeHint() const;
-  QSize sizeHint() const;
-  
-  int alCard, alDevice, alSubdevice;  // link to card, device number (default 0), subdevice number (default -1: first available)
-  int alMmap_emulation, alSync_ptr_ioctl, alNonblock;  // enable mmap emulation for ro/wo devices, use SYNC_PTR ioctl rather than the direct mmap access for control structures, force non-blocking open mode
-  QString alFormat; // restrict only to the given format
-  int alChannels, alRate; // restrict only to the given channels, restrict only to the given rate
-  
-public:
-  QCPHW(QWidget *parent, QRenderArea *aOwner);
-  ~QCPHW();
-  void readFromStream( QDataStream & stream );
-  void storeToStream( QDataStream & stream );
+    ZCPHW(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPHW() override;
+
+    void readFromStreamLegacy(QDataStream & stream) override;
+    void readFromJson(const QJsonValue& json) override;
+    QJsonValue storeToJson() const override;
+
+    QSize minimumSizeHint() const override;
+
+    int getRate() const;
+    int getChannels() const;
+
 protected:
-  void paintEvent(QPaintEvent *event);
+    void paintEvent(QPaintEvent *event) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream) const override;
+    void showSettingsDlg() override;
 };
 #endif

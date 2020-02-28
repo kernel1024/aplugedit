@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -18,44 +17,35 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef QHWDLG_H
-#define QHWDLG_H
-#include <QtGui>
+#include <QtWidgets>
 #include <QtCore>
-#include "ui_qhwdlg.h"
+#include "includes/generatedialog.h"
 
-class tlDevices;
-class tlCards;
-  
-class QHWDialog : public QDialog, public Ui::QHWDialog
+ZGenerateDialog::ZGenerateDialog(QWidget *parent)
+    : QDialog(parent)
 {
-    Q_OBJECT
+    setupUi(this);
+    connect(saveButton,&QPushButton::clicked,this,&ZGenerateDialog::saveAs);
+}
 
-public:
-    QList<tlCards *> hwCnt;
-    
-    QHWDialog(QWidget *parent = 0);
-    ~QHWDialog();
-public slots:
-    void cardSelected(int index);
-    void devSelected(int index);
-};
-
-class tlDevices : public QObject
+void ZGenerateDialog::setConfigText(const QString &text)
 {
-  Q_OBJECT
-public:
-  int devNum;
-  int subdevices;
-};
+    configEditor->setPlainText(text);
+}
 
-class tlCards : public QObject
+ZGenerateDialog::~ZGenerateDialog() = default;
+
+void ZGenerateDialog::saveAs()
 {
-  Q_OBJECT
-public:
-  QString cardName;
-  int cardNum;
-  QList<tlDevices *> devices;
-};
+    QString fname = QFileDialog::getSaveFileName(this,tr("Choose a filename to save config under"));
+    if (fname.isEmpty()) return;
 
-#endif
+    QFile file(fname);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::critical(this,tr("File error"),tr("Cannot create file %1").arg(fname));
+        return;
+    }
+    file.write(configEditor->toPlainText().toUtf8());
+    file.close();
+}
+

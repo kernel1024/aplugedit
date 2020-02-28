@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -25,24 +24,30 @@
 #include <QtGui>
 #include "cpbase.h"
 
-class QCPRate : public QCPBase
+class ZCPRate : public ZCPBase
 {
-  Q_OBJECT
+    Q_OBJECT
+private:
+    QString m_converter;
+    int m_rate { 48000 };
+    ZCPInput* fInp;
+    ZCPOutput* fOut;
+
 public:
-  void realignPins(QPainter & painter);
-  void doInfoGenerate(QTextStream & stream);
-  QCPInput* fInp;
-  QCPOutput* fOut;
-  QSize minimumSizeHint() const;
-  QSize sizeHint() const;
-  QString alConverter;
-  int alRate;
-  QCPRate(QWidget *parent, QRenderArea *aOwner);
-  ~QCPRate();
+    ZCPRate(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPRate() override;
+
+    void readFromStreamLegacy( QDataStream & stream ) override;
+    void readFromJson(const QJsonValue& json) override;
+    QJsonValue storeToJson() const override;
+
+    QSize minimumSizeHint() const override;
+    int getRate() const;
+
 protected:
-  void paintEvent ( QPaintEvent * event );
-  void showSettingsDlg();
-  void readFromStream( QDataStream & stream );
-  void storeToStream( QDataStream & stream );
+    void paintEvent ( QPaintEvent * event ) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream) const override;
+    void showSettingsDlg() override;
 };
 #endif

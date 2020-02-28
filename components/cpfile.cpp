@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -21,103 +20,105 @@
 #include "includes/cpbase.h"
 #include "includes/cpfile.h"
 
-QCPFile::QCPFile(QWidget *parent, QRenderArea *aOwner)
-  : QCPBase(parent,aOwner)
+ZCPFile::ZCPFile(QWidget *parent, ZRenderArea *aOwner)
+    : ZCPBase(parent,aOwner)
 {
-  fInp=new QCPInput(this,this);
-  fInp->pinName="in";
-  fInputs.append(fInp);
-  fileName="unnamed";
+    fInp=new ZCPInput(this,this);
+    fInp->pinName=QSL("in");
+    registerInput(fInp);
+    m_fileName=QSL("unnamed");
 }
 
-QCPFile::~QCPFile()
+ZCPFile::~ZCPFile() = default;
+
+QSize ZCPFile::minimumSizeHint() const
 {
-  delete fInp;
+    return QSize(180,50);
 }
 
-QSize QCPFile::minimumSizeHint() const
+void ZCPFile::realignPins()
 {
-  return QSize(180,50);
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
 }
 
-QSize QCPFile::sizeHint() const
+void ZCPFile::doInfoGenerate(QTextStream & stream) const
 {
-  return minimumSizeHint();
+    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
+    stream << QSL("  type file") << endl;
+    stream << QSL("  slave.pcm null") << endl;
+    stream << QSL("  file \"") << m_fileName << QSL("\"") << endl;
+    stream << QSL("  format \"raw\"") << endl;
+    stream << QSL("}") << endl;
+    stream << endl;
 }
 
-void QCPFile::realignPins(QPainter &)
+void ZCPFile::paintEvent (QPaintEvent * event)
 {
-  fInp->relCoord=QPoint(QCP_PINSIZE/2,height()/2);
+    Q_UNUSED(event)
+
+    QPainter p(this);
+    QPen pn=QPen(Qt::black);
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+    pn.setWidth(2);
+    p.setPen(pn);
+    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
+
+    p.drawRect(rect());
+
+    redrawPins(p);
+
+    QFont n=of;
+    n.setBold(true);
+    n.setPointSize(n.pointSize()+1);
+    p.setFont(n);
+    p.drawText(rect(),Qt::AlignCenter,QSL("File Writer"));
+
+    n.setBold(false);
+    n.setPointSize(n.pointSize()-3);
+    p.setPen(QPen(Qt::gray));
+    p.setFont(n);
+    QFileInfo fi(m_fileName);
+    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,fi.fileName());
+
+    p.setFont(of);
+    p.setBrush(ob);
+    p.setPen(op);
 }
 
-void QCPFile::doInfoGenerate(QTextStream & stream)
+void ZCPFile::readFromStreamLegacy( QDataStream & stream )
 {
-  stream << "pcm." << objectName() << " {" << endl;
-  stream << "  type file" << endl;
-  stream << "  slave.pcm null" << endl;
-  stream << "  file \"" << fileName << "\"" << endl;
-  stream << "  format \"raw\"" << endl;
-  stream << "}" << endl;
-  stream << endl;
+    ZCPBase::readFromStreamLegacy(stream);
+    stream >> m_fileName;
 }
 
-void QCPFile::paintEvent ( QPaintEvent * )
+void ZCPFile::readFromJson(const QJsonValue &json)
 {
-  QPainter p(this);
-  QPen pn=QPen(Qt::black);
-  QPen op=p.pen();
-  QBrush ob=p.brush();
-  QFont of=p.font();
-  pn.setWidth(2);
-  p.setPen(pn);
-  p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
-  
-  p.drawRect(rect());
-  
-  redrawPins(p);
-  
-  QFont n=of;
-  n.setBold(true);
-  n.setPointSize(n.pointSize()+1);
-  p.setFont(n);
-  p.drawText(rect(),Qt::AlignCenter,"File Writer");
-  
-  n.setBold(false);
-  n.setPointSize(n.pointSize()-3);
-  p.setPen(QPen(Qt::gray));
-  p.setFont(n);
-  QFileInfo fi(fileName);
-  p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,fi.fileName());
-  
-  p.setFont(of);
-  p.setBrush(ob);
-  p.setPen(op);
+    ZCPBase::readFromJson(json.toObject().value(QSL("base")));
+    m_fileName = json.toObject().value(QSL("fileName")).toString();
 }
 
-void QCPFile::readFromStream( QDataStream & stream )
+QJsonValue ZCPFile::storeToJson() const
 {
-  QCPBase::readFromStream(stream);
-  stream >> fileName;
+    QJsonObject data;
+    data.insert(QSL("base"),ZCPBase::storeToJson());
+    data.insert(QSL("fileName"),m_fileName);
+
+    return data;
 }
 
-void QCPFile::storeToStream( QDataStream & stream )
+void ZCPFile::showSettingsDlg()
 {
-  QCPBase::storeToStream(stream);
-  stream << fileName;
-}
-
-void QCPFile::showSettingsDlg()
-{
-  QFileDialog d(0,tr("Choose a filename to save stream under"),"~",
-                  "RAW file (*.raw)");
-  d.setDefaultSuffix("raw");
-  d.setAcceptMode(QFileDialog::AcceptSave);
-  d.setConfirmOverwrite(true);
-  d.setDirectory(QDir::currentPath());
-  if (!d.exec()) return;
-  if (d.selectedFiles().count()==0) return;
-  fileName=d.selectedFiles()[0];
-  update();
-  emit componentChanged(this);
+    QFileDialog d(topLevelWidget(),tr("Choose a filename to save stream under"),QString(),
+                  tr("RAW file [*.raw] (*.raw)"));
+    d.setDefaultSuffix(QSL("raw"));
+    d.setAcceptMode(QFileDialog::AcceptSave);
+    if (d.exec()==QDialog::Rejected) return;
+    const auto selectedFiles = d.selectedFiles();
+    if (selectedFiles.isEmpty()) return;
+    m_fileName=selectedFiles.first();
+    update();
+    Q_EMIT componentChanged(this);
 }
 

@@ -2,8 +2,8 @@
  <author></author>
  <comment></comment>
  <exportmacro></exportmacro>
- <class>QMeterDialog</class>
- <widget class="QDialog" name="QMeterDialog" >
+ <class>ZMeterDialog</class>
+ <widget class="QDialog" name="ZMeterDialog" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -171,7 +171,7 @@
   <connection>
    <sender>okButton</sender>
    <signal>clicked()</signal>
-   <receiver>QMeterDialog</receiver>
+   <receiver>ZMeterDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel" >
@@ -187,7 +187,7 @@
   <connection>
    <sender>cancelButton</sender>
    <signal>clicked()</signal>
-   <receiver>QMeterDialog</receiver>
+   <receiver>ZMeterDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel" >

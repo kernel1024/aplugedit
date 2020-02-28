@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -18,22 +17,23 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef QRATEDLG_H
-#define QRATEDLG_H
+#ifndef GENERATEDLG_H
+#define GENERATEDLG_H
 #include <QtGui>
 #include <QtCore>
-#include "ui_qratedlg.h"
+#include "ui_generatedlg.h"
 
-class QRateDialog : public QDialog, public Ui::QRateDialog
+class ZGenerateDialog : public QDialog, public Ui::ZGenerateDialog
 {
     Q_OBJECT
 
 public:
-    QRateDialog(QWidget *parent = 0);
-    ~QRateDialog();
-    int getRate();
-    QString getConverter();
-    void setParams(int aRate, QString & aConverter);
+    ZGenerateDialog(QWidget *parent = nullptr);
+    ~ZGenerateDialog() override;
+    void setConfigText(const QString& text);
+
+public Q_SLOTS:
+    void saveAs();
 };
 
 #endif

@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -18,21 +17,23 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef QMETERDLG_H
-#define QMETERDLG_H
+#ifndef RATEDLG_H
+#define RATEDLG_H
 #include <QtGui>
 #include <QtCore>
-#include "ui_qmeterdlg.h"
+#include "ui_ratedlg.h"
 
-class QMeterDialog : public QDialog, public Ui::QMeterDialog
+class ZRateDialog : public QDialog, public Ui::ZRateDialog
 {
     Q_OBJECT
 
 public:
-    QMeterDialog(QWidget *parent = 0);
-    ~QMeterDialog();
-public slots:
-    void browseMeter(bool checked);
+    ZRateDialog(QWidget *parent = nullptr);
+    ~ZRateDialog() override;
+
+    int getRate();
+    QString getConverter();
+    void setParams(int aRate, const QString& aConverter);
 };
 
 #endif

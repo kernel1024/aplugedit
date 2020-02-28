@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -20,124 +19,124 @@
 
 #include "includes/cpbase.h"
 #include "includes/cprate.h"
-#include "includes/qratedialog.h"
+#include "includes/ratedialog.h"
 
-QCPRate::QCPRate(QWidget *parent, QRenderArea *aOwner)
-  : QCPBase(parent,aOwner)
+int ZCPRate::getRate() const
 {
-  fInp=new QCPInput(this,this);
-  fInp->pinName="in";
-  fInputs.append(fInp);
-  fOut=new QCPOutput(this,this);
-  fOut->pinName="out";
-  fOutputs.append(fOut);
-  alRate=48000;
-  alConverter="";
+    return m_rate;
 }
 
-QCPRate::~QCPRate()
+ZCPRate::ZCPRate(QWidget *parent, ZRenderArea *aOwner)
+    : ZCPBase(parent,aOwner)
 {
-  delete fInp;
-  delete fOut;
+    fInp=new ZCPInput(this,this);
+    fInp->pinName=QSL("in");
+    registerInput(fInp);
+    fOut=new ZCPOutput(this,this);
+    fOut->pinName=QSL("out");
+    registerOutput(fOut);
 }
 
-QSize QCPRate::minimumSizeHint() const
+ZCPRate::~ZCPRate() = default;
+
+QSize ZCPRate::minimumSizeHint() const
 {
-  return QSize(140,50);
+    return QSize(140,50);
 }
 
-QSize QCPRate::sizeHint() const
+void ZCPRate::realignPins()
 {
-  return minimumSizeHint();
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void QCPRate::realignPins(QPainter &)
+void ZCPRate::doInfoGenerate(QTextStream & stream) const
 {
-  fInp->relCoord=QPoint(QCP_PINSIZE/2,height()/2);
-  fOut->relCoord=QPoint(width()-QCP_PINSIZE/2,height()/2);
+    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
+    stream << QSL("  type rate") << endl;
+    if (fOut->toFilter) {
+        stream << QSL("  slave {") << endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+        stream << QSL("    rate ") << m_rate << endl;
+        stream << QSL("  }") << endl;
+    }
+    if (!m_converter.isEmpty())
+        stream << QSL("  converter \"") << m_converter << QSL("\"") << endl;
+    stream << QSL("}") << endl;
+    stream << endl;
+    if (fOut->toFilter)
+        fOut->toFilter->doGenerate(stream);
 }
 
-void QCPRate::doInfoGenerate(QTextStream & stream)
+void ZCPRate::paintEvent(QPaintEvent * event)
 {
-  stream << "pcm." << objectName() << " {" << endl;
-  stream << "  type rate" << endl;
-  if (fOut->toFilter!=0)
-  {
-    stream << "  slave {" << endl;
-    stream << "    pcm \"" << fOut->toFilter->objectName() << "\"" << endl;
-    stream << "    rate " << alRate << endl;
-    stream << "  }" << endl;
-  }
-  if (alConverter!="")
-    stream << "  converter \"" << alConverter << "\"" << endl;
-  stream << "}" << endl;
-  stream << endl;
-  if (fOut->toFilter!=0)
-    fOut->toFilter->doGenerate(stream);
+    Q_UNUSED(event)
+
+    QPainter p(this);
+    QPen pn=QPen(Qt::black);
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+    pn.setWidth(2);
+    p.setPen(pn);
+    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
+
+    p.drawRect(rect());
+
+    redrawPins(p);
+
+    QFont n=of;
+    n.setBold(true);
+    n.setPointSize(n.pointSize()+1);
+    p.setFont(n);
+    p.drawText(rect(),Qt::AlignCenter,QSL("SRC"));
+
+    n.setBold(false);
+    n.setPointSize(n.pointSize()-3);
+    p.setPen(QPen(Qt::gray));
+    p.setFont(n);
+    QString s = QSL("%1 Hz").arg(m_rate);
+    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,s);
+
+    p.setFont(of);
+    p.setBrush(ob);
+    p.setPen(op);
 }
 
-void QCPRate::paintEvent ( QPaintEvent * )
+void ZCPRate::readFromStreamLegacy( QDataStream & stream )
 {
-  QPainter p(this);
-  QPen pn=QPen(Qt::black);
-  QPen op=p.pen();
-  QBrush ob=p.brush();
-  QFont of=p.font();
-  pn.setWidth(2);
-  p.setPen(pn);
-  p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
-  
-  p.drawRect(rect());
-  
-  redrawPins(p);
-  
-  QFont n=of;
-  n.setBold(true);
-  n.setPointSize(n.pointSize()+1);
-  p.setFont(n);
-  p.drawText(rect(),Qt::AlignCenter,"SRC");
-  
-  n.setBold(false);
-  n.setPointSize(n.pointSize()-3);
-  p.setPen(QPen(Qt::gray));
-  p.setFont(n);
-  QString s=QString::number(alRate)+" Hz";
-  p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,s);
-  
-  p.setFont(of);
-  p.setBrush(ob);
-  p.setPen(op);
+    ZCPBase::readFromStreamLegacy(stream);
+    stream >> m_rate;
+    stream >> m_converter;
 }
 
-void QCPRate::readFromStream( QDataStream & stream )
+void ZCPRate::readFromJson(const QJsonValue &json)
 {
-  QCPBase::readFromStream(stream);
-  stream >> alRate;
-  stream >> alConverter;
+    ZCPBase::readFromJson(json.toObject().value(QSL("base")));
+    m_rate = json.toObject().value(QSL("rate")).toInt();
+    m_converter = json.toObject().value(QSL("converter")).toString();
 }
 
-void QCPRate::storeToStream( QDataStream & stream )
+QJsonValue ZCPRate::storeToJson() const
 {
-  QCPBase::storeToStream(stream);
-  stream << alRate;
-  stream << alConverter;
+    QJsonObject data;
+    data.insert(QSL("base"),ZCPBase::storeToJson());
+    data.insert(QSL("rate"),m_rate);
+    data.insert(QSL("converter"),m_converter);
+    return data;
 }
 
-void QCPRate::showSettingsDlg()
+void ZCPRate::showSettingsDlg()
 {
-  QRateDialog* d=new QRateDialog();
-  d->setParams(alRate,alConverter);
+    ZRateDialog d(topLevelWidget());
+    d.setParams(m_rate,m_converter);
 
-  if (d->exec()==QDialog::Rejected)
-  {
-    delete d;
-    return;
-  }
-  emit componentChanged(this);
-  
-  alRate=d->getRate();
-  alConverter=d->getConverter();
-  delete d;
-  update();
+    if (d.exec()==QDialog::Rejected) return;
+
+    Q_EMIT componentChanged(this);
+
+    m_rate=d.getRate();
+    m_converter=d.getConverter();
+    update();
 }
 

@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -22,128 +21,132 @@
 #include "includes/renderarea.h"
 #include "includes/cpinp.h"
 
-static int dspCnt=-1;
-
-QCPInp::QCPInp(QWidget *parent, QRenderArea *aOwner)
-  : QCPBase(parent,aOwner)
+ZCPInp::ZCPInp(QWidget *parent, ZRenderArea *aOwner)
+    : ZCPBase(parent,aOwner)
 {
-  fOut=new QCPOutput(this,this);
-  fOut->pinName="out";
-  fOutputs.append(fOut);
-  if (dspCnt==-1)
-    dspNum="!default";
-  else
-    dspNum="dsp"+QString::number(dspCnt++);
-  if (dspCnt>7) dspCnt=-1;
+    fOut=new ZCPOutput(this,this);
+    fOut->pinName=QSL("out");
+    registerOutput(fOut);
+    m_dspName=QSL("!default");
 }
 
-QCPInp::~QCPInp()
-{
-  delete fOut;
-}
+ZCPInp::~ZCPInp() = default;
 
-void QCPInp::showSettingsDlg()
+void ZCPInp::showSettingsDlg()
 {
-  QStringList items;
-  items << "!default" << "dsp0" << "dsp1" << "dsp2" << "dsp3" << "dsp4" << "dsp5" << "dsp6" << "dsp7";
-  int c=0;
-  if (!(items.contains(dspNum)))
-  {
-    items << dspNum;
-    c=items.count()-1;
-  } else
-    c=items.indexOf(QRegExp(dspNum));
-  
-  bool ok;
-  QString item = QInputDialog::getItem(this, tr("DSP input device"),
-                                        tr("User-land device number"), items, c, true, &ok);
-  if (ok && !item.isEmpty())
-  {
-    dspNum=item;
-    for (int i=0;i<cpOwner->children().count();i++)
-      if (QCPInp *base=qobject_cast<QCPInp*>(cpOwner->children().at(i)))
-        if ((base->objectName()!=objectName()) && (base->dspNum==dspNum))
-        {
-          QMessageBox::warning(0,tr("Duplicated DSP"),tr("You have entered duplicated identifier for this DSP input,\nthat is already used in another component.\nPlease, recheck your DSP inputs!"));
-          break;
+    QStringList items { QSL("!default") };
+    items.reserve(8);
+    for (int i=0;i<8;i++)
+        items << QSL("dsp%1").arg(i);
+
+    int c=0;
+    if (!(items.contains(m_dspName))) {
+        items << m_dspName;
+        c=items.count()-1;
+    } else {
+        c=items.indexOf(m_dspName);
+    }
+
+    bool ok;
+    QString item = QInputDialog::getItem(this, tr("DSP input device"),
+                                         tr("User-land device number"), items, c, true, &ok);
+    if (ok && !item.isEmpty())
+    {
+        m_dspName=item;
+        for (int i=0;i<ownerArea()->children().count();i++) {
+            if (auto base=qobject_cast<ZCPInp*>(ownerArea()->children().at(i))) {
+                if ((base->objectName()!=objectName()) && (base->m_dspName==m_dspName))
+                {
+                    QMessageBox::warning(topLevelWidget(),tr("Duplicated DSP"),
+                                         tr("You have entered duplicated identifier for this DSP input,\n"
+                                            "that is already used in another component.\n"
+                                            "Please, recheck your DSP inputs!"));
+                    break;
+                }
+            }
         }
-    update();
-    emit componentChanged(this);
-  }
+        update();
+        Q_EMIT componentChanged(this);
+    }
 }
 
-void QCPInp::readFromStream( QDataStream & stream )
+void ZCPInp::readFromStreamLegacy( QDataStream & stream )
 {
-  QCPBase::readFromStream(stream);
-  stream >> dspNum;
+    ZCPBase::readFromStreamLegacy(stream);
+    stream >> m_dspName;
 }
 
-void QCPInp::storeToStream( QDataStream & stream )
+void ZCPInp::readFromJson(const QJsonValue &json)
 {
-  QCPBase::storeToStream(stream);
-  stream << dspNum;
+    ZCPBase::readFromJson(json.toObject().value(QSL("base")));
+    m_dspName = json.toObject().value(QSL("dspName")).toString();
 }
 
-QSize QCPInp::minimumSizeHint() const
+QJsonValue ZCPInp::storeToJson() const
 {
-  return QSize(180,50);
+    QJsonObject data;
+    data.insert(QSL("base"),ZCPBase::storeToJson());
+    data.insert(QSL("dspName"),m_dspName);
+    return data;
 }
 
-QSize QCPInp::sizeHint() const
+QSize ZCPInp::minimumSizeHint() const
 {
-  return minimumSizeHint();
+    return QSize(180,50);
 }
 
-void QCPInp::realignPins(QPainter &)
+void ZCPInp::realignPins()
 {
-  fOut->relCoord=QPoint(width()-QCP_PINSIZE/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void QCPInp::doInfoGenerate(QTextStream & stream)
+void ZCPInp::doInfoGenerate(QTextStream & stream) const
 {
-  stream << "pcm." << dspNum << " {" << endl;
-  if (fOut->toFilter!=0)
-  {
-    stream << "  type plug" << endl;
-    stream << "  slave.pcm \"" << fOut->toFilter->objectName() << "\"" << endl;
-  } else {
-    stream << "  type hw" << endl;
-    stream << "  card 0" << endl;
-  }
-  stream << "}" << endl;
-  stream << endl;
-  if (fOut->toFilter!=0)
-    fOut->toFilter->doGenerate(stream);
+    stream << QSL("pcm.") << m_dspName << QSL(" {") << endl;
+    if (fOut->toFilter)
+    {
+        stream << QSL("  type plug") << endl;
+        stream << QSL("  slave.pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+    } else {
+        stream << QSL("  type hw") << endl;
+        stream << QSL("  card 0") << endl;
+    }
+    stream << QSL("}") << endl;
+    stream << endl;
+    if (fOut->toFilter)
+        fOut->toFilter->doGenerate(stream);
 }
 
-void QCPInp::paintEvent ( QPaintEvent *)
+void ZCPInp::paintEvent(QPaintEvent *event)
 {
-  QPainter p(this);
-  QPen op=p.pen();
-  QBrush ob=p.brush();
-  QFont of=p.font();
-  QPen pn=QPen(Qt::black);
-  pn.setWidth(2);
-  p.setPen(pn);
-  p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
-  
-  p.drawRect(rect());
-  
-  redrawPins(p);
-  
-  QFont n=of;
-  n.setBold(true);
-  n.setPointSize(n.pointSize()+1);
-  p.setFont(n);
-  p.drawText(rect(),Qt::AlignCenter,"Input DSP");
-  
-  n.setBold(false);
-  n.setPointSize(n.pointSize()-3);
-  p.setPen(QPen(Qt::gray));
-  p.setFont(n);
-  p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,dspNum);
-  
-  p.setFont(of);
-  p.setBrush(ob);
-  p.setPen(op);
+    Q_UNUSED(event)
+
+    QPainter p(this);
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+    QPen pn=QPen(Qt::black);
+    pn.setWidth(2);
+    p.setPen(pn);
+    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
+
+    p.drawRect(rect());
+
+    redrawPins(p);
+
+    QFont n=of;
+    n.setBold(true);
+    n.setPointSize(n.pointSize()+1);
+    p.setFont(n);
+    p.drawText(rect(),Qt::AlignCenter,QSL("Input DSP"));
+
+    n.setBold(false);
+    n.setPointSize(n.pointSize()-3);
+    p.setPen(QPen(Qt::gray));
+    p.setFont(n);
+    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,m_dspName);
+
+    p.setFont(of);
+    p.setBrush(ob);
+    p.setPen(op);
 }

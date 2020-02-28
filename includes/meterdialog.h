@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -18,21 +17,25 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef QGENERATEDLG_H
-#define QGENERATEDLG_H
+#ifndef METERDLG_H
+#define METERDLG_H
 #include <QtGui>
 #include <QtCore>
-#include "ui_qgeneratedlg.h"
+#include "ui_meterdlg.h"
 
-class QGenerateDialog : public QDialog, public Ui::QGenerateDialog
+class ZMeterDialog : public QDialog, public Ui::ZMeterDialog
 {
     Q_OBJECT
 
 public:
-    QGenerateDialog(QWidget *parent = 0);
-    ~QGenerateDialog();
-public slots:
-    void saveAs(bool state);
+    ZMeterDialog(QWidget *parent = nullptr);
+    ~ZMeterDialog() override;
+
+    void setParams(const QString& mMeterLib, const QString& mMeterFunc, int mRefreshRate);
+    void getParams(QString& mMeterLib, QString& mMeterFunc, int& mRefreshRate);
+
+public Q_SLOTS:
+    void browseMeter();
 };
 
 #endif

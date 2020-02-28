@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -18,109 +17,101 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QRandomGenerator>
 #include "includes/cpbase.h"
 #include "includes/cpdmix.h"
 #include "includes/cphw.h"
 
-QCPDMix::QCPDMix(QWidget *parent, QRenderArea *aOwner)
-  : QCPBase(parent,aOwner)
+ZCPDMix::ZCPDMix(QWidget *parent, ZRenderArea *aOwner)
+    : ZCPBase(parent,aOwner)
 {
-  fInp=new QCPInput(this,this);
-  fInp->pinName="in";
-  fInputs.append(fInp);
-  fOut=new QCPOutput(this,this);
-  fOut->pinName="out";
-  fOutputs.append(fOut);
+    fInp=new ZCPInput(this,this);
+    fInp->pinName=QSL("in");
+    registerInput(fInp);
+    fOut=new ZCPOutput(this,this);
+    fOut->pinName=QSL("out");
+    registerOutput(fOut);
 }
 
-QCPDMix::~QCPDMix()
+ZCPDMix::~ZCPDMix() = default;
+
+QSize ZCPDMix::minimumSizeHint() const
 {
-  delete fInp;
-  delete fOut;
+    return QSize(140,50);
 }
 
-QSize QCPDMix::minimumSizeHint() const
+void ZCPDMix::realignPins()
 {
-  return QSize(140,50);
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-QSize QCPDMix::sizeHint() const
+void ZCPDMix::doInfoGenerate(QTextStream & stream) const
 {
-  return minimumSizeHint();
-}
-
-void QCPDMix::realignPins(QPainter &)
-{
-  fInp->relCoord=QPoint(QCP_PINSIZE/2,height()/2);
-  fOut->relCoord=QPoint(width()-QCP_PINSIZE/2,height()/2);
-}
-
-void QCPDMix::doInfoGenerate(QTextStream & stream)
-{
-  QCPHW *hw=qobject_cast<QCPHW*>(fOut->toFilter);
-  stream << "pcm." << objectName() << " {" << endl;
-  stream << "  type dmix" << endl;
-  stream << "  ipc_key " << rand() << endl;
-  if (fOut->toFilter!=0)
-  {
-    stream << "  slave {" << endl;
-    stream << "    pcm \"" << fOut->toFilter->objectName() << "\"" << endl;
-    if (hw)
-    {
-      if (hw->alChannels!=-1)
-        stream << "    channels " << hw->alChannels << endl;
-      if (hw->alRate!=-1)
-        stream << "    rate " << hw->alRate << endl;
+    auto hw=qobject_cast<ZCPHW*>(fOut->toFilter);
+    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
+    stream << QSL("  type dmix") << endl;
+    stream << QSL("  ipc_key ") << QRandomGenerator::global()->bounded(1024,INT_MAX) << endl;
+    if (fOut->toFilter) {
+        stream << QSL("  slave {") << endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+        if (hw) {
+            if (hw->getChannels()!=-1)
+                stream << QSL("    channels ") << hw->getChannels() << endl;
+            if (hw->getRate()!=-1)
+                stream << QSL("    rate ") << hw->getRate() << endl;
+        }
+        stream << QSL("  }") << endl;
+        if (hw) {
+            if (hw->getChannels()!=-1) {
+                stream << QSL("  bindings {") << endl;
+                for (int i=0;i<hw->getChannels();i++)
+                    stream << QSL("    ") << i << QSL(" ") << i << endl;
+                stream << QSL("  }") << endl;
+            }
+        }
     }
-    stream << "  }" << endl;
-    if (hw)
-      if (hw->alChannels!=-1)
-      {
-        stream << "  bindings {" << endl;
-        for (int i=0;i<hw->alChannels;i++)
-          stream << "    " << i << " " << i << endl;
-        stream << "  }" << endl;
-      }
-  }
-  stream << "}" << endl;
-  stream << endl;
-  if (fOut->toFilter!=0)
-    fOut->toFilter->doGenerate(stream);
+    stream << QSL("}") << endl;
+    stream << endl;
+    if (fOut->toFilter)
+        fOut->toFilter->doGenerate(stream);
 }
 
-bool QCPDMix::canConnectOut(QCPBase * toFilter)
+bool ZCPDMix::canConnectOut(ZCPBase * toFilter)
 {
-  QCPHW *base=qobject_cast<QCPHW*>(toFilter);
-  return (base!=0);
+    const auto base=qobject_cast<ZCPHW*>(toFilter);
+    return (base!=nullptr);
 }
 
-void QCPDMix::paintEvent ( QPaintEvent * )
+void ZCPDMix::paintEvent (QPaintEvent * event)
 {
-  QPainter p(this);
-  QPen pn=QPen(Qt::black);
-  QPen op=p.pen();
-  QBrush ob=p.brush();
-  QFont of=p.font();
-  pn.setWidth(2);
-  p.setPen(pn);
-  p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
-  
-  p.drawRect(rect());
-  
-  redrawPins(p);
-  
-  QFont n=of;
-  n.setBold(true);
-  n.setPointSize(n.pointSize()+1);
-  p.setFont(n);
-  p.drawText(rect(),Qt::AlignCenter,"DMix");
-  
-  n.setBold(false);
-  n.setPointSize(n.pointSize()-3);
-  p.setPen(QPen(Qt::gray));
-  p.setFont(n);
-  
-  p.setFont(of);
-  p.setBrush(ob);
-  p.setPen(op);
+    Q_UNUSED(event)
+
+    QPainter p(this);
+    QPen pn=QPen(Qt::black);
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+    pn.setWidth(2);
+    p.setPen(pn);
+    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
+
+    p.drawRect(rect());
+
+    redrawPins(p);
+
+    QFont n=of;
+    n.setBold(true);
+    n.setPointSize(n.pointSize()+1);
+    p.setFont(n);
+    p.drawText(rect(),Qt::AlignCenter,QSL("DMix"));
+
+    n.setBold(false);
+    n.setPointSize(n.pointSize()-3);
+    p.setPen(QPen(Qt::gray));
+    p.setFont(n);
+
+    p.setFont(of);
+    p.setBrush(ob);
+    p.setPen(op);
 }

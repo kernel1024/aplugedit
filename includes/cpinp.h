@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -25,23 +24,27 @@
 #include <QtGui>
 #include "cpbase.h"
 
-class QCPInp : public QCPBase
+class ZCPInp : public ZCPBase
 {
-  Q_OBJECT
+    Q_OBJECT
+private:
+    ZCPOutput* fOut;
+    QString m_dspName;
+
 public:
-  void realignPins(QPainter & painter);
-  void doInfoGenerate(QTextStream & stream);
-  QCPOutput* fOut;
-  QSize minimumSizeHint() const;
-  QSize sizeHint() const;
-public:
-  QCPInp(QWidget *parent, QRenderArea *aOwner);
-  ~QCPInp();
-  QString dspNum;
-  void showSettingsDlg();
-  void readFromStream( QDataStream & stream );
-  void storeToStream( QDataStream & stream );
+
+    ZCPInp(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPInp() override;
+
+    void readFromStreamLegacy(QDataStream & stream) override;
+    void readFromJson(const QJsonValue& json) override;
+    QJsonValue storeToJson() const override;
+
+    QSize minimumSizeHint() const override;
 protected:
-  void paintEvent ( QPaintEvent * event );
+    void paintEvent (QPaintEvent * event) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream) const override;
+    void showSettingsDlg() override;
 };
 #endif

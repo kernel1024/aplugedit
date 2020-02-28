@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -25,25 +24,30 @@
 #include <QtGui>
 #include "cpbase.h"
 
-class QCPMeter : public QCPBase
+class ZCPMeter : public ZCPBase
 {
-  Q_OBJECT
+    Q_OBJECT
+private:
+    QString m_meterLib;
+    QString m_meterFunc;
+    int m_refreshRate { 50 };
+    ZCPInput* fInp;
+    ZCPOutput* fOut;
+
 public:
-  void realignPins(QPainter & painter);
-  void doInfoGenerate(QTextStream & stream);
-  QCPInput* fInp;
-  QCPOutput* fOut;
-  QSize minimumSizeHint() const;
-  QSize sizeHint() const;
-  QCPMeter(QWidget *parent, QRenderArea *aOwner);
-  ~QCPMeter();
+    ZCPMeter(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPMeter() override;
+
+    void readFromStreamLegacy(QDataStream & stream) override;
+    void readFromJson(const QJsonValue& json) override;
+    QJsonValue storeToJson() const override;
+
+    QSize minimumSizeHint() const override;
+
 protected:
-  QString alMeterLib;
-  QString alMeterFunc;
-  int alRefreshRate;
-  void paintEvent ( QPaintEvent * event );
-  void showSettingsDlg();
-  void readFromStream( QDataStream & stream );
-  void storeToStream( QDataStream & stream );
+    void paintEvent (QPaintEvent * event) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream) const override;
+    void showSettingsDlg() override;
 };
 #endif

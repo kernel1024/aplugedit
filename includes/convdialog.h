@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -18,44 +17,19 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
-#include <QtWidgets>
+#ifndef CONVDLG_H
+#define CONVDLG_H
+#include <QtGui>
 #include <QtCore>
-#include "includes/qgeneratedialog.h"
+#include "ui_convdlg.h"
 
-QGenerateDialog::QGenerateDialog(QWidget *parent)
-  : QDialog(parent)
+class ZConvDialog : public QDialog, public Ui::ZConvDialog
 {
-  setupUi(this);
-  connect(saveButton,SIGNAL(clicked(bool)),this,SLOT(saveAs(bool)));
-}
+    Q_OBJECT
 
-QGenerateDialog::~QGenerateDialog()
-{
-}
+public:
+    ZConvDialog(QWidget *parent = nullptr);
+    ~ZConvDialog() override;
+};
 
-void QGenerateDialog::saveAs(bool )
-{
-  QFileDialog d(this,tr("Choose a filename to save config under"),"~",
-                  "Any file (*.*)");
-  d.setAcceptMode(QFileDialog::AcceptSave);
-  d.setConfirmOverwrite(true);
-  d.setDirectory(QDir::currentPath());
-  if (!d.exec()) return;
-  if (d.selectedFiles().count()==0) return;
-  QString fname=d.selectedFiles()[0];
-  
-  QFile file(fname);
-  if (!file.open(QIODevice::WriteOnly))
-  {
-    QMessageBox::critical(this,tr("File error"),tr("Cannot create file %1").arg(fname));
-    return;
-  }
-  QTextStream out(&file);
-  
-  QString buf;
-  buf=configBrowser->toPlainText();
-  out << buf;
-  file.close();
-}
-
+#endif

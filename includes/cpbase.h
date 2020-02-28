@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -24,86 +23,112 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#define QPT_INPUT     1
-#define QPT_OUTPUT    2
-#define QCP_PINSIZE   8
+const int zcpPinSize = 8;
 
-class QCPInput;
-class QCPOutput;
-class QRenderArea;
+class ZCPInput;
+class ZCPOutput;
+class ZRenderArea;
 
-class QCPBase : public QWidget
+class ZCPBase : public QWidget
 {
     Q_OBJECT
+    friend class ZRenderArea;
+public:
+    enum PinType {
+        ptInput = 1,
+        ptOutput = 2
+    };
+    Q_ENUM(PinType)
+
+    ZCPBase(QWidget *parent, ZRenderArea *aOwner);
+    
+    virtual void readFromStreamLegacy(QDataStream & stream);
+    virtual void readFromJson(const QJsonValue& json);
+    virtual QJsonValue storeToJson() const;
+
+    virtual bool canConnectOut(ZCPBase *toFilter);
+    virtual bool canConnectIn(ZCPBase *toFilter);
+
+    QSize sizeHint() const override;
+
+    ZRenderArea *ownerArea() const;
+    bool postLoadBind();
+    void doGenerate(QTextStream & stream);
+    void redrawPins(QPainter & painter);
+
+    void registerInput(ZCPInput* inp);
+    void registerOutput(ZCPOutput* out);
+    virtual ZCPOutput* getMainOutput() const;
 
 private:
-    virtual void realignPins(QPainter & painter)=0;
-    void mouseInPin(const QPoint & mx, int &aPinNum, int &aPinType, QCPBase * &aFilter);
+    QList<ZCPInput*> fInputs;
+    QList<ZCPOutput*> fOutputs;
+    bool m_isDragging { false };
+    QColor m_pinColor { Qt::blue };
+    QPoint m_relCorner;
+    ZRenderArea *m_owner;
+
+    void mouseInPin(const QPoint& mx, int &aPinNum, ZCPBase::PinType &aPinType, ZCPBase *&aFilter);
     void checkRecycle();
-    virtual void doInfoGenerate(QTextStream & stream)=0;
+
+    Q_DISABLE_COPY(ZCPBase)
+
 protected:
-    void mouseMoveEvent(QMouseEvent * event);
-    void mousePressEvent(QMouseEvent * event);
-    void mouseReleaseEvent(QMouseEvent * event);
-    void paintEvent(QPaintEvent *event);
-    
-public:
-    QCPBase(QWidget *parent, QRenderArea *aOwner);
-    
-    virtual void readFromStream( QDataStream & stream );
-    virtual void storeToStream( QDataStream & stream );
-    void postLoadBind();
-    
-    void doGenerate(QTextStream & stream);
+    void mouseMoveEvent(QMouseEvent * event) override;
+    void mousePressEvent(QMouseEvent * event) override;
+    void mouseReleaseEvent(QMouseEvent * event) override;
+    void paintEvent(QPaintEvent *event) override;
+    virtual void realignPins()=0;
+    virtual void doInfoGenerate(QTextStream & stream) const = 0;
     virtual void showSettingsDlg();
-    void redrawPins(QPainter & painter);
-    virtual bool canConnectOut(QCPBase * toFilter);
-    virtual bool canConnectIn(QCPBase * toFilter);
+    virtual void addCtxMenuItems(QMenu* menu);
 
-    QRenderArea *cpOwner;
-    QList<QCPInput*> fInputs;
-    QList<QCPOutput*> fOutputs;
-    QPoint relCorner;
-    bool isDragging, fSettingsDlg;
-    QColor pinColor;
-signals:
-    void componentChanged(QCPBase * obj);
+Q_SIGNALS:
+    void componentChanged(ZCPBase * obj);
+
+public Q_SLOTS:
+    void deleteComponent();
+
 };
 
-class QCPOutput : public QObject
+class ZCPOutput : public QObject
 {
     Q_OBJECT
 public:
-    QCPOutput(QObject * parent, QCPBase * aOwner);
-    void readFromStream( QDataStream & stream );
-    void storeToStream( QDataStream & stream );
-    void postLoadBind();
-    
-    QCPBase *toFilter;
-    QCPBase *ownerFilter;
+    qint32 toPin { -1 };
+    ZCPBase *toFilter { nullptr };
+    ZCPBase *ownerFilter { nullptr };
     QPoint relCoord;
-    qint32 toPin;
     QString pinName;
     QString ffLogic;
+
+    ZCPOutput(QObject * parent, ZCPBase * aOwner);
+
+    void readFromStreamLegacy( QDataStream & stream );
+    void readFromJson(const QJsonValue& json);
+    QJsonValue storeToJson() const;
+    bool postLoadBind();
 };
 
-class QCPInput : public QObject
+class ZCPInput : public QObject
 {
     Q_OBJECT
 public:
-    QCPInput(QObject * parent, QCPBase * aOwner);
-    
-    void readFromStream( QDataStream & stream );
-    void storeToStream( QDataStream & stream );
-    void postLoadBind();
-
-    QCPBase * fromFilter;
-    QCPBase * ownerFilter;
+    qint32 fromPin { -1 };
+    ZCPBase * fromFilter { nullptr };
+    ZCPBase * ownerFilter { nullptr };
     QPoint relCoord;
-    qint32 fromPin;
     QString pinName;
     QString ffLogic;
+
+    ZCPInput(QObject * parent, ZCPBase * aOwner);
+    
+    void readFromStreamLegacy( QDataStream & stream );
+    void readFromJson(const QJsonValue& json);
+    QJsonValue storeToJson() const;
+    bool postLoadBind();
 };
 
-void debugPrint(const QString &s);
+#define QSL QStringLiteral
+
 #endif

@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -21,64 +20,58 @@
 #include "includes/cpbase.h"
 #include "includes/cpnull.h"
 
-QCPNull::QCPNull(QWidget *parent, QRenderArea *aOwner)
-  : QCPBase(parent,aOwner)
+ZCPNull::ZCPNull(QWidget *parent, ZRenderArea *aOwner)
+    : ZCPBase(parent,aOwner)
 {
-  fInp=new QCPInput(this,this);
-  fInp->pinName="in";
-  fInputs.append(fInp);
+    fInp=new ZCPInput(this,this);
+    fInp->pinName=QSL("in");
+    registerInput(fInp);
 }
 
-QCPNull::~QCPNull()
+ZCPNull::~ZCPNull() = default;
+
+QSize ZCPNull::minimumSizeHint() const
 {
-  delete fInp;
+    return QSize(150,50);
 }
 
-QSize QCPNull::minimumSizeHint() const
+void ZCPNull::realignPins()
 {
-  return QSize(150,50);
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
 }
 
-QSize QCPNull::sizeHint() const
+void ZCPNull::doInfoGenerate(QTextStream & stream) const
 {
-  return minimumSizeHint();
+    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
+    stream << QSL("  type null") << endl;
+    stream << QSL("}") << endl;
+    stream << endl;
 }
 
-void QCPNull::realignPins(QPainter &)
+void ZCPNull::paintEvent(QPaintEvent * event)
 {
-  fInp->relCoord=QPoint(QCP_PINSIZE/2,height()/2);
-}
+    Q_UNUSED(event)
 
-void QCPNull::doInfoGenerate(QTextStream & stream)
-{
-  stream << "pcm." << objectName() << " {" << endl;
-  stream << "  type null" << endl;
-  stream << "}" << endl;
-  stream << endl;
-}
+    QPainter p(this);
+    QPen pn=QPen(Qt::black);
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+    pn.setWidth(2);
+    p.setPen(pn);
+    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-void QCPNull::paintEvent ( QPaintEvent * )
-{
-  QPainter p(this);
-  QPen pn=QPen(Qt::black);
-  QPen op=p.pen();
-  QBrush ob=p.brush();
-  QFont of=p.font();
-  pn.setWidth(2);
-  p.setPen(pn);
-  p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
-  
-  p.drawRect(rect());
-  
-  redrawPins(p);
-  
-  QFont n=of;
-  n.setBold(true);
-  n.setPointSize(n.pointSize()+1);
-  p.setFont(n);
-  p.drawText(rect(),Qt::AlignCenter,"null");
-  p.setFont(of);
-  p.setBrush(ob);
-  p.setPen(op);
+    p.drawRect(rect());
+
+    redrawPins(p);
+
+    QFont n=of;
+    n.setBold(true);
+    n.setPointSize(n.pointSize()+1);
+    p.setFont(n);
+    p.drawText(rect(),Qt::AlignCenter,QSL("null"));
+    p.setFont(of);
+    p.setBrush(ob);
+    p.setPen(op);
 }
 

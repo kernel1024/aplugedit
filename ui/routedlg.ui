@@ -2,8 +2,8 @@
  <author></author>
  <comment></comment>
  <exportmacro></exportmacro>
- <class>QRouteDialog</class>
- <widget class="QDialog" name="QRouteDialog" >
+ <class>ZRouteDialog</class>
+ <widget class="QDialog" name="ZRouteDialog" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -156,7 +156,7 @@
   <connection>
    <sender>okButton</sender>
    <signal>clicked()</signal>
-   <receiver>QRouteDialog</receiver>
+   <receiver>ZRouteDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel" >
@@ -172,7 +172,7 @@
   <connection>
    <sender>cancelButton</sender>
    <signal>clicked()</signal>
-   <receiver>QRouteDialog</receiver>
+   <receiver>ZRouteDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel" >

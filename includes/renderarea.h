@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -25,41 +24,49 @@
 #include <QtGui>
 #include "cpbase.h"
 
-class QRenderArea : public QFrame
+class ZRenderArea : public QFrame
 {
     Q_OBJECT
-public:
-    QRenderArea(QWidget *parent = 0, QScrollArea *aScroller=0);
-    
-    QSize minimumSizeHint() const;
-    QSize sizeHint() const;
-    
+    friend class ZCPBase;
+private:
+    bool erroneousRoute { false };
+    bool rectLinks { true };
+    bool cbBuilding { false };
+    int cbType { 0 };
+    int cbPinNum { -1 };
+    int cbConnCount { 0 };
+    ZCPInput *cbInput { nullptr };
+    ZCPOutput *cbOutput { nullptr };
     QScrollArea *scroller;
-    
-    bool resReading, erroneousRoute, rectLinks;
-    QStringList nodeLocks;
-    QLabel* recycle;
-    QDataStream* storeStream;
-    
-    int cbType, cbPinNum, cbConnCount;
-    QCPInput *cbInput;
-    QCPOutput *cbOutput;
-    bool cbBuilding;
+    QScopedPointer<QLabel,QScopedPointerDeleteLater> recycle;
     QPoint cbCurrent;
+    QStringList nodeLocks;
+
+public:
+    explicit ZRenderArea(QScrollArea *aScroller = nullptr);
     
-    void initConnBuilder(const int aType, int aPinNum, QCPInput* aInput, QCPOutput* aOutput);
+    QSize minimumSizeHint() const override;
+    QSize sizeHint() const override;
+
+    bool readSchematicLegacy(QDataStream& stream);
+    bool readSchematic(const QByteArray& json);
+    QByteArray storeSchematic() const;
+
     void repaintConn();
-    void refreshConnBuilder(const QPoint & atPos);
-    void doneConnBuilder(const bool aNone, int aType, const int aPinNum, QCPInput* aInput, QCPOutput* aOutput);
-    void postLoadBinding();
-    void readSchematic(QDataStream & stream);
-    void storeSchematic(QDataStream & stream);
+    void doGenerate(QTextStream& stream);
+
+    void initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
+    void refreshConnBuilder(const QPoint& atPos);
+    void doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
+    bool postLoadBinding();
     void deleteComponents();
-    void doGenerate(QTextStream & stream);
-    int cpComponentCount();
+    int componentCount() const;
+
+    ZCPBase* createCpInstance(const QString &className, const QPoint &pos = QPoint(),
+                              const QString &objectName = QString());
+
 protected:
-    void paintEvent ( QPaintEvent * event );
-    QCPBase* createCpInstance(QString & className);
+    void paintEvent(QPaintEvent* event) override;
 };
 
 #endif

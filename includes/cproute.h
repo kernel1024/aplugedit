@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -25,31 +24,42 @@
 #include <QtGui>
 #include "cpbase.h"
 
-typedef struct TalRouteItem_t {
-  int from;
-  float coeff;
-} TalRouteItem;
-
-typedef TalRouteItem TalRoute[8];
-
-class QCPRoute : public QCPBase
+class CRouteItem
 {
-  Q_OBJECT
 public:
-  void realignPins(QPainter & painter);
-  void doInfoGenerate(QTextStream & stream);
-  QCPInput* fInp;
-  QCPOutput* fOut;
-  QSize minimumSizeHint() const;
-  QSize sizeHint() const;
-  QCPRoute(QWidget *parent, QRenderArea *aOwner);
-  ~QCPRoute();
+    int from { -1 };
+    double coeff { 0.0 };
+    CRouteItem() = default;
+    ~CRouteItem() = default;
+    CRouteItem(const CRouteItem& other);
+    CRouteItem(int aFrom, double aCoeff);
+    CRouteItem &operator=(const CRouteItem& other) = default;
+};
+
+class ZCPRoute : public ZCPBase
+{
+    Q_OBJECT
+private:
+    int m_channelsIn;
+    QList<CRouteItem> m_routeTable;
+    ZCPInput* fInp;
+    ZCPOutput* fOut;
+
+public:
+    ZCPRoute(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPRoute() override;
+
+    void readFromStreamLegacy( QDataStream & stream ) override;
+    void readFromJson(const QJsonValue& json) override;
+    QJsonValue storeToJson() const override;
+
+    QSize minimumSizeHint() const override;
+    int getChannelsOut() const;
+
 protected:
-  int alChannelsIn, alChannelsOut;
-  TalRoute alTable;
-  void paintEvent ( QPaintEvent * event );
-  void showSettingsDlg();
-  void readFromStream( QDataStream & stream );
-  void storeToStream( QDataStream & stream );
+    void paintEvent ( QPaintEvent * event ) override;
+    void doInfoGenerate(QTextStream & stream) const override;
+    void realignPins() override;
+    void showSettingsDlg() override;
 };
 #endif

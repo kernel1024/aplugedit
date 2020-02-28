@@ -1,34 +1,35 @@
-# C++ objects and libs
-
-*.slo
-*.lo
-*.o
-*.a
-*.la
-*.lai
-*.so
-*.dll
-*.dylib
-
-# Qt-es
-
-/.qmake.cache
-/.qmake.stash
-*.pro.user
-*.pro.user.*
-*.qbs.user
-*.qbs.user.*
+# Generic Qt and C++ patterns
 *.moc
-moc_*.cpp
-qrc_*.cpp
-ui_*.h
 Makefile*
-*build-*
+*.so.*
+*.so
+*.so.debug
+*.o
+.cd.rc
+*.swp
+core
+moc_*.cpp
+*.Debug
+*.Release
+*.pdb
+*.idb
+*.ib_pdb_index
+ui_*.h
+qrc_*.cpp
+Debug/
+Release/
+*.log
+.*.stash
+*_adaptor.*
+*_interface.*
+moc_*.h
 
-# QtCreator
+# QtCreator project files
+*.pro.user
+=======
+*.pro.user*
+*~
 
-*.autosave
-
-#QtCtreator Qml
-*.qmlproject.user
-*.qmlproject.user.*
+# Project specific
+aplugedit
+aplugedit_*.pro

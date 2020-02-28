@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -23,191 +22,204 @@
 #include "includes/cphw.h"
 #include "includes/cprate.h"
 
-QCPLADSPA::QCPLADSPA(QWidget *parent, QRenderArea *aOwner)
-  : QCPBase(parent,aOwner)
+ZCPLADSPA::ZCPLADSPA(QWidget *parent, ZRenderArea *aOwner)
+    : ZCPBase(parent,aOwner)
 {
-  fInp=new QCPInput(this,this);
-  fInp->pinName="in";
-  fInputs.append(fInp);
-  fOut=new QCPOutput(this,this);
-  fOut->pinName="out";
-  fOutputs.append(fOut);
-  
-  alPlugName="<please select filter!!!>";
-  alPlugID="";
-  alPlugLabel="";
-  alPlugFile="";
-  alCItems.clear();
+    fInp=new ZCPInput(this,this);
+    fInp->pinName=QSL("in");
+    registerInput(fInp);
+    fOut=new ZCPOutput(this,this);
+    fOut->pinName=QSL("out");
+    registerOutput(fOut);
+
+    m_plugName=tr("<please select filter!!!>");
 }
 
-QCPLADSPA::~QCPLADSPA()
+ZCPLADSPA::~ZCPLADSPA() = default;
+
+QSize ZCPLADSPA::minimumSizeHint() const
 {
-  delete fInp;
-  delete fOut;
+    return QSize(200,50);
 }
 
-QSize QCPLADSPA::minimumSizeHint() const
+void ZCPLADSPA::realignPins()
 {
-  return QSize(200,50);
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-QSize QCPLADSPA::sizeHint() const
+void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
 {
-  return minimumSizeHint();
-}
-
-void QCPLADSPA::realignPins(QPainter &)
-{
-  fInp->relCoord=QPoint(QCP_PINSIZE/2,height()/2);
-  fOut->relCoord=QPoint(width()-QCP_PINSIZE/2,height()/2);
-}
-
-void QCPLADSPA::doInfoGenerate(QTextStream & stream)
-{
-  stream << "pcm." << objectName() << " {" << endl;
-  stream << "  type ladspa" << endl;
-  if (fOut->toFilter!=0)
-  {
-    stream << "  slave {" << endl;
-    stream << "    pcm \"" << fOut->toFilter->objectName() << "\"" << endl;
-    stream << "  }" << endl;
-    if (alPlugLabel!="")
+    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
+    stream << QSL("  type ladspa") << endl;
+    if (fOut->toFilter)
     {
-      QFileInfo fi(alPlugFile);
-      stream << "  path \"" << fi.path() << "\"" << endl;
-      stream << "  plugins [" << endl;
-      stream << "    {" << endl;
-      stream << "      label " << alPlugLabel << endl;
-      stream << "      input {" << endl;
-      stream << "        controls [ ";
-      for (int i=0;i<alCItems.count();i++)
-      {
-        switch (alCItems[i]->aatType)
+        stream << QSL("  slave {") << endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+        stream << QSL("  }") << endl;
+        if (!m_plugLabel.isEmpty())
         {
-          case aacToggle:
-            if (alCItems[i]->aasToggle)
-              stream << "1";
-            else
-              stream << "0";
-            break;
-          case aacFreq: stream << alCItems[i]->aasFreq; break;
-          case aacInteger: stream << alCItems[i]->aasInt; break;
-          default: stream << alCItems[i]->aasValue;
+            QFileInfo fi(m_plugLibrary);
+            stream << QSL("  path \"") << fi.path() << QSL("\"") << endl;
+            stream << QSL("  plugins [") << endl;
+            stream << QSL("    {") << endl;
+            stream << QSL("      label ") << m_plugLabel << endl;
+            stream << QSL("      input {") << endl;
+            stream << QSL("        controls [ ");
+            for (int i=0;i<m_plugControls.count();i++)
+            {
+                switch (m_plugControls.at(i).aatType)
+                {
+                    case ZLADSPA::aacToggle:
+                        if (m_plugControls.at(i).aasToggle) {
+                            stream << QSL("1");
+                        } else {
+                            stream << QSL("0");
+                        }
+                        break;
+                    case ZLADSPA::aacFreq: stream << m_plugControls.at(i).aasFreq; break;
+                    case ZLADSPA::aacInteger: stream << m_plugControls.at(i).aasInt; break;
+                    default: stream << m_plugControls.at(i).aasValue;
+                }
+                stream << QSL(" ");
+            }
+            stream << QSL("]") << endl
+                          << QSL("      }") << endl
+                          << QSL("    }") << endl
+                          << QSL("  ]") << endl;
         }
-        stream << " ";
-      }
-      stream << "]" << endl << "      }" << endl << "    }" << endl << "  ]" << endl;
     }
-  }
-  stream << "}" << endl;
-  stream << endl;
-  if (fOut->toFilter!=0)
-    fOut->toFilter->doGenerate(stream);
+    stream << QSL("}") << endl;
+    stream << endl;
+    if (fOut->toFilter)
+        fOut->toFilter->doGenerate(stream);
 }
 
-void QCPLADSPA::paintEvent ( QPaintEvent * )
+void ZCPLADSPA::paintEvent(QPaintEvent * event)
 {
-  QPainter p(this);
-  QPen pn=QPen(Qt::black);
-  QPen op=p.pen();
-  QBrush ob=p.brush();
-  QFont of=p.font();
-  pn.setWidth(2);
-  p.setPen(pn);
-  p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
-  
-  p.drawRect(rect());
-  
-  redrawPins(p);
-  
-  QFont n=of;
-  n.setBold(true);
-  n.setPointSize(n.pointSize()+1);
-  p.setFont(n);
-  p.drawText(rect(),Qt::AlignCenter,"LADSPA");
-  
-  n.setBold(false);
-  n.setPointSize(n.pointSize()-3);
-  p.setPen(QPen(Qt::gray));
-  p.setFont(n);
+    Q_UNUSED(event)
+
+    QPainter p(this);
+    QPen pn=QPen(Qt::black);
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+    pn.setWidth(2);
+    p.setPen(pn);
+    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
+
+    p.drawRect(rect());
+
+    redrawPins(p);
+
+    QFont n=of;
+    n.setBold(true);
+    n.setPointSize(n.pointSize()+1);
+    p.setFont(n);
+    p.drawText(rect(),Qt::AlignCenter,QSL("LADSPA"));
+
+    n.setBold(false);
+    n.setPointSize(n.pointSize()-3);
+    p.setPen(QPen(Qt::gray));
+    p.setFont(n);
     
-  p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,alPlugName);
-  
-  p.setFont(of);
-  p.setBrush(ob);
-  p.setPen(op);
+    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,m_plugName);
+
+    p.setFont(of);
+    p.setBrush(ob);
+    p.setPen(op);
 }
 
-void QCPLADSPA::readFromStream( QDataStream & stream )
+void ZCPLADSPA::readFromStreamLegacy( QDataStream & stream )
 {
-  QCPBase::readFromStream(stream);
-  stream >> alPlugName >> alPlugID >> alPlugLabel >> alPlugFile;
-  int cn;
-  stream >> cn;
-  for (int i=0;i<cn;i++)
-    alCItems.append(new QControlItem(stream));
+    ZCPBase::readFromStreamLegacy(stream);
+    stream >> m_plugName >> m_plugID >> m_plugLabel >> m_plugLibrary;
+    int cn;
+    stream >> cn;
+    for (int i=0;i<cn;i++)
+        m_plugControls << ZLADSPAControlItem(stream);
 }
 
-void QCPLADSPA::storeToStream( QDataStream & stream )
+void ZCPLADSPA::readFromJson(const QJsonValue &json)
 {
-  QCPBase::storeToStream(stream);
-  stream << alPlugName << alPlugID << alPlugLabel << alPlugFile;
-  stream << (int)alCItems.count();
-  for (int i=0;i<alCItems.count();i++)
-    alCItems[i]->storeToStream(stream);
+    ZCPBase::readFromJson(json.toObject().value(QSL("base")));
+    m_plugName = json.toObject().value(QSL("plugName")).toString();
+    m_plugID = json.toObject().value(QSL("plugID")).toString();
+    m_plugLabel = json.toObject().value(QSL("plugLabel")).toString();
+    m_plugLibrary = json.toObject().value(QSL("plugLibrary")).toString();
+
+    const QJsonArray controls = json.toObject().value(QSL("controls")).toArray();
+    for (const auto& item : controls)
+        m_plugControls << ZLADSPAControlItem(item);
 }
 
-static bool sampleRateWarn=false;
-
-int QCPLADSPA::searchSampleRate()
+QJsonValue ZCPLADSPA::storeToJson() const
 {
-  QCPBase* w=fOut->toFilter;
-  int sampleRate=-1;
-  while (w!=0)
-  {
-    QString s=w->metaObject()->className();
-    if (QCPHW* hw=qobject_cast<QCPHW*>(w))
+    QJsonObject data;
+    data.insert(QSL("base"),ZCPBase::storeToJson());
+    data.insert(QSL("plugName"),m_plugName);
+    data.insert(QSL("plugID"),m_plugID);
+    data.insert(QSL("plugLabel"),m_plugLabel);
+    data.insert(QSL("plugLibrary"),m_plugLibrary);
+
+    QJsonArray controls;
+    for (int i=0;i<m_plugControls.count();i++)
+        controls.append(m_plugControls[i].storeToJson());
+    data.insert(QSL("controls"),controls);
+
+    return data;
+}
+
+int ZCPLADSPA::searchSampleRate()
+{
+    static bool sampleRateWarn=false;
+
+    ZCPBase* w=fOut->toFilter;
+    int sampleRate=-1;
+    while (w)
     {
-      sampleRate=hw->alRate;
-      break;
+        if (auto hw=qobject_cast<ZCPHW*>(w))
+        {
+            sampleRate=hw->getRate();
+            break;
+        }
+        if (auto hw=qobject_cast<ZCPRate*>(w))
+        {
+            sampleRate=hw->getRate();
+            break;
+        }
+        ZCPOutput* out = w->getMainOutput();
+        if (out==nullptr) break;
+        w=out->toFilter;
     }
-    if (QCPRate* hw=qobject_cast<QCPRate*>(w))
+    if (sampleRate==-1)
     {
-      sampleRate=hw->alRate;
-      break;
+        if (!sampleRateWarn) {
+            QMessageBox::warning(topLevelWidget(),tr("LADSPA settings"),
+                                 tr("Samplerate not defined!\n\n"
+                                    "Please connect this LADSPA filter to SRC or HW component\n"
+                                    "and specify Rate parameter in theirs settings.\n"
+                                    "Samplerate adjusted to default 48000 Hz.\n"
+                                    "This setting is used by LADSPA plugins in frequency calculations."));
+        }
+        sampleRateWarn=true;
+        sampleRate=48000;
+        // TODO: add checks for FLOAT data type. Only FLOAT is supported by LADSPA. Suggest plug plugins. We need to add plug plugin too.
     }
-    if (fOutputs.count()==0) break;
-    w=w->fOutputs[0]->toFilter;
-  }
-  if (sampleRate==-1)
-  {
-    if (!sampleRateWarn)
-      QMessageBox::warning(0,"LADSPA settings","Samplerate not defined!\n\n"
-        "Please connect this LADSPA filter to SRC or HW component\n"
-        "and specify Rate parameter in theirs settings.\n"
-        "Samplerate adjusted to default 44100 Hz.\n"
-        "This setting is used by LADSPA plugins in frequency calculations.");
-    sampleRateWarn=true;
-    sampleRate=44100;
-  }
-  return sampleRate;
+    return sampleRate;
 }
 
-void QCPLADSPA::showSettingsDlg()
+void ZCPLADSPA::showSettingsDlg()
 {
-  QLADSPADialog* d=new QLADSPADialog(0,searchSampleRate());
+    ZLADSPADialog d(topLevelWidget(),searchSampleRate());
 
-  d->setParams(alPlugLabel,alPlugID,&alCItems);
+    d.setParams(m_plugLabel,m_plugID,m_plugControls);
 
-  if (d->exec()==QDialog::Rejected)
-  {
-    delete d;
-    return;
-  }
-  emit componentChanged(this);
+    if (d.exec()==QDialog::Rejected) return;
 
-  d->getParams(alPlugLabel,alPlugID,alPlugName,alPlugFile,&alCItems);
-  delete d;
-  update();
+    Q_EMIT componentChanged(this);
+
+    d.getParams(m_plugLabel,m_plugID,m_plugName,m_plugLibrary,m_plugControls);
+    update();
 }
 

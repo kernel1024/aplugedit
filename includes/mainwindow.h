@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -23,97 +22,43 @@
 
 #include <QtCore>
 #include <QtGui>
-
+#include "ui_mainwindow.h"
 #include "renderarea.h"
 
-class QAPEWindow : public QMainWindow
+class ZMainWindow : public QMainWindow, public Ui::MainWindow
 {
     Q_OBJECT
+private:
+    bool modified;
+    ZRenderArea *renderArea;
+    QLabel* statusLabel;
+    QString workFile;
+    QString programTitle;
+    QTimer repaintTimer;
 
 public:
-    QAPEWindow();
+    explicit ZMainWindow(QWidget *parent = nullptr);
+    ~ZMainWindow() override;
     
-    QRenderArea *renderArea;
-    QScrollArea *scrollArea;
-    QLabel* statusLabel;
-    
-    QAction* actFileNew;
-    QAction* actFileOpen;
-    QAction* actFileSave;
-    QAction* actFileSaveAs;
-    QAction* actFileGenerate;
-    QAction* actFileGeneratePart;
-    QAction* actFileExit;
-    
-    QAction* actEditHW;
-    QAction* actEditInp;
-    QAction* actEditNull;
-    QAction* actEditFile;
-    
-    QAction* actEditRoute;
-    QAction* actEditRate;
-    QAction* actEditDmix;
-    QAction* actEditLADSPA;
-    QAction* actEditMeter;
-    
-    QAction* actEditLinear;
-    QAction* actEditFloat;
-    QAction* actEditIEC958;
-    QAction* actEditMuLaw;
-    QAction* actEditALaw;
-    QAction* actEditImaADPCM;
-    
-    QAction* actToolAllocate;
-    
-    QAction* actHelpAbout;
-    
-    bool modified;
-    
-    int deletedTimer, repaintTimer;
     void generateConfigToFile(QTextStream & stream);
-public slots:
-    void deletedItem(QObject * obj);
-    void timerEvent(QTimerEvent * event);
-    void changingComponents(QCPBase * obj);
-    
+
+public Q_SLOTS:
     void fileNew();
     void fileOpen();
     void fileSave();
     void fileSaveAs();
     void fileGenerate();
     void fileGeneratePart();
-    void fileExit();
-    
-    void editInp();
-    
-    void editHW();
-    void editNull();
-    void editFile();
-    
-    void editRoute();
-    void editRate();
-    void editDmix();
-    void editLADSPA();
-    void editMeter();
-    
-    void editLinear();
-    void editFloat();
-    void editIEC958();
-    void editMuLaw();
-    void editALaw();
-    void editImaADPCM();
-    
+    void editComponent();
     void toolAllocate();
-    
     void helpAbout();
-protected:
-    QString workFile;
-    QString programTitle;
-    QString loadingFile;
-    void loadFile(QString & fname);
-    bool saveFile(QString & fname);
-    void closeEvent(QCloseEvent *event);
-    void continueLoading();
+    void repaintWithConnections();
+    void changingComponents(ZCPBase *base);
     void updateStatus();
+    void loadFile(const QString& fname);
+    bool saveFile(const QString& fname);
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 };
 #endif

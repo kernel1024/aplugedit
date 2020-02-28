@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -20,7 +19,6 @@
 
 #include "includes/renderarea.h"
 #include "includes/mainwindow.h"
-
 #include "includes/cpinp.h"
 #include "includes/cphw.h"
 #include "includes/cpnull.h"
@@ -32,355 +30,399 @@
 #include "includes/cpconv.h"
 #include "includes/cpladspa.h"
 
-QRenderArea::QRenderArea(QWidget *parent, QScrollArea *aScroller)
-    : QFrame(parent)
+ZRenderArea::ZRenderArea(QScrollArea *aScroller)
+    : QFrame(aScroller)
 {
-  scroller=aScroller;
-  
-  resReading=false;
-  erroneousRoute=false;
-  rectLinks=true;
-  nodeLocks.clear();
-  
-  recycle=new QLabel(this);
-  recycle->setGeometry(QRect(10, 10, 48, 48));
-  recycle->setPixmap(QPixmap(":/images/trashcan_empty.png"));
-  recycle->setText("");
-  recycle->setObjectName("trashcan");
-  
-  cbType=0;
-  cbPinNum=-1;
-  cbConnCount=0;
-  cbInput=0;
-  cbOutput=0;
-  cbBuilding=false;
-  cbCurrent=QPoint(0,0);
+    scroller=aScroller;
+
+    recycle.reset(new QLabel(this));
+    recycle->setGeometry(QRect(10, 10, 48, 48));
+    recycle->clear();//setText("");
+    recycle->setPixmap(QPixmap(QSL(":/images/trashcan_empty.png")));
+    recycle->setObjectName(QSL("trashcan"));
 }
 
-QSize QRenderArea::minimumSizeHint() const
+QSize ZRenderArea::minimumSizeHint() const
 {
-  int x=3*scroller->width()/2;
-  int y=3*scroller->height()/2;
-  QRect r(0,0,0,0);
-  for (int i=0;i<children().count();i++)
-    if (QWidget* w=qobject_cast<QWidget*>(children().at(i)))
-      r=r.united(w->geometry());
-  QSize cmSize=QSize(r.width(),r.height());
-  return QSize(x,y).expandedTo(cmSize);
-}
-
-QSize QRenderArea::sizeHint() const
-{
-  return minimumSizeHint();
-}
-
-void QRenderArea::initConnBuilder(const int aType, int aPinNum, QCPInput* aInput, QCPOutput* aOutput)
-{
-  if (cbBuilding)
-  {
-    cbBuilding=false;
-    return;
-  }
-  cbType=aType;
-  cbPinNum=aPinNum;
-  cbInput=0;
-  cbOutput=0;
-  // init connection form input
-  if (cbType==QPT_INPUT)
-  {
-    cbInput=aInput;
-    if (cbInput!=0)
-    {
-      // disconnect old connections from this input
-      if ((cbInput->fromPin!=-1) && (cbInput->fromFilter!=0))
-      {
-        cbInput->fromFilter->fOutputs[cbInput->fromPin]->toFilter=0;
-        cbInput->fromFilter->fOutputs[cbInput->fromPin]->toPin=-1;
-      }
-      cbInput->fromFilter=0;
-      cbInput->fromPin=-1;
-      cbCurrent=cbInput->ownerFilter->pos()+cbInput->relCoord;
+    int x=3*scroller->width()/2;
+    int y=3*scroller->height()/2;
+    QRect r(0,0,0,0);
+    for (int i=0;i<children().count();i++) {
+        if (QWidget* w=qobject_cast<QWidget*>(children().at(i)))
+            r=r.united(w->geometry());
     }
-  } else {
-    // init connection from output
-    cbOutput=aOutput;
-    if (cbOutput!=0)
-    {
-      // disconnect old connections from this output
-      if ((cbOutput->toPin!=-1) && (cbOutput->toFilter!=0))
-      {
-        cbOutput->toFilter->fInputs[cbOutput->toPin]->fromFilter=0;
-        cbOutput->toFilter->fInputs[cbOutput->toPin]->fromPin=-1;
-      }
-      cbOutput->toFilter=0;
-      cbOutput->toPin=-1;
-      cbCurrent=cbOutput->ownerFilter->pos()+cbOutput->relCoord;
+    QSize cmSize=QSize(r.width(),r.height());
+    return QSize(x,y).expandedTo(cmSize);
+}
+
+QSize ZRenderArea::sizeHint() const
+{
+    return minimumSizeHint();
+}
+
+void ZRenderArea::initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput)
+{
+    if (cbBuilding) {
+        cbBuilding=false;
+        return;
     }
-  }
-  cbBuilding=true;
+
+    cbType=aType;
+    cbPinNum=aPinNum;
+    cbInput=nullptr;
+    cbOutput=nullptr;
+    // init connection form input
+    if (cbType==ZCPBase::PinType::ptInput) {
+        cbInput=aInput;
+        if (cbInput) {
+            // disconnect old connections from this input
+            if ((cbInput->fromPin!=-1) && (cbInput->fromFilter)) {
+                cbInput->fromFilter->fOutputs[cbInput->fromPin]->toFilter=nullptr;
+                cbInput->fromFilter->fOutputs[cbInput->fromPin]->toPin=-1;
+            }
+            cbInput->fromFilter=nullptr;
+            cbInput->fromPin=-1;
+            cbCurrent=cbInput->ownerFilter->pos()+cbInput->relCoord;
+        }
+    } else {
+        // init connection from output
+        cbOutput=aOutput;
+        if (cbOutput) {
+            // disconnect old connections from this output
+            if ((cbOutput->toPin!=-1) && (cbOutput->toFilter)) {
+                cbOutput->toFilter->fInputs[cbOutput->toPin]->fromFilter=nullptr;
+                cbOutput->toFilter->fInputs[cbOutput->toPin]->fromPin=-1;
+            }
+            cbOutput->toFilter=nullptr;
+            cbOutput->toPin=-1;
+            cbCurrent=cbOutput->ownerFilter->pos()+cbOutput->relCoord;
+        }
+    }
+    cbBuilding=true;
 }
 
-void QRenderArea::repaintConn()
+void ZRenderArea::repaintConn()
 {
-  repaint();
+    repaint();
 }
 
-void QRenderArea::paintEvent ( QPaintEvent * event )
+void ZRenderArea::paintEvent(QPaintEvent * event)
 {
-  QPainter p(this);
-  cbConnCount=0;
-  QCPOutput* aout;
-  QCPInput* ainp;
-  QPoint c1,c2,c3,c4;
-  
-  if (event->isAccepted());
-  
-  QPen op=p.pen();
-  p.setPen(QPen(Qt::red));
-  cbConnCount=0;
-  for (int i=0;i<children().count();i++)
-  {
-    QCPBase *base=qobject_cast<QCPBase*>(children().at(i));
-    if (base==0) continue;
-    for (int j=0;j<base->fOutputs.count();j++)
-    {
-      aout=base->fOutputs[j];
-      if (aout->toPin==-1) continue;
-      if (aout->toFilter==0) continue;
-      ainp=aout->toFilter->fInputs[aout->toPin];
-      
-      c1=base->pos()+aout->relCoord;
-      c2=aout->toFilter->pos()+ainp->relCoord;
-      c3=QPoint((c1.x()+c2.x())/2,c1.y());
-      c4=QPoint(c3.x(),c2.y());
-      
-      if (rectLinks)
-      {
-        p.drawLine(c1,c3);
-        p.drawLine(c3,c4);
-        p.drawLine(c4,c2);
-      } else
+    Q_UNUSED(event)
+    QPainter p(this);
+    cbConnCount=0;
+    QPoint c1;
+    QPoint c2;
+    QPoint c3;
+    QPoint c4;
+
+    QPen op=p.pen();
+    p.setPen(QPen(Qt::red));
+    cbConnCount=0;
+    for (const auto &a : children()) {
+        auto base=qobject_cast<ZCPBase*>(a);
+        if (base==nullptr) continue;
+        for (const auto &pin : qAsConst(base->fOutputs)) {
+            if (pin->toPin==-1) continue;
+            if (pin->toFilter==nullptr) continue;
+            ZCPInput* inp=pin->toFilter->fInputs.at(pin->toPin);
+
+            c1=base->pos()+pin->relCoord;
+            c2=pin->toFilter->pos()+inp->relCoord;
+            c3=QPoint((c1.x()+c2.x())/2,c1.y());
+            c4=QPoint(c3.x(),c2.y());
+
+            if (rectLinks) {
+                p.drawLine(c1,c3);
+                p.drawLine(c3,c4);
+                p.drawLine(c4,c2);
+            } else {
+                p.drawLine(c1,c2);
+            }
+
+            cbConnCount++;
+        }
+    }
+    if (cbBuilding) {
+        p.setPen(QPen(Qt::darkCyan));
+        if (cbType==ZCPBase::PinType::ptInput) {
+            c1=cbInput->ownerFilter->pos()+cbInput->relCoord;
+        } else {
+            c1=cbOutput->ownerFilter->pos()+cbOutput->relCoord;
+        }
+        c2=cbCurrent;
         p.drawLine(c1,c2);
-      
-      cbConnCount++;
     }
-  }
-  if (cbBuilding)
-  {
-    p.setPen(QPen(Qt::darkCyan));
-    if (cbType==QPT_INPUT)
-      c1=cbInput->ownerFilter->pos()+cbInput->relCoord;
-    else
-      c1=cbOutput->ownerFilter->pos()+cbOutput->relCoord;
-    c2=cbCurrent;
-    p.drawLine(c1,c2);
-  }
-  p.setPen(op);
+    p.setPen(op);
 }
 
 
-void QRenderArea::refreshConnBuilder(const QPoint & atPos)
+void ZRenderArea::refreshConnBuilder(const QPoint & atPos)
 {
-  if (!cbBuilding) return;
-  if (cbType==QPT_INPUT)
-    cbCurrent=QPoint(cbInput->ownerFilter->pos()+atPos);
-  else
-    cbCurrent=QPoint(cbOutput->ownerFilter->pos()+atPos);
-  repaintConn();
+    if (!cbBuilding) return;
+    if (cbType==ZCPBase::PinType::ptInput) {
+        cbCurrent=QPoint(cbInput->ownerFilter->pos()+atPos);
+    } else {
+        cbCurrent=QPoint(cbOutput->ownerFilter->pos()+atPos);
+    }
+    repaintConn();
 }
 
-void QRenderArea::doneConnBuilder(const bool aNone, int aType, const int aPinNum, QCPInput* aInput, QCPOutput* aOutput)
+void ZRenderArea::doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput)
 {
-  // if we making trace from input to this output...
-  if ((cbType==QPT_INPUT) && (cbInput!=0))
-  {
-    // and we have new output now...
-    if (aOutput!=0)
-    {
-      // then we remove old connection to this output to connect our new trace to it
-      if ((aOutput->toPin!=-1) && (aOutput->toFilter!=0))
-      {
-        aOutput->toFilter->fInputs[aOutput->toPin]->fromFilter=0;
-        aOutput->toFilter->fInputs[aOutput->toPin]->fromPin=-1;
-      }
-      aOutput->toFilter=0;
-      aOutput->toPin=-1;
+    // if we making trace from input to this output...
+    if ((cbType==ZCPBase::PinType::ptInput) && cbInput) {
+        // and we have new output now...
+        if (aOutput) {
+            // then we remove old connection to this output to connect our new trace to it
+            if ((aOutput->toPin!=-1) && aOutput->toFilter) {
+                aOutput->toFilter->fInputs[aOutput->toPin]->fromFilter=nullptr;
+                aOutput->toFilter->fInputs[aOutput->toPin]->fromPin=-1;
+            }
+            aOutput->toFilter=nullptr;
+            aOutput->toPin=-1;
+        }
+        // if our input (from that we making connection) is connected - then disconnect it now
+        if ((cbInput->fromPin!=-1) && cbInput->fromFilter) {
+            cbInput->fromFilter->fOutputs[cbInput->fromPin]->toFilter=nullptr;
+            cbInput->fromFilter->fOutputs[cbInput->fromPin]->toPin=-1;
+        }
+        cbInput->fromFilter=nullptr;
+        cbInput->fromPin=-1;
     }
-    // if our input (from that we making connection) is connected - then disconnect it now
-    if ((cbInput->fromPin!=-1) && (cbInput->fromFilter!=0))
-    {
-      cbInput->fromFilter->fOutputs[cbInput->fromPin]->toFilter=0;
-      cbInput->fromFilter->fOutputs[cbInput->fromPin]->toPin=-1;
+    // if we making trace from output to this input...
+    else if (cbOutput) {
+        // and we have new input now...
+        if (aInput) {
+            // then we remove old connection to this input
+            if ((aInput->fromPin!=-1) && aInput->fromFilter) {
+                aInput->fromFilter->fOutputs[aInput->fromPin]->toFilter=nullptr;
+                aInput->fromFilter->fOutputs[aInput->fromPin]->toPin=-1;
+            }
+            aInput->fromFilter=nullptr;
+            aInput->fromPin=-1;
+        }
+        // if our output (from that we making connection) is connected - then disconnect it now
+        if ((cbOutput->toPin!=-1) && cbOutput->toFilter) {
+            cbOutput->toFilter->fInputs[cbOutput->toPin]->fromFilter=nullptr;
+            cbOutput->toFilter->fInputs[cbOutput->toPin]->fromPin=-1;
+        }
+        cbOutput->toFilter=nullptr;
+        cbOutput->toPin=-1;
     }
-    cbInput->fromFilter=0;
-    cbInput->fromPin=-1;
-  }
-  // if we making trace from output to this input...
-  else if (cbOutput!=0)
-  {
-    // and we have new input now...
-    if (aInput!=0)
-    {
-      // then we remove old connection to this input
-      if ((aInput->fromPin!=-1) && (aInput->fromFilter!=0))
-      {
-        aInput->fromFilter->fOutputs[aInput->fromPin]->toFilter=0;
-        aInput->fromFilter->fOutputs[aInput->fromPin]->toPin=-1;
-      }
-      aInput->fromFilter=0;
-      aInput->fromPin=-1;
+    // if this is simple deletion or incorrect route (in-in, out-out), then delete it
+    if ((aNone) || (aType==cbType)) {
+        cbBuilding=false;
+        repaintConn();
+        return;
     }
-    // if our output (from that we making connection) is connected - then disconnect it now
-    if ((cbOutput->toPin!=-1) && (cbOutput->toFilter!=0))
-    {
-      cbOutput->toFilter->fInputs[cbOutput->toPin]->fromFilter=0;
-      cbOutput->toFilter->fInputs[cbOutput->toPin]->fromPin=-1;
+    // if this output can't possible connect to specified input (np: DMix connecting not to HW), then delete it
+    ZCPBase *aTo;
+    ZCPBase *aFrom;
+    if (cbType==ZCPBase::PinType::ptInput) {
+        aTo=cbInput->ownerFilter;
+        aFrom=aOutput->ownerFilter;
+    } else {
+        aTo=aInput->ownerFilter;
+        aFrom=cbOutput->ownerFilter;
     }
-    cbOutput->toFilter=0;
-    cbOutput->toPin=-1;
-  }
-  // if this is simple deletion or incorrect route (in-in, out-out), then delete it
-  if ((aNone) || (aType==cbType))
-  {
+    if ((!aFrom->canConnectOut(aTo)) || (!aTo->canConnectIn(aFrom))) {
+        cbBuilding=false;
+        repaintConn();
+        return;
+    }
+    if (cbType==ZCPBase::PinType::ptInput) {
+        cbInput->fromFilter=aOutput->ownerFilter;
+        cbInput->fromPin=aPinNum;
+        aOutput->toFilter=cbInput->ownerFilter;
+        aOutput->toPin=cbPinNum;
+    } else {
+        cbOutput->toFilter=aInput->ownerFilter;
+        cbOutput->toPin=aPinNum;
+        aInput->fromFilter=cbOutput->ownerFilter;
+        aInput->fromPin=cbPinNum;
+    }
     cbBuilding=false;
     repaintConn();
-    return;
-  }
-  // if this output can't possible connect to specified input (np: DMix connecting not to HW), then delete it
-  QCPBase *aTo, *aFrom;
-  if (cbType==QPT_INPUT)
-  {
-    aTo=cbInput->ownerFilter;
-    aFrom=aOutput->ownerFilter;
-  } else {
-    aTo=aInput->ownerFilter;
-    aFrom=cbOutput->ownerFilter;
-  }
-  if ((!aFrom->canConnectOut(aTo)) || (!aTo->canConnectIn(aFrom)))
-  {
-    cbBuilding=false;
-    repaintConn();
-    return;
-  }
-  if (cbType==QPT_INPUT)
-  {
-    cbInput->fromFilter=aOutput->ownerFilter;
-    cbInput->fromPin=aPinNum;
-    aOutput->toFilter=cbInput->ownerFilter;
-    aOutput->toPin=cbPinNum;
-  } else {
-    cbOutput->toFilter=aInput->ownerFilter;
-    cbOutput->toPin=aPinNum;
-    aInput->fromFilter=cbOutput->ownerFilter;
-    aInput->fromPin=cbPinNum;
-  }
-  cbBuilding=false;
-  repaintConn();
 }
 
-void QRenderArea::postLoadBinding()
+bool ZRenderArea::postLoadBinding()
 {
-  for (int i=0;i<children().count();i++)
-  {
-    QCPBase* base=qobject_cast<QCPBase*>(children().at(i));
-    if (base!=0) base->postLoadBind();
-  }
+    for (const auto &a : children()) {
+        auto base = qobject_cast<ZCPBase*>(a);
+        if (base) {
+            if (!(base->postLoadBind()))
+                return false;
+        }
+    }
+    return true;
 }
 
-void QRenderArea::doGenerate(QTextStream & stream)
+void ZRenderArea::doGenerate(QTextStream & stream)
 {
-  // Generate header
-  stream << "# This file is automatically generated in ALSA Plugin Editor." << endl;
-  
-  // Generate plugin tree for all DSP inputs
-  for (int i=0;i<children().count();i++)
-    if (QCPInp *base=qobject_cast<QCPInp*>(children().at(i)))
-    {
-      stream << "# plugin tree for " << base->objectName() << endl;
-      base->doGenerate(stream);
+    stream << "# This file is automatically generated in ALSA Plugin Editor v2." << endl
+           << "# Generated: " << QDateTime::currentDateTime().toString(Qt::ISODate) << endl << endl;
+
+    // Generate plugin tree for all DSP inputs
+    for (const auto &a : children()) {
+        if (auto base = qobject_cast<ZCPInp*>(a)) {
+            stream << "# plugin tree for " << base->objectName() << endl;
+            base->doGenerate(stream);
+        }
     }
     
-  // Finalizing config
-  stream << "# Generation successfully completted." << endl;
+    stream << "# Generation successfully completted." << endl;
 }
 
-int QRenderArea::cpComponentCount()
+int ZRenderArea::componentCount() const
 {
-  int c=0;
-  QCPBase* base;
-  for (int i=0;i<children().count();i++)
-    if (base=qobject_cast<QCPBase*>(children().at(i))) c++;
-  if (base==0);
-  return c;
+    int c=0;
+    for (const auto &a : children())
+        if (qobject_cast<ZCPBase*>(a) != nullptr) c++;
+    return c;
 }
 
-void QRenderArea::readSchematic(QDataStream & stream)
+bool ZRenderArea::readSchematicLegacy(QDataStream & stream)
 {
-  int c;
-  stream >> c;
-  for (int i=0;i<c;i++)
-  {
-    QString clName;
-    stream >> clName;
-    QCPBase* b=createCpInstance(clName);
-    if (b==0)
+    int c;
+    stream >> c;
+    for (int i=0;i<c;i++)
     {
-      debugPrint(clName);
-      throw "Loading error. Class not found.";
-      return;
+        QString clName;
+        QPoint pos;
+        QString instName;
+        stream >> clName;
+        stream >> pos;
+        stream >> instName;
+        ZCPBase* cp = createCpInstance(clName,pos,instName);
+        if (cp==nullptr) {
+            QMessageBox::warning(this,tr("File load error"),tr("Unable to find class \"%1\".").arg(clName));
+            return false;
+        }
+        cp->readFromStreamLegacy(stream);
+        cp->show();
     }
-    QPoint pos;
-    QString instName;
-    stream >> pos;
-    stream >> instName;
-    b->move(pos);
-    b->setObjectName(instName);
-    b->readFromStream(stream);
-    b->show();
-  }
-  resReading=false;
-  postLoadBinding();
-  repaintConn();
+    postLoadBinding();
+    repaintConn();
+    return true;
 }
 
-void QRenderArea::storeSchematic(QDataStream & stream)
+bool ZRenderArea::readSchematic(const QByteArray &json)
 {
-  int c=cpComponentCount();
-  stream << c;
-  for (int i=0;i<children().count();i++)
-  {
-    QCPBase* base=qobject_cast<QCPBase*>(children().at(i));
-    if (!base) continue;
-    QString a=base->metaObject()->className();
-    QPoint p=base->pos();
-    QString n=base->objectName();
-    stream << a;
-    stream << p;
-    stream << n;
-    base->storeToStream(stream);
-  }
+    QJsonParseError jerr {};
+    QJsonDocument doc = QJsonDocument::fromJson(json,&jerr);
+    if (doc.isNull()) {
+        QMessageBox::warning(this,tr("File load error"),tr("Unable to parse JSON.\n%1").arg(jerr.errorString()));
+        return false;
+    }
+
+    const QJsonArray components = doc.object().value(QSL("components")).toArray();
+    if (components.isEmpty()) {
+        QMessageBox::warning(this,tr("File load error"),tr("Empty, incorrect or incompatible JSON data."));
+        return false;
+    }
+    bool warn = false;
+    for (const auto &item : components) {
+        QString iClassName = item.toObject().value(QSL("className")).toString();
+        QString iName = item.toObject().value(QSL("name")).toString();
+        if (iClassName.isEmpty() || iName.isEmpty()) {
+            qWarning() << "Incorrect JSON or empty component";
+            warn = true;
+            continue;
+        }
+
+        QJsonObject jpos = item.toObject().value(QSL("position")).toObject();
+        QPoint iPos(jpos.value(QSL("x")).toInt(200),
+                    jpos.value(QSL("y")).toInt(200));
+
+        ZCPBase* cp = createCpInstance(iClassName,iPos,iName);
+        if (cp==nullptr) {
+            QMessageBox::warning(this,tr("File load error"),tr("Unable to find class \"%1\".").arg(iClassName));
+            return false;
+        }
+        cp->readFromJson(item.toObject().value(QSL("data")));
+        cp->show();
+    }
+    if (warn) {
+        QMessageBox::warning(this,tr("File load warning"),
+                             tr("Empty, incorrect or incompatible component found in file."));
+    }
+
+    postLoadBinding();
+    repaintConn();
+    return true;
 }
 
-void QRenderArea::deleteComponents()
+QByteArray ZRenderArea::storeSchematic() const
 {
-  for (int i=0;i<children().count();i++)
-  {
-    QCPBase* base=qobject_cast<QCPBase*>(children().at(i));
-    if (base!=0) base->deleteLater();
-  }
+    QJsonObject root;
+
+    QJsonArray components;
+    int cCnt = 0;
+    for (int i=0;i<children().count();i++)
+    {
+        auto base = qobject_cast<ZCPBase*>(children().at(i));
+        if (base==nullptr) continue;
+
+        QJsonObject item;
+        item.insert(QSL("className"),base->metaObject()->className());
+        item.insert(QSL("name"),base->objectName());
+
+        QJsonObject position;
+        QPoint mpos = base->pos();
+        position.insert(QSL("x"),mpos.x());
+        position.insert(QSL("y"),mpos.y());
+        item.insert(QSL("position"),position);
+
+        item.insert(QSL("data"),base->storeToJson());
+
+        components.append(item);
+        cCnt++;
+    }
+    root.insert(QSL("componentCount"),cCnt);
+    root.insert(QSL("components"),components);
+
+    QJsonDocument doc(root);
+    return doc.toJson(QJsonDocument::Indented);
 }
 
-QCPBase* QRenderArea::createCpInstance(QString & className)
+void ZRenderArea::deleteComponents()
 {
-  if (className=="QCPInp")      return new QCPInp(this,this);
-  else if (className=="QCPHW")  return new QCPHW(this,this);
-  else if (className=="QCPNull")  return new QCPNull(this,this);
-  else if (className=="QCPFile")  return new QCPFile(this,this);
-  else if (className=="QCPRate")  return new QCPRate(this,this);
-  else if (className=="QCPRoute")  return new QCPRoute(this,this);
-  else if (className=="QCPDMix")  return new QCPDMix(this,this);
-  else if (className=="QCPMeter")  return new QCPMeter(this,this);
-  else if (className=="QCPConv")  return new QCPConv(this,this);
-  else if (className=="QCPLADSPA")  return new QCPLADSPA(this,this);
-  else return 0;
+    for (const auto &a : children())
+    {
+        auto base = qobject_cast<ZCPBase*>(a);
+        if (base)
+            base->deleteComponent();
+    }
+}
+
+ZCPBase* ZRenderArea::createCpInstance(const QString& className, const QPoint& pos, const QString& objectName)
+{
+    ZCPBase* res = nullptr;
+    QString name = className;
+    if (name.startsWith(QSL("QCP")))
+        name.replace(0,1,QChar('Z'));
+    if (name==QSL("ZCPInp")) res = new ZCPInp(this,this);
+    else if (name==QSL("ZCPHW")) res = new ZCPHW(this,this);
+    else if (name==QSL("ZCPNull")) res = new ZCPNull(this,this);
+    else if (name==QSL("ZCPFile")) res = new ZCPFile(this,this);
+    else if (name==QSL("ZCPRate")) res = new ZCPRate(this,this);
+    else if (name==QSL("ZCPRoute")) res = new ZCPRoute(this,this);
+    else if (name==QSL("ZCPDMix")) res = new ZCPDMix(this,this);
+    else if (name==QSL("ZCPMeter")) res = new ZCPMeter(this,this);
+    else if (name==QSL("ZCPConv")) res = new ZCPConv(this,this);
+    else if (name==QSL("ZCPLADSPA")) res = new ZCPLADSPA(this,this);
+
+    if (res==nullptr) {
+        qCritical() << "Unable to create component " << className;
+        return res;
+    }
+
+    if (!pos.isNull())
+        res->move(pos);
+
+    if (!objectName.isEmpty())
+        res->setObjectName(objectName);
+
+    return res;
 }

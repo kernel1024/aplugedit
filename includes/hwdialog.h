@@ -17,49 +17,60 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef CPCONV_H
-#define CPCONV_H 1
-
-#include <QtCore>
+#ifndef HWDLG_H
+#define HWDLG_H
 #include <QtGui>
-#include "cpbase.h"
+#include <QtCore>
+#include "ui_hwdlg.h"
 
-class ZCPConv : public ZCPBase
+class CCardItem;
+
+class ZHWDialog : public QDialog, public Ui::ZHWDialog
 {
     Q_OBJECT
-public:
-    enum ConverterType {
-        alcLinear,
-        alcFloat,
-        alcIEC958,
-        alcMuLaw,
-        alcALaw,
-        alcImaADPCM
-    };
-    Q_ENUM(ConverterType)
-
-    ZCPConv(QWidget *parent, ZRenderArea *aOwner);
-    ~ZCPConv() override;
-
-    void readFromStreamLegacy(QDataStream & stream) override;
-    void readFromJson(const QJsonValue& json) override;
-    QJsonValue storeToJson() const override;
-
-    void setConverterType(ZCPConv::ConverterType type);
-
-    QSize minimumSizeHint() const override;
-
-protected:
-    void paintEvent(QPaintEvent * event) override;
-    void realignPins() override;
-    void doInfoGenerate(QTextStream & stream) const override;
-    void showSettingsDlg() override;
-
 private:
-    QString m_format;
-    ConverterType m_converter { alcLinear };
-    ZCPInput* fInp { nullptr };
-    ZCPOutput* fOut { nullptr };
+    QList<CCardItem> hwCnt;
 
+public:
+    ZHWDialog(QWidget *parent = nullptr);
+    ~ZHWDialog() override;
+
+    void setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emulation,
+                   int mSync_ptr_ioctl, int mNonblock, int mChannels, int mRate,
+                   const QString& mFormat);
+
+    void getParams(int &mCard, int &mDevice, int &mSubdevice, int &mMmap_emulation,
+                   int &mSync_ptr_ioctl, int &mNonblock, int &mChannels, int &mRate,
+                   QString& mFormat);
+
+public Q_SLOTS:
+    void cardSelected(int index);
+    void devSelected(int index);
 };
+
+class CDeviceItem
+{
+public:
+    int devNum { -1 };
+    int subdevices { -1 };
+    CDeviceItem() = default;
+    ~CDeviceItem() = default;
+    CDeviceItem(const CDeviceItem& other);
+    CDeviceItem(int aDevNum, int aSubdevices);
+    CDeviceItem &operator=(const CDeviceItem& other) = default;
+};
+
+class CCardItem
+{
+public:
+    QString cardName;
+    int cardNum { -1 };
+    QList<CDeviceItem> devices;
+    CCardItem() = default;
+    ~CCardItem() = default;
+    CCardItem(const CCardItem& other);
+    CCardItem(const QString& aCardName, int aCardNum);
+    CCardItem &operator=(const CCardItem& other) = default;
+};
+
 #endif

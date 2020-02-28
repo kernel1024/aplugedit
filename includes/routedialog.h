@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -18,19 +17,31 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef QCONVDLG_H
-#define QCONVDLG_H
+#ifndef ROUTEDLG_H
+#define ROUTEDLG_H
 #include <QtGui>
 #include <QtCore>
-#include "ui_qconvdlg.h"
+#include "includes/cproute.h"
+#include "ui_routedlg.h"
 
-class QConvDialog : public QDialog, public Ui::QConvDialog
+class ZRouteDialog : public QDialog, public Ui::ZRouteDialog
 {
     Q_OBJECT
 
+private:
+    int alChannelsIn { 2 };
+    int alChannelsOut { 2 };
+
 public:
-    QConvDialog(QWidget *parent = 0);
-    ~QConvDialog();
+    ZRouteDialog(QWidget *parent = nullptr);
+    ~ZRouteDialog() override;
+    int getOutChannels() const;
+    int getInChannels() const;
+    void setParams(int inChannels, const QList<CRouteItem> &alTable);
+    QList<CRouteItem> getTable() const;
+
+public Q_SLOTS:
+    void channelsChanged(int index);
 };
 
 #endif

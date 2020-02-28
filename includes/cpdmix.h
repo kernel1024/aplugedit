@@ -1,10 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2006 by Kernel                                          *
-*   kernelonline@bk.ru                                                    *
+*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
+*   the Free Software Foundation; either version 3 of the License, or     *
 *   (at your option) any later version.                                   *
 *                                                                         *
 *   This program is distributed in the hope that it will be useful,       *
@@ -25,21 +24,23 @@
 #include <QtGui>
 #include "cpbase.h"
 
-class QCPDMix : public QCPBase
+class ZCPDMix : public ZCPBase
 {
-  Q_OBJECT
+    Q_OBJECT
+private:
+    ZCPInput* fInp;
+    ZCPOutput* fOut;
+
 public:
-  void realignPins(QPainter & painter);
-  void doInfoGenerate(QTextStream & stream);
-  QCPInput* fInp;
-  QCPOutput* fOut;
-  QSize minimumSizeHint() const;
-  QSize sizeHint() const;
-public:
-  QCPDMix(QWidget *parent, QRenderArea *aOwner);
-  ~QCPDMix();
-  bool canConnectOut(QCPBase * toFilter);
+    ZCPDMix(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPDMix() override;
+
+    QSize minimumSizeHint() const override;
+    bool canConnectOut(ZCPBase * toFilter) override;
+
 protected:
-  void paintEvent ( QPaintEvent * event );
+    void paintEvent (QPaintEvent * event) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream) const override;
 };
 #endif
