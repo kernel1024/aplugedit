@@ -72,8 +72,6 @@ void ZCPMeter::doInfoGenerate(QTextStream & stream) const
     ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
-    if (fOut->toFilter)
-        fOut->toFilter->doGenerate(stream);
 }
 
 void ZCPMeter::paintEvent (QPaintEvent * event)

@@ -38,7 +38,6 @@ private:
     QScrollArea *m_scroller;
     QScopedPointer<QLabel,QScopedPointerDeleteLater> m_recycle;
     QPoint m_connCursor;
-    QStringList m_nodeLocks;
 
     void paintConnections(QPainter *p);
     void initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);

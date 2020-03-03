@@ -74,8 +74,6 @@ void ZCPDMix::doInfoGenerate(QTextStream & stream) const
     ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
-    if (fOut->toFilter)
-        fOut->toFilter->doGenerate(stream);
 }
 
 bool ZCPDMix::canConnectOut(ZCPBase * toFilter)

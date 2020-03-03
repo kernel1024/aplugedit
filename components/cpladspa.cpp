@@ -92,8 +92,6 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
     ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
-    if (fOut->toFilter)
-        fOut->toFilter->doGenerate(stream);
 }
 
 void ZCPLADSPA::paintEvent(QPaintEvent * event)

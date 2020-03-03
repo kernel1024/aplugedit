@@ -52,8 +52,6 @@ public:
     QSize sizeHint() const override;
 
     ZRenderArea *ownerArea() const;
-    bool postLoadBind();
-    void doGenerate(QTextStream & stream);
 
     void registerInput(ZCPInput* inp);
     void registerOutput(ZCPOutput* out);
@@ -74,7 +72,9 @@ private:
     void mouseInPin(const QPoint& mx, int &aPinNum, ZCPBase::PinType &aPinType, ZCPBase *&aFilter);
     void checkRecycle();
     void showCtxMenu(const QPoint& pos);
+
     void redrawPins(QPainter & painter);
+    bool postLoadBind();
 
     Q_DISABLE_COPY(ZCPBase)
 

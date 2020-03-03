@@ -388,20 +388,6 @@ QJsonValue ZCPBase::storeToJson() const
     return data;
 }
 
-void ZCPBase::doGenerate(QTextStream & stream)
-{
-    if (m_owner->m_nodeLocks.contains(objectName())) {
-        QString msg = tr("Recursive call of component %1").arg(objectName());
-        qWarning() << msg;
-        QMessageBox::warning(m_owner,tr("Config generation"),msg);
-        return;
-    }
-
-    m_owner->m_nodeLocks.append(objectName());
-    doInfoGenerate(stream);
-    m_owner->m_nodeLocks.removeAll(objectName());
-}
-
 QSize ZCPBase::sizeHint() const
 {
     return minimumSizeHint();

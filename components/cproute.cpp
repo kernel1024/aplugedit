@@ -74,8 +74,6 @@ void ZCPRoute::doInfoGenerate(QTextStream & stream) const
     ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
-    if (fOut->toFilter)
-        fOut->toFilter->doGenerate(stream);
 }
 
 void ZCPRoute::paintEvent(QPaintEvent * event)

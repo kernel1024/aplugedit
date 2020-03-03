@@ -65,8 +65,6 @@ void ZCPRate::doInfoGenerate(QTextStream & stream) const
     ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
-    if (fOut->toFilter)
-        fOut->toFilter->doGenerate(stream);
 }
 
 void ZCPRate::paintEvent(QPaintEvent * event)
