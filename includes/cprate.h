@@ -30,8 +30,8 @@ class ZCPRate : public ZCPBase
 private:
     QString m_converter;
     int m_rate { 48000 };
-    ZCPInput* fInp;
-    ZCPOutput* fOut;
+    ZCPInput* fInp { nullptr };
+    ZCPOutput* fOut { nullptr };
 
 public:
     ZCPRate(QWidget *parent, ZRenderArea *aOwner);

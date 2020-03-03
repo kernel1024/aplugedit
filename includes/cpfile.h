@@ -28,7 +28,7 @@ class ZCPFile : public ZCPBase
 {
     Q_OBJECT
 private:
-    ZCPInput* fInp;
+    ZCPInput* fInp { nullptr };
     QString m_fileName;
 
 public:

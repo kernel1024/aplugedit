@@ -42,8 +42,8 @@ class ZCPRoute : public ZCPBase
 private:
     int m_channelsIn;
     QVector<CRouteItem> m_routeTable;
-    ZCPInput* fInp;
-    ZCPOutput* fOut;
+    ZCPInput* fInp { nullptr };
+    ZCPOutput* fOut { nullptr };
 
 public:
     ZCPRoute(QWidget *parent, ZRenderArea *aOwner);

@@ -42,6 +42,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditInp->setData(QSL("ZCPInp"));
     actionEditNull->setData(QSL("ZCPNull"));
     actionEditFile->setData(QSL("ZCPFile"));
+    actionEditPlug->setData(QSL("ZCPPlug"));
     actionEditDmix->setData(QSL("ZCPDMix"));
     actionEditRoute->setData(QSL("ZCPRoute"));
     actionEditRate->setData(QSL("ZCPRate"));
@@ -66,6 +67,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditInp,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditNull,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditFile,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditPlug,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditDmix,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditRoute,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditRate,&QAction::triggered,this,&ZMainWindow::editComponent);

@@ -71,6 +71,7 @@ void ZCPRoute::doInfoGenerate(QTextStream & stream) const
         stream << QSL("  ttable.") << m_routeTable.at(i).from << QSL(".") << i << QSL(" ")
                << QSL("%1").arg(m_routeTable.at(i).coeff,1,'f',1) << endl;
     }
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
     if (fOut->toFilter)
@@ -82,17 +83,11 @@ void ZCPRoute::paintEvent(QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen pn=QPen(Qt::black);
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);
@@ -105,7 +100,7 @@ void ZCPRoute::paintEvent(QPaintEvent * event)
     p.setPen(QPen(Qt::gray));
     p.setFont(n);
     QString s=QSL("%1 -> %2").arg(m_channelsIn).arg(getChannelsOut());
-    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,s);
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,s);
 
     p.setFont(of);
     p.setBrush(ob);

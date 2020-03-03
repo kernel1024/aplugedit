@@ -71,6 +71,7 @@ void ZCPDMix::doInfoGenerate(QTextStream & stream) const
             }
         }
     }
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
     if (fOut->toFilter)
@@ -88,17 +89,11 @@ void ZCPDMix::paintEvent (QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen pn=QPen(Qt::black);
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);

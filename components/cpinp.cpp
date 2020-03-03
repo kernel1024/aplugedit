@@ -111,6 +111,7 @@ void ZCPInp::doInfoGenerate(QTextStream & stream) const
         stream << QSL("  type hw") << endl;
         stream << QSL("  card 0") << endl;
     }
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
     if (fOut->toFilter)
@@ -125,14 +126,8 @@ void ZCPInp::paintEvent(QPaintEvent *event)
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    QPen pn=QPen(Qt::black);
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);
@@ -144,7 +139,7 @@ void ZCPInp::paintEvent(QPaintEvent *event)
     n.setPointSize(n.pointSize()-3);
     p.setPen(QPen(Qt::gray));
     p.setFont(n);
-    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,m_dspName);
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,m_dspName);
 
     p.setFont(of);
     p.setBrush(ob);

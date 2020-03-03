@@ -2,6 +2,7 @@ TEMPLATE += app
 QT += widgets
 HEADERS       = includes/cpbase.h \
                 includes/convdialog.h \
+                includes/cpplug.h \
                 includes/generatedialog.h \
                 includes/hwdialog.h \
                 includes/ladspadialog.h \
@@ -21,6 +22,7 @@ HEADERS       = includes/cpbase.h \
                 includes/cpladspa.h \
                 includes/routedialog.h
 SOURCES       = main.cpp \
+                components/cpplug.cpp \
                 dialogs/convdialog.cpp \
                 dialogs/generatedialog.cpp \
                 dialogs/hwdialog.cpp \

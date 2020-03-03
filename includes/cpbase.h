@@ -54,32 +54,37 @@ public:
     ZRenderArea *ownerArea() const;
     bool postLoadBind();
     void doGenerate(QTextStream & stream);
-    void redrawPins(QPainter & painter);
 
     void registerInput(ZCPInput* inp);
     void registerOutput(ZCPOutput* out);
     virtual ZCPOutput* getMainOutput() const;
 
+    QString getHint() const;
+    void setHint(const QString &hint);
+
 private:
+    bool m_isDragging { false };
+    ZRenderArea *m_owner;
+    QString m_hint;
     QList<ZCPInput*> fInputs;
     QList<ZCPOutput*> fOutputs;
-    bool m_isDragging { false };
     QColor m_pinColor { Qt::blue };
     QPoint m_relCorner;
-    ZRenderArea *m_owner;
 
     void mouseInPin(const QPoint& mx, int &aPinNum, ZCPBase::PinType &aPinType, ZCPBase *&aFilter);
     void checkRecycle();
+    void showCtxMenu(const QPoint& pos);
+    void redrawPins(QPainter & painter);
 
     Q_DISABLE_COPY(ZCPBase)
 
 protected:
+    void paintBase(QPainter &p);
     void mouseMoveEvent(QMouseEvent * event) override;
     void mousePressEvent(QMouseEvent * event) override;
     void mouseReleaseEvent(QMouseEvent * event) override;
-    void paintEvent(QPaintEvent *event) override;
     virtual void realignPins()=0;
-    virtual void doInfoGenerate(QTextStream & stream) const = 0;
+    virtual void doInfoGenerate(QTextStream & stream) const;
     virtual void showSettingsDlg();
     virtual void addCtxMenuItems(QMenu* menu);
 

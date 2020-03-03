@@ -17,14 +17,14 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef CPDMIX_H
-#define CPDMIX_H 1
+#ifndef CPPLUG_H
+#define CPPLUG_H
 
 #include <QtCore>
 #include <QtGui>
 #include "cpbase.h"
 
-class ZCPDMix : public ZCPBase
+class ZCPPlug : public ZCPBase
 {
     Q_OBJECT
 private:
@@ -32,15 +32,16 @@ private:
     ZCPOutput* fOut { nullptr };
 
 public:
-    ZCPDMix(QWidget *parent, ZRenderArea *aOwner);
-    ~ZCPDMix() override;
+    ZCPPlug(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPPlug() override;
 
     QSize minimumSizeHint() const override;
-    bool canConnectOut(ZCPBase * toFilter) override;
 
 protected:
     void paintEvent (QPaintEvent * event) override;
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream) const override;
+
 };
-#endif
+
+#endif // CPPLUG_H

@@ -183,6 +183,33 @@ void ZCPBase::checkRecycle()
         deleteComponent();
 }
 
+void ZCPBase::showCtxMenu(const QPoint &pos)
+{
+    QMenu menu;
+    addCtxMenuItems(&menu);
+    if (!menu.isEmpty())
+        menu.addSeparator();
+
+    QAction* ac = menu.addAction(tr("Hint..."));
+    connect(ac,&QAction::triggered,this,[this](){
+        bool ok;
+        QString hint = QInputDialog::getText(topLevelWidget(),tr("Plugin configuration"),
+                                             tr("Displayed hint"),QLineEdit::Normal,m_hint,&ok);
+        if (ok) {
+            m_hint = hint;
+            Q_EMIT componentChanged(this);
+            update();
+        }
+    });
+
+    ac = menu.addAction(tr("Properties..."));
+    connect(ac,&QAction::triggered,this,[this](){
+        showSettingsDlg();
+    });
+
+    menu.exec(pos);
+}
+
 void ZCPBase::mouseMoveEvent(QMouseEvent * event)
 {
     if (m_isDragging)
@@ -198,13 +225,44 @@ void ZCPBase::mouseMoveEvent(QMouseEvent * event)
     }
 }
 
-void ZCPBase::paintEvent(QPaintEvent * event)
+void ZCPBase::paintBase(QPainter &p)
 {
-    Q_UNUSED(event)
-    QPainter p(this);
-    p.setPen(QPen(Qt::black));
+    QPen pn=QPen(Qt::black);
+    pn.setWidth(2);
+
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+
+    p.setPen(pn);
     p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
+
     p.drawRect(rect());
+
+    redrawPins(p);
+
+    if (!m_hint.isEmpty()) {
+        QFont n=of;
+        n.setBold(false);
+        n.setPointSize(n.pointSize()-3);
+        p.setPen(QPen(Qt::blue));
+        p.setFont(n);
+        p.drawText(QRect(0,0,width(),height()/3),Qt::AlignCenter,m_hint);
+    }
+
+    p.setPen(op);
+    p.setBrush(ob);
+    p.setFont(of);
+}
+
+void ZCPBase::doInfoGenerate(QTextStream &stream) const
+{
+    if (!m_hint.isEmpty()) {
+        stream << QSL("  hint {") << endl;
+        stream << QSL("    show on") << endl;
+        stream << QSL("    description \"%1\"").arg(m_hint) << endl;
+        stream << QSL("  }") << endl;
+    }
 }
 
 ZCPOutput *ZCPBase::getMainOutput() const
@@ -215,6 +273,17 @@ ZCPOutput *ZCPBase::getMainOutput() const
     return nullptr;
 }
 
+QString ZCPBase::getHint() const
+{
+    return m_hint;
+}
+
+void ZCPBase::setHint(const QString &hint)
+{
+    m_hint = hint;
+    m_hint.remove(QChar('"'));
+}
+
 void ZCPBase::mousePressEvent(QMouseEvent * event)
 {
     raise();
@@ -222,17 +291,7 @@ void ZCPBase::mousePressEvent(QMouseEvent * event)
 
     if (event->button()==Qt::RightButton)
     {
-        QMenu menu;
-        addCtxMenuItems(&menu);
-        if (!menu.isEmpty())
-            menu.addSeparator();
-
-        QAction* ac = menu.addAction(tr("Properties..."));
-        connect(ac,&QAction::triggered,this,[this](){
-            showSettingsDlg();
-        });
-        menu.exec(mx);
-
+        showCtxMenu(mx);
         return;
     }
 
@@ -282,6 +341,7 @@ void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
 
 void ZCPBase::readFromStreamLegacy( QDataStream & stream )
 {
+    m_hint.clear();
     stream >> m_pinColor;
     for (int i=0;i<fInputs.count();i++)
         fInputs.at(i)->readFromStreamLegacy(stream);
@@ -298,6 +358,8 @@ void ZCPBase::readFromJson(const QJsonValue &json)
         qWarning() << "Incorrect color in JSON";
     }
 
+    m_hint = json.toObject().value(QSL("hint")).toString();
+
     const QJsonArray inputs = json.toObject().value(QSL("inputs")).toArray();
     for (int i=0;i<fInputs.count();i++)
         fInputs.at(i)->readFromJson(inputs.at(i));
@@ -311,6 +373,7 @@ QJsonValue ZCPBase::storeToJson() const
 {
     QJsonObject data;
     data.insert(QSL("pinColor"),m_pinColor.name());
+    data.insert(QSL("hint"),m_hint);
 
     QJsonArray inputs;
     for (int i=0;i<fInputs.count();i++)

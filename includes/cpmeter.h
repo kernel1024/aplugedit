@@ -31,8 +31,8 @@ private:
     QString m_meterLib;
     QString m_meterFunc;
     int m_refreshRate { 50 };
-    ZCPInput* fInp;
-    ZCPOutput* fOut;
+    ZCPInput* fInp { nullptr };
+    ZCPOutput* fOut { nullptr };
 
 public:
     ZCPMeter(QWidget *parent, ZRenderArea *aOwner);

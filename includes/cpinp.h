@@ -28,7 +28,7 @@ class ZCPInp : public ZCPBase
 {
     Q_OBJECT
 private:
-    ZCPOutput* fOut;
+    ZCPOutput* fOut { nullptr };
     QString m_dspName;
 
 public:

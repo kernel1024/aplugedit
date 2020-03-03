@@ -15,20 +15,17 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
-    <property name="spacing">
-     <number>0</number>
-    </property>
     <property name="leftMargin">
-     <number>0</number>
+     <number>2</number>
     </property>
     <property name="topMargin">
-     <number>0</number>
+     <number>2</number>
     </property>
     <property name="rightMargin">
-     <number>0</number>
+     <number>2</number>
     </property>
     <property name="bottomMargin">
-     <number>0</number>
+     <number>2</number>
     </property>
     <item>
      <widget class="QScrollArea" name="scrollArea">
@@ -40,8 +37,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>798</width>
-         <height>517</height>
+         <width>794</width>
+         <height>513</height>
         </rect>
        </property>
       </widget>
@@ -145,6 +142,7 @@
    <addaction name="actionEditNull"/>
    <addaction name="actionEditFile"/>
    <addaction name="separator"/>
+   <addaction name="actionEditPlug"/>
    <addaction name="actionEditRoute"/>
    <addaction name="actionEditRate"/>
    <addaction name="actionEditDmix"/>
@@ -444,6 +442,18 @@
   <action name="actionHelpAboutQt">
    <property name="text">
     <string>About Qt...</string>
+   </property>
+  </action>
+  <action name="actionEditPlug">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/plug.png</normaloff>:/images/plug.png</iconset>
+   </property>
+   <property name="text">
+    <string>Plug plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add block for automatic conversion</string>
    </property>
   </action>
  </widget>

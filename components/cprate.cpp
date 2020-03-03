@@ -21,11 +21,6 @@
 #include "includes/cprate.h"
 #include "includes/ratedialog.h"
 
-int ZCPRate::getRate() const
-{
-    return m_rate;
-}
-
 ZCPRate::ZCPRate(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
@@ -50,6 +45,11 @@ void ZCPRate::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
+int ZCPRate::getRate() const
+{
+    return m_rate;
+}
+
 void ZCPRate::doInfoGenerate(QTextStream & stream) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
@@ -62,6 +62,7 @@ void ZCPRate::doInfoGenerate(QTextStream & stream) const
     }
     if (!m_converter.isEmpty())
         stream << QSL("  converter \"") << m_converter << QSL("\"") << endl;
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
     if (fOut->toFilter)
@@ -73,17 +74,11 @@ void ZCPRate::paintEvent(QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen pn=QPen(Qt::black);
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);
@@ -96,7 +91,7 @@ void ZCPRate::paintEvent(QPaintEvent * event)
     p.setPen(QPen(Qt::gray));
     p.setFont(n);
     QString s = QSL("%1 Hz").arg(m_rate);
-    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,s);
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,s);
 
     p.setFont(of);
     p.setBrush(ob);

@@ -48,6 +48,7 @@ void ZCPFile::doInfoGenerate(QTextStream & stream) const
     stream << QSL("  slave.pcm null") << endl;
     stream << QSL("  file \"") << m_fileName << QSL("\"") << endl;
     stream << QSL("  format \"raw\"") << endl;
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
 }
@@ -57,17 +58,11 @@ void ZCPFile::paintEvent (QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen pn=QPen(Qt::black);
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);
@@ -80,7 +75,7 @@ void ZCPFile::paintEvent (QPaintEvent * event)
     p.setPen(QPen(Qt::gray));
     p.setFont(n);
     QFileInfo fi(m_fileName);
-    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,fi.fileName());
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,fi.fileName());
 
     p.setFont(of);
     p.setBrush(ob);

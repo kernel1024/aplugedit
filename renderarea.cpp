@@ -29,6 +29,7 @@
 #include "includes/cpmeter.h"
 #include "includes/cpconv.h"
 #include "includes/cpladspa.h"
+#include "includes/cpplug.h"
 
 ZRenderArea::ZRenderArea(QScrollArea *aScroller)
     : QFrame(aScroller)
@@ -483,6 +484,7 @@ ZCPBase* ZRenderArea::createCpInstance(const QString& className, const QPoint& p
     else if (name==QSL("ZCPMeter")) res = new ZCPMeter(this,this);
     else if (name==QSL("ZCPConv")) res = new ZCPConv(this,this);
     else if (name==QSL("ZCPLADSPA")) res = new ZCPLADSPA(this,this);
+    else if (name==QSL("ZCPPlug")) res = new ZCPPlug(this,this);
 
     if (res==nullptr) {
         qCritical() << "Unable to create component " << className;

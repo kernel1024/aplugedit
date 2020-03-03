@@ -54,7 +54,6 @@ void ZCPConv::realignPins()
 
 void ZCPConv::doInfoGenerate(QTextStream & stream) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     QString conv = QSL("linear");
     switch (m_converter) {
         case alcLinear: conv=QSL("linear"); break;
@@ -64,6 +63,8 @@ void ZCPConv::doInfoGenerate(QTextStream & stream) const
         case alcALaw: conv=QSL("alaw"); break;
         case alcImaADPCM: conv=QSL("adpcm"); break;
     }
+
+    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type ") << conv << endl;
     if (fOut->toFilter) {
         stream << QSL("  slave {") << endl;
@@ -72,6 +73,7 @@ void ZCPConv::doInfoGenerate(QTextStream & stream) const
             stream << QSL("    format ") << m_format << endl;
         stream << QSL("  }") << endl;
     }
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
     if (fOut->toFilter)
@@ -83,17 +85,11 @@ void ZCPConv::paintEvent(QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen pn=QPen(Qt::black);
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);
@@ -115,7 +111,7 @@ void ZCPConv::paintEvent(QPaintEvent * event)
         case alcALaw: conv=QSL("linear<->ALaw"); break;
         case alcImaADPCM: conv=QSL("linear<->ImaADPCM"); break;
     }
-    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,conv);
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,conv);
 
     p.setFont(of);
     p.setBrush(ob);

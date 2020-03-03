@@ -37,8 +37,8 @@ private:
     int searchSampleRate();
 
 public:
-    ZCPInput* fInp;
-    ZCPOutput* fOut;
+    ZCPInput* fInp { nullptr };
+    ZCPOutput* fOut { nullptr };
 
     ZCPLADSPA(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPLADSPA() override;

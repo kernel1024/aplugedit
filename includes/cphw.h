@@ -28,7 +28,7 @@ class ZCPHW : public ZCPBase
 {
     Q_OBJECT
 private:
-    ZCPInput* fInp;
+    ZCPInput* fInp { nullptr };
     int m_card { 0 };      // link to card
     int m_device { -1 };    // device number (default 0)
     int m_subdevice { -1 }; // subdevice number (default -1: first available)

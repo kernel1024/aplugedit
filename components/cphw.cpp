@@ -93,6 +93,7 @@ void ZCPHW::doInfoGenerate(QTextStream & stream) const
     if (m_rate!=-1)
         stream << QSL("  rate ") << m_rate << endl;
 
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
 }
@@ -141,17 +142,11 @@ void ZCPHW::paintEvent(QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen pn=QPen(Qt::black);
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);
@@ -176,7 +171,7 @@ void ZCPHW::paintEvent(QPaintEvent * event)
               .arg(m_device)
               .arg(m_channels)
               .arg(rate);
-    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,s);
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,s);
 
     p.setFont(of);
     p.setBrush(ob);

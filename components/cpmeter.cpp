@@ -69,6 +69,7 @@ void ZCPMeter::doInfoGenerate(QTextStream & stream) const
     }
     stream << QSL("  frequency ") << m_refreshRate << endl;
     stream << QSL("  scopes.0 ") << objectName() << endl;
+    ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
     if (fOut->toFilter)
@@ -80,17 +81,11 @@ void ZCPMeter::paintEvent (QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen pn=QPen(Qt::black);
     QPen op=p.pen();
     QBrush ob=p.brush();
     QFont of=p.font();
-    pn.setWidth(2);
-    p.setPen(pn);
-    p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
-    p.drawRect(rect());
-
-    redrawPins(p);
+    paintBase(p);
 
     QFont n=of;
     n.setBold(true);
@@ -104,7 +99,7 @@ void ZCPMeter::paintEvent (QPaintEvent * event)
     p.setFont(n);
     
     QFileInfo fi(m_meterLib);
-    p.drawText(QRect(0,height()/3,width(),height()),Qt::AlignCenter,fi.fileName());
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,fi.fileName());
 
     p.setFont(of);
     p.setBrush(ob);

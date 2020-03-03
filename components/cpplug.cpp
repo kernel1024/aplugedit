@@ -17,30 +17,61 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef CPDMIX_H
-#define CPDMIX_H 1
+#include "includes/cpplug.h"
 
-#include <QtCore>
-#include <QtGui>
-#include "cpbase.h"
-
-class ZCPDMix : public ZCPBase
+ZCPPlug::ZCPPlug(QWidget *parent, ZRenderArea *aOwner)
+    : ZCPBase(parent,aOwner)
 {
-    Q_OBJECT
-private:
-    ZCPInput* fInp { nullptr };
-    ZCPOutput* fOut { nullptr };
+    fInp=new ZCPInput(this,this);
+    fInp->pinName=QSL("in");
+    registerInput(fInp);
+    fOut=new ZCPOutput(this,this);
+    fOut->pinName=QSL("out");
+    registerOutput(fOut);
+}
 
-public:
-    ZCPDMix(QWidget *parent, ZRenderArea *aOwner);
-    ~ZCPDMix() override;
+ZCPPlug::~ZCPPlug() = default;
 
-    QSize minimumSizeHint() const override;
-    bool canConnectOut(ZCPBase * toFilter) override;
+QSize ZCPPlug::minimumSizeHint() const
+{
+    return QSize(150,50);
+}
 
-protected:
-    void paintEvent (QPaintEvent * event) override;
-    void realignPins() override;
-    void doInfoGenerate(QTextStream & stream) const override;
-};
-#endif
+void ZCPPlug::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event)
+
+    QPainter p(this);
+    QPen op=p.pen();
+    QBrush ob=p.brush();
+    QFont of=p.font();
+
+    paintBase(p);
+
+    QFont n=of;
+    n.setBold(true);
+    n.setPointSize(n.pointSize()+1);
+    p.setFont(n);
+    p.drawText(rect(),Qt::AlignCenter,QSL("Plug"));
+
+    p.setFont(of);
+    p.setBrush(ob);
+    p.setPen(op);}
+
+void ZCPPlug::realignPins()
+{
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
+}
+
+void ZCPPlug::doInfoGenerate(QTextStream &stream) const
+{
+    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
+    stream << QSL("  type plug") << endl;
+    stream << QSL("  slave.pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
+    ZCPBase::doInfoGenerate(stream);
+    stream << QSL("}") << endl;
+    stream << endl;
+    if (fOut->toFilter)
+        fOut->toFilter->doGenerate(stream);
+}
