@@ -57,11 +57,9 @@ public:
     void registerOutput(ZCPOutput* out);
     virtual ZCPOutput* getMainOutput() const;
 
-    QString getHint() const;
-    void setHint(const QString &hint);
-
 private:
     bool m_isDragging { false };
+    bool m_hintShow { true };
     ZRenderArea *m_owner;
     QString m_hint;
     QList<ZCPInput*> fInputs;
@@ -75,6 +73,7 @@ private:
 
     void redrawPins(QPainter & painter);
     bool postLoadBind();
+    void showHintDlg();
 
     Q_DISABLE_COPY(ZCPBase)
 

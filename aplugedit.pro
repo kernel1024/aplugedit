@@ -3,6 +3,8 @@ QT += widgets
 HEADERS       = includes/cpbase.h \
                 includes/convdialog.h \
                 includes/cpplug.h \
+                includes/cpupmix.h \
+                includes/cpvdownmix.h \
                 includes/generatedialog.h \
                 includes/hwdialog.h \
                 includes/ladspadialog.h \
@@ -23,6 +25,8 @@ HEADERS       = includes/cpbase.h \
                 includes/routedialog.h
 SOURCES       = main.cpp \
                 components/cpplug.cpp \
+                components/cpupmix.cpp \
+                components/cpvdownmix.cpp \
                 dialogs/convdialog.cpp \
                 dialogs/generatedialog.cpp \
                 dialogs/hwdialog.cpp \
@@ -47,12 +51,14 @@ RESOURCES     = aplugedit.qrc
 FORMS         = \
                 ui/convdlg.ui \
                 ui/generatedlg.ui \
+                ui/hintdlg.ui \
                 ui/hwdlg.ui \
                 ui/ladspadlg.ui \
                 ui/mainwindow.ui \
                 ui/meterdlg.ui \
                 ui/ratedlg.ui \
-                ui/routedlg.ui
+                ui/routedlg.ui \
+                ui/upmixdlg.ui
 
 CONFIG += warn_on \
     link_pkgconfig \

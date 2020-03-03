@@ -19,6 +19,7 @@
 
 #include "includes/renderarea.h"
 #include "includes/cpbase.h"
+#include "ui_hintdlg.h"
 
 ZCPBase::ZCPBase(QWidget *parent, ZRenderArea *aOwner)
     : QWidget(parent)
@@ -183,6 +184,24 @@ void ZCPBase::checkRecycle()
         deleteComponent();
 }
 
+void ZCPBase::showHintDlg()
+{
+    QDialog dlg(topLevelWidget());
+    Ui::ZHintDialog ui;
+    ui.setupUi(&dlg);
+
+    ui.editHint->setText(m_hint);
+    ui.checkShowHint->setChecked(m_hintShow);
+
+    if (dlg.exec()==QDialog::Rejected) return;
+
+    m_hint = ui.editHint->text();
+    m_hintShow = ui.checkShowHint->isChecked();
+
+    Q_EMIT componentChanged(this);
+    update();
+}
+
 void ZCPBase::showCtxMenu(const QPoint &pos)
 {
     QMenu menu;
@@ -191,16 +210,7 @@ void ZCPBase::showCtxMenu(const QPoint &pos)
         menu.addSeparator();
 
     QAction* ac = menu.addAction(tr("Hint..."));
-    connect(ac,&QAction::triggered,this,[this](){
-        bool ok;
-        QString hint = QInputDialog::getText(topLevelWidget(),tr("Plugin configuration"),
-                                             tr("Displayed hint"),QLineEdit::Normal,m_hint,&ok);
-        if (ok) {
-            m_hint = hint;
-            Q_EMIT componentChanged(this);
-            update();
-        }
-    });
+    connect(ac,&QAction::triggered,this,&ZCPBase::showHintDlg);
 
     ac = menu.addAction(tr("Properties..."));
     connect(ac,&QAction::triggered,this,[this](){
@@ -258,8 +268,12 @@ void ZCPBase::paintBase(QPainter &p)
 void ZCPBase::doInfoGenerate(QTextStream &stream) const
 {
     if (!m_hint.isEmpty()) {
+        QString opt = QSL("off");
+        if (m_hintShow)
+            opt = QSL("on");
+
         stream << QSL("  hint {") << endl;
-        stream << QSL("    show on") << endl;
+        stream << QSL("    show %1").arg(opt) << endl;
         stream << QSL("    description \"%1\"").arg(m_hint) << endl;
         stream << QSL("  }") << endl;
     }
@@ -271,17 +285,6 @@ ZCPOutput *ZCPBase::getMainOutput() const
         return fOutputs.first();
 
     return nullptr;
-}
-
-QString ZCPBase::getHint() const
-{
-    return m_hint;
-}
-
-void ZCPBase::setHint(const QString &hint)
-{
-    m_hint = hint;
-    m_hint.remove(QChar('"'));
 }
 
 void ZCPBase::mousePressEvent(QMouseEvent * event)
@@ -342,6 +345,7 @@ void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
 void ZCPBase::readFromStreamLegacy( QDataStream & stream )
 {
     m_hint.clear();
+    m_hintShow = true;
     stream >> m_pinColor;
     for (int i=0;i<fInputs.count();i++)
         fInputs.at(i)->readFromStreamLegacy(stream);
@@ -359,6 +363,7 @@ void ZCPBase::readFromJson(const QJsonValue &json)
     }
 
     m_hint = json.toObject().value(QSL("hint")).toString();
+    m_hintShow = json.toObject().value(QSL("hintShow")).toBool(true);
 
     const QJsonArray inputs = json.toObject().value(QSL("inputs")).toArray();
     for (int i=0;i<fInputs.count();i++)
@@ -374,6 +379,7 @@ QJsonValue ZCPBase::storeToJson() const
     QJsonObject data;
     data.insert(QSL("pinColor"),m_pinColor.name());
     data.insert(QSL("hint"),m_hint);
+    data.insert(QSL("hintShow"),m_hintShow);
 
     QJsonArray inputs;
     for (int i=0;i<fInputs.count();i++)

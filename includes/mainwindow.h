@@ -32,6 +32,7 @@ private:
     bool modified;
     ZRenderArea *renderArea;
     QLabel* statusLabel;
+    QLabel* mouseLabel;
     QString workFile;
     QString programTitle;
     QTimer repaintTimer;
@@ -62,5 +63,6 @@ public Q_SLOTS:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 };
 #endif

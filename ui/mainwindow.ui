@@ -78,9 +78,13 @@
     <addaction name="actionEditNull"/>
     <addaction name="actionEditFile"/>
     <addaction name="separator"/>
+    <addaction name="actionEditPlug"/>
     <addaction name="actionEditRoute"/>
     <addaction name="actionEditRate"/>
     <addaction name="actionEditDmix"/>
+    <addaction name="actionEditUpmix"/>
+    <addaction name="actionEditVDownmix"/>
+    <addaction name="separator"/>
     <addaction name="actionEditLADSPA"/>
     <addaction name="actionEditMeter"/>
     <addaction name="separator"/>
@@ -146,6 +150,9 @@
    <addaction name="actionEditRoute"/>
    <addaction name="actionEditRate"/>
    <addaction name="actionEditDmix"/>
+   <addaction name="actionEditUpmix"/>
+   <addaction name="actionEditVDownmix"/>
+   <addaction name="separator"/>
    <addaction name="actionEditLADSPA"/>
    <addaction name="actionEditMeter"/>
    <addaction name="separator"/>
@@ -454,6 +461,30 @@
    </property>
    <property name="statusTip">
     <string>Add block for automatic conversion</string>
+   </property>
+  </action>
+  <action name="actionEditUpmix">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/upmix.png</normaloff>:/images/upmix.png</iconset>
+   </property>
+   <property name="text">
+    <string>Upmix plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add block for easy-to-use upmixing to 4 or 6-channel stream</string>
+   </property>
+  </action>
+  <action name="actionEditVDownmix">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/downmix.png</normaloff>:/images/downmix.png</iconset>
+   </property>
+   <property name="text">
+    <string>VDownmix plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add block for downmixer from 4-6 channels to 2-channel stereo output</string>
    </property>
   </action>
  </widget>

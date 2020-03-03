@@ -17,55 +17,31 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef RENDERAREA_H
-#define RENDERAREA_H 1
+#ifndef CPVDOWNMIX_H
+#define CPVDOWNMIX_H
 
 #include <QtCore>
 #include <QtGui>
 #include "cpbase.h"
 
-class ZRenderArea : public QFrame
+class ZCPVDownmix : public ZCPBase
 {
     Q_OBJECT
-    friend class ZCPBase;
-private:
-    bool m_connBuilding { false };
-    int m_startPinType { 0 };
-    int m_startPinNum { -1 };
-    int m_connCount { 0 };
-    ZCPInput *m_startInput { nullptr };
-    ZCPOutput *m_startOutput { nullptr };
-    QScrollArea *m_scroller { nullptr };
-    QLabel *m_recycle { nullptr };
-    QPoint m_connCursor;
-
-    void paintConnections(QPainter *p);
-    void initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
-    void refreshConnBuilder(const QPoint& atPos);
-    void doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
-    bool postLoadBinding();
-
 public:
-    explicit ZRenderArea(QScrollArea *aScroller = nullptr);
-    
+    ZCPVDownmix(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPVDownmix() override;
+
     QSize minimumSizeHint() const override;
-    QSize sizeHint() const override;
-
-    bool readSchematicLegacy(QDataStream& stream);
-    bool readSchematic(const QByteArray& json);
-    QByteArray storeSchematic() const;
-
-    void repaintConn();
-    void doGenerate(QTextStream& stream);
-
-    void deleteComponents();
-    int componentCount() const;
-
-    ZCPBase* createCpInstance(const QString &className, const QPoint &pos = QPoint(),
-                              const QString &objectName = QString());
 
 protected:
-    void paintEvent(QPaintEvent* event) override;
+    void paintEvent(QPaintEvent * event) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream) const override;
+
+private:
+    ZCPInput* fInp { nullptr };
+    ZCPOutput* fOut { nullptr };
+
 };
 
-#endif
+#endif // CPVDOWNMIX_H

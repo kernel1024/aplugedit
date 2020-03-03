@@ -27,8 +27,10 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 {
     setupUi(this);
 
-    statusLabel=new QLabel(this);
-    statusBar()->addWidget(statusLabel,100);
+    mouseLabel = new QLabel(this);
+    statusBar()->addPermanentWidget(mouseLabel);
+    statusLabel = new QLabel(this);
+    statusBar()->addPermanentWidget(statusLabel);
 
     renderArea = new ZRenderArea(scrollArea);
     scrollArea->setWidget(renderArea);
@@ -46,6 +48,8 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditDmix->setData(QSL("ZCPDMix"));
     actionEditRoute->setData(QSL("ZCPRoute"));
     actionEditRate->setData(QSL("ZCPRate"));
+    actionEditUpmix->setData(QSL("ZCPUpmix"));
+    actionEditVDownmix->setData(QSL("ZCPVDownmix"));
     actionEditLADSPA->setData(QSL("ZCPLADSPA"));
     actionEditMeter->setData(QSL("ZCPMeter"));
     actionEditLinear->setData(QSL("ZCPConv#Linear"));
@@ -71,6 +75,8 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditDmix,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditRoute,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditRate,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditUpmix,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditVDownmix,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLADSPA,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditMeter,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLinear,&QAction::triggered,this,&ZMainWindow::editComponent);
@@ -85,6 +91,8 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionHelpAboutQt,&QAction::triggered,qApp,&QApplication::aboutQt);
 
     connect(&repaintTimer,&QTimer::timeout,this,&ZMainWindow::repaintWithConnections);
+
+    qApp->installEventFilter(this);
 
     modified=false;
     updateStatus();
@@ -105,6 +113,20 @@ void ZMainWindow::updateStatus()
     if (modified) s.append(QSL(" *"));
 
     setWindowTitle(QSL("%1 - %2").arg(programTitle,s));
+}
+
+bool ZMainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseMove)
+    {
+        auto mouseEvent = dynamic_cast<QMouseEvent*>(event);
+        if (mouseEvent) {
+            mouseLabel->setText(tr("X:%1, Y:%2").
+                                arg(mouseEvent->pos().x()).
+                                arg(mouseEvent->pos().y()));
+        }
+    }
+    return QMainWindow::eventFilter(obj,event);
 }
 
 void ZMainWindow::loadFile(const QString &fname)

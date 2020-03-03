@@ -24,5 +24,7 @@
         <file>images/ima.png</file>
         <file>images/meter.png</file>
         <file>images/plug.png</file>
+        <file>images/upmix.png</file>
+        <file>images/downmix.png</file>
     </qresource>
 </RCC>

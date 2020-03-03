@@ -30,13 +30,15 @@
 #include "includes/cpconv.h"
 #include "includes/cpladspa.h"
 #include "includes/cpplug.h"
+#include "includes/cpupmix.h"
+#include "includes/cpvdownmix.h"
 
 ZRenderArea::ZRenderArea(QScrollArea *aScroller)
     : QFrame(aScroller)
 {
     m_scroller=aScroller;
 
-    m_recycle.reset(new QLabel(this));
+    m_recycle = new QLabel(this);
     m_recycle->setGeometry(QRect(10, 10, 48, 48));
     m_recycle->clear();
     m_recycle->setPixmap(QPixmap(QSL(":/images/trashcan_empty.png")));
@@ -482,6 +484,8 @@ ZCPBase* ZRenderArea::createCpInstance(const QString& className, const QPoint& p
     else if (name==QSL("ZCPConv")) res = new ZCPConv(this,this);
     else if (name==QSL("ZCPLADSPA")) res = new ZCPLADSPA(this,this);
     else if (name==QSL("ZCPPlug")) res = new ZCPPlug(this,this);
+    else if (name==QSL("ZCPUpmix")) res = new ZCPUpmix(this,this);
+    else if (name==QSL("ZCPVDownmix")) res = new ZCPVDownmix(this,this);
 
     if (res==nullptr) {
         qCritical() << "Unable to create component " << className;
