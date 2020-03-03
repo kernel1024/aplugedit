@@ -179,7 +179,7 @@ bool ZCPBase::postLoadBind()
 
 void ZCPBase::checkRecycle()
 {
-    if (frameGeometry().intersects(m_owner->recycle->frameGeometry()))
+    if (frameGeometry().intersects(m_owner->m_recycle->frameGeometry()))
         deleteComponent();
 }
 
@@ -327,16 +327,16 @@ QJsonValue ZCPBase::storeToJson() const
 
 void ZCPBase::doGenerate(QTextStream & stream)
 {
-    if (m_owner->erroneousRoute) return;
-
-    if (m_owner->nodeLocks.contains(objectName())) {
-        m_owner->erroneousRoute=true;
+    if (m_owner->m_nodeLocks.contains(objectName())) {
+        QString msg = tr("Recursive call of component %1").arg(objectName());
+        qWarning() << msg;
+        QMessageBox::warning(m_owner,tr("Config generation"),msg);
         return;
     }
 
-    m_owner->nodeLocks.append(objectName());
+    m_owner->m_nodeLocks.append(objectName());
     doInfoGenerate(stream);
-    m_owner->nodeLocks.removeAll(objectName());
+    m_owner->m_nodeLocks.removeAll(objectName());
 }
 
 QSize ZCPBase::sizeHint() const

@@ -40,7 +40,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>760</width>
+         <width>798</width>
          <height>517</height>
         </rect>
        </property>
@@ -129,15 +129,13 @@
    <addaction name="separator"/>
    <addaction name="actionFileGenerate"/>
    <addaction name="actionFileGeneratePart"/>
-   <addaction name="separator"/>
-   <addaction name="actionFileExit"/>
   </widget>
   <widget class="QToolBar" name="toolBarTools">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
    <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
+    <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>

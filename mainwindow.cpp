@@ -166,12 +166,17 @@ void ZMainWindow::fileNew()
         }
     }
 
-    scrollArea->ensureVisible(0,0);
-    renderArea->deleteComponents();
+    clearSchematic();
     modified=false;
     workFile.clear();
     updateStatus();
     repaintTimer.start();
+}
+
+void ZMainWindow::clearSchematic()
+{
+    scrollArea->ensureVisible(0,0);
+    renderArea->deleteComponents();
 }
 
 void ZMainWindow::fileOpen()
@@ -192,6 +197,8 @@ void ZMainWindow::fileOpen()
     QString s = QFileDialog::getOpenFileName(this,tr("Choose a file"),QString(),
                     tr("ALSA Plugin editor files v2 [*.ape2] (*.ape2);;ALSA Plugin editor files [*.ape] (*.ape)"));
     if (s.isEmpty()) return;
+
+    clearSchematic();
     workFile=s;
     modified=false;
     loadFile(s);
@@ -321,7 +328,10 @@ void ZMainWindow::editComponent()
         convMode = sl.last();
     }
 
-    ZCPBase* cp = renderArea->createCpInstance(name,QPoint(100,100),
+    QPoint pos(100,100);
+    int dx = renderArea->componentCount()*10;
+    pos += QPoint(dx,dx);
+    ZCPBase* cp = renderArea->createCpInstance(name,pos,
                                                QSL("%1%2").arg(name.toLower()).arg(renderArea->componentCount()));
     if (cp==nullptr) return;
 

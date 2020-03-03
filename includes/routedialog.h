@@ -37,8 +37,8 @@ public:
     ~ZRouteDialog() override;
     int getOutChannels() const;
     int getInChannels() const;
-    void setParams(int inChannels, const QList<CRouteItem> &alTable);
-    QList<CRouteItem> getTable() const;
+    void setParams(int inChannels, const QVector<CRouteItem> &alTable);
+    QVector<CRouteItem> getTable() const;
 
 public Q_SLOTS:
     void channelsChanged(int index);

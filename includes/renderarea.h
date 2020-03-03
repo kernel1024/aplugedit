@@ -29,18 +29,22 @@ class ZRenderArea : public QFrame
     Q_OBJECT
     friend class ZCPBase;
 private:
-    bool erroneousRoute { false };
-    bool rectLinks { true };
-    bool cbBuilding { false };
-    int cbType { 0 };
-    int cbPinNum { -1 };
-    int cbConnCount { 0 };
-    ZCPInput *cbInput { nullptr };
-    ZCPOutput *cbOutput { nullptr };
-    QScrollArea *scroller;
-    QScopedPointer<QLabel,QScopedPointerDeleteLater> recycle;
-    QPoint cbCurrent;
-    QStringList nodeLocks;
+    bool m_connBuilding { false };
+    int m_startPinType { 0 };
+    int m_startPinNum { -1 };
+    int m_connCount { 0 };
+    ZCPInput *m_startInput { nullptr };
+    ZCPOutput *m_startOutput { nullptr };
+    QScrollArea *m_scroller;
+    QScopedPointer<QLabel,QScopedPointerDeleteLater> m_recycle;
+    QPoint m_connCursor;
+    QStringList m_nodeLocks;
+
+    void paintConnections(QPainter *p);
+    void initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
+    void refreshConnBuilder(const QPoint& atPos);
+    void doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
+    bool postLoadBinding();
 
 public:
     explicit ZRenderArea(QScrollArea *aScroller = nullptr);
@@ -55,10 +59,6 @@ public:
     void repaintConn();
     void doGenerate(QTextStream& stream);
 
-    void initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
-    void refreshConnBuilder(const QPoint& atPos);
-    void doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
-    bool postLoadBinding();
     void deleteComponents();
     int componentCount() const;
 

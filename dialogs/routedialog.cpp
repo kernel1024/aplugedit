@@ -76,9 +76,9 @@ int ZRouteDialog::getInChannels() const
     return 2;
 }
 
-QList<CRouteItem> ZRouteDialog::getTable() const
+QVector<CRouteItem> ZRouteDialog::getTable() const
 {
-    QList<CRouteItem> res;
+    QVector<CRouteItem> res;
     res.reserve(alChannelsOut);
     for (int i=0;i<alChannelsOut;i++) {
         res << CRouteItem(alRouteTable->item(i,0)->text().toInt(),
@@ -87,7 +87,7 @@ QList<CRouteItem> ZRouteDialog::getTable() const
     return res;
 }
 
-void ZRouteDialog::setParams(int inChannels, const QList<CRouteItem> &alTable)
+void ZRouteDialog::setParams(int inChannels, const QVector<CRouteItem> &alTable)
 {
     switch (inChannels) {
         case 1: alChannelsInput->setCurrentIndex(0); break;

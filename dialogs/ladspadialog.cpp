@@ -25,8 +25,6 @@
 
 #include <QtWidgets>
 #include <QtCore>
-//#include <sys/types.h>
-//#include <unistd.h>
 #include <cmath>
 #include <cfloat>
 #include <ladspa.h>
@@ -175,6 +173,11 @@ void ZLADSPADialog::getParams(QString &plugLabel, QString &plugID, QString &plug
     }
 }
 
+int ZLADSPADialog::truncDouble(double num)
+{
+    return static_cast<int>(std::trunc(num));
+}
+
 void ZLADSPADialog::valueChanged(double value)
 {
     Q_UNUSED(value)
@@ -196,9 +199,9 @@ void ZLADSPADialog::readInfoFromControls()
                 alCItems[i].aasToggle=(w->checkState()==Qt::Checked);
         } else if (auto w=qobject_cast<QDoubleSpinBox*>(alCItems.at(i).aawControl)) {
             if (alCItems.at(i).aatType==ZLADSPA::aacInteger) {
-                alCItems[i].aasInt=qRound(w->value());
+                alCItems[i].aasInt=truncDouble(w->value());
             } else if (alCItems.at(i).aatType==ZLADSPA::aacFreq) {
-                alCItems[i].aasFreq=qRound(w->value());
+                alCItems[i].aasFreq=truncDouble(w->value());
             } else {
                 alCItems[i].aasValue=w->value();
             }
@@ -572,9 +575,9 @@ void ZLADSPADialog::analyzePlugin(int index)
                         } // switch (iHintDescriptor & LADSPA_HINT_DEFAULT_MASK)
 
                         if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
-                            alCItems.last().aasInt=qRound(aspinBox->value());
+                            alCItems.last().aasInt=truncDouble(aspinBox->value());
                         } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
-                            alCItems.last().aasFreq=qRound(aspinBox->value());
+                            alCItems.last().aasFreq=truncDouble(aspinBox->value());
                         } else {
                             alCItems.last().aasValue=aspinBox->value();
                         }
@@ -630,8 +633,8 @@ ZLADSPAControlItem::ZLADSPAControlItem(const QString &AportName, ZLADSPA::Contro
     aatType=AaatType;
     aasToggle=AaasToggle;
     aasValue=AaasValue;
-    aasFreq=qRound(aasValue);
-    aasInt=qRound(aasValue);
+    aasFreq=ZLADSPADialog::truncDouble(aasValue);
+    aasInt=ZLADSPADialog::truncDouble(aasValue);
     portName=AportName;
     aawControl=AaawControl;
     aawLayout=AaawLayout;

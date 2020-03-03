@@ -85,6 +85,7 @@ public:
     ~ZLADSPADialog() override;
     void setParams(const QString &plugLabel, const QString &plugID, const ZLADSPAControlItems &controlItems);
     void getParams(QString &plugLabel, QString &plugID, QString &plugName, QString &plugFile, ZLADSPAControlItems &aCItems);
+    static inline int truncDouble(double num);
 public Q_SLOTS:
     void changeLADSPA(int index);
     void valueChanged(double value);

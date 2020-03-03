@@ -36,6 +36,8 @@ private:
     QString programTitle;
     QTimer repaintTimer;
 
+    void clearSchematic();
+
 public:
     explicit ZMainWindow(QWidget *parent = nullptr);
     ~ZMainWindow() override;

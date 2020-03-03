@@ -41,7 +41,7 @@ class ZCPRoute : public ZCPBase
     Q_OBJECT
 private:
     int m_channelsIn;
-    QList<CRouteItem> m_routeTable;
+    QVector<CRouteItem> m_routeTable;
     ZCPInput* fInp;
     ZCPOutput* fOut;
 

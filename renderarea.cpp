@@ -33,19 +33,19 @@
 ZRenderArea::ZRenderArea(QScrollArea *aScroller)
     : QFrame(aScroller)
 {
-    scroller=aScroller;
+    m_scroller=aScroller;
 
-    recycle.reset(new QLabel(this));
-    recycle->setGeometry(QRect(10, 10, 48, 48));
-    recycle->clear();//setText("");
-    recycle->setPixmap(QPixmap(QSL(":/images/trashcan_empty.png")));
-    recycle->setObjectName(QSL("trashcan"));
+    m_recycle.reset(new QLabel(this));
+    m_recycle->setGeometry(QRect(10, 10, 48, 48));
+    m_recycle->clear();
+    m_recycle->setPixmap(QPixmap(QSL(":/images/trashcan_empty.png")));
+    m_recycle->setObjectName(QSL("trashcan"));
 }
 
 QSize ZRenderArea::minimumSizeHint() const
 {
-    int x=3*scroller->width()/2;
-    int y=3*scroller->height()/2;
+    int x=3*m_scroller->width()/2;
+    int y=3*m_scroller->height()/2;
     QRect r(0,0,0,0);
     for (int i=0;i<children().count();i++) {
         if (QWidget* w=qobject_cast<QWidget*>(children().at(i)))
@@ -62,43 +62,43 @@ QSize ZRenderArea::sizeHint() const
 
 void ZRenderArea::initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput)
 {
-    if (cbBuilding) {
-        cbBuilding=false;
+    if (m_connBuilding) {
+        m_connBuilding=false;
         return;
     }
 
-    cbType=aType;
-    cbPinNum=aPinNum;
-    cbInput=nullptr;
-    cbOutput=nullptr;
+    m_startPinType=aType;
+    m_startPinNum=aPinNum;
+    m_startInput=nullptr;
+    m_startOutput=nullptr;
     // init connection form input
-    if (cbType==ZCPBase::PinType::ptInput) {
-        cbInput=aInput;
-        if (cbInput) {
+    if (m_startPinType==ZCPBase::PinType::ptInput) {
+        m_startInput=aInput;
+        if (m_startInput) {
             // disconnect old connections from this input
-            if ((cbInput->fromPin!=-1) && (cbInput->fromFilter)) {
-                cbInput->fromFilter->fOutputs[cbInput->fromPin]->toFilter=nullptr;
-                cbInput->fromFilter->fOutputs[cbInput->fromPin]->toPin=-1;
+            if ((m_startInput->fromPin!=-1) && (m_startInput->fromFilter)) {
+                m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toFilter=nullptr;
+                m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toPin=-1;
             }
-            cbInput->fromFilter=nullptr;
-            cbInput->fromPin=-1;
-            cbCurrent=cbInput->ownerFilter->pos()+cbInput->relCoord;
+            m_startInput->fromFilter=nullptr;
+            m_startInput->fromPin=-1;
+            m_connCursor=m_startInput->ownerFilter->pos()+m_startInput->relCoord;
         }
     } else {
         // init connection from output
-        cbOutput=aOutput;
-        if (cbOutput) {
+        m_startOutput=aOutput;
+        if (m_startOutput) {
             // disconnect old connections from this output
-            if ((cbOutput->toPin!=-1) && (cbOutput->toFilter)) {
-                cbOutput->toFilter->fInputs[cbOutput->toPin]->fromFilter=nullptr;
-                cbOutput->toFilter->fInputs[cbOutput->toPin]->fromPin=-1;
+            if ((m_startOutput->toPin!=-1) && (m_startOutput->toFilter)) {
+                m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromFilter=nullptr;
+                m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromPin=-1;
             }
-            cbOutput->toFilter=nullptr;
-            cbOutput->toPin=-1;
-            cbCurrent=cbOutput->ownerFilter->pos()+cbOutput->relCoord;
+            m_startOutput->toFilter=nullptr;
+            m_startOutput->toPin=-1;
+            m_connCursor=m_startOutput->ownerFilter->pos()+m_startOutput->relCoord;
         }
     }
-    cbBuilding=true;
+    m_connBuilding=true;
 }
 
 void ZRenderArea::repaintConn()
@@ -110,60 +110,131 @@ void ZRenderArea::paintEvent(QPaintEvent * event)
 {
     Q_UNUSED(event)
     QPainter p(this);
-    cbConnCount=0;
-    QPoint c1;
-    QPoint c2;
-    QPoint c3;
-    QPoint c4;
 
     QPen op=p.pen();
-    p.setPen(QPen(Qt::red));
-    cbConnCount=0;
-    for (const auto &a : children()) {
-        auto base=qobject_cast<ZCPBase*>(a);
-        if (base==nullptr) continue;
-        for (const auto &pin : qAsConst(base->fOutputs)) {
-            if (pin->toPin==-1) continue;
-            if (pin->toFilter==nullptr) continue;
-            ZCPInput* inp=pin->toFilter->fInputs.at(pin->toPin);
 
-            c1=base->pos()+pin->relCoord;
-            c2=pin->toFilter->pos()+inp->relCoord;
-            c3=QPoint((c1.x()+c2.x())/2,c1.y());
-            c4=QPoint(c3.x(),c2.y());
+    paintConnections(&p);
 
-            if (rectLinks) {
-                p.drawLine(c1,c3);
-                p.drawLine(c3,c4);
-                p.drawLine(c4,c2);
-            } else {
-                p.drawLine(c1,c2);
-            }
-
-            cbConnCount++;
-        }
-    }
-    if (cbBuilding) {
+    if (m_connBuilding) {
         p.setPen(QPen(Qt::darkCyan));
-        if (cbType==ZCPBase::PinType::ptInput) {
-            c1=cbInput->ownerFilter->pos()+cbInput->relCoord;
+        QPoint c1;
+        if (m_startPinType==ZCPBase::PinType::ptInput) {
+            c1=m_startInput->ownerFilter->pos()+m_startInput->relCoord;
         } else {
-            c1=cbOutput->ownerFilter->pos()+cbOutput->relCoord;
+            c1=m_startOutput->ownerFilter->pos()+m_startOutput->relCoord;
         }
-        c2=cbCurrent;
+        QPoint c2=m_connCursor;
         p.drawLine(c1,c2);
     }
     p.setPen(op);
 }
 
+void ZRenderArea::paintConnections(QPainter* p)
+{
+    const int pinSpace = 20;
+    const int seqMarginStep = 4; // incremental margin for pin
+
+    QVector<ZCPBase *> cmps;
+    QVector<QRect> cmpsRect;
+    cmps.reserve(children().count());
+    cmpsRect.reserve(children().count());
+
+    QPen wirePen = QPen(Qt::red);
+    QRect framingRect;
+
+    m_connCount=0;
+
+    // collect components geometry
+    for (const auto &w : children()) {
+        auto base=qobject_cast<ZCPBase*>(w);
+        if (base!=nullptr) {
+            cmps << base;
+            cmpsRect << base->geometry();
+            framingRect = framingRect.united(base->geometry());
+        }
+    }
+
+    int walkaroundCmps = 0;
+    for (const auto &base : qAsConst(cmps)) {
+        int outIdx = 0;
+        for (const auto &outPin : qAsConst(base->fOutputs)) {
+            if (outPin->toPin==-1) continue;
+            if (outPin->toFilter==nullptr) continue;
+            ZCPInput* inpPin=outPin->toFilter->fInputs.at(outPin->toPin);
+
+            QPoint c1 = base->pos()+outPin->relCoord;
+            QPoint c2 = outPin->toFilter->pos()+inpPin->relCoord;
+            QRect linkRect = QRect(c1,c2);
+            linkRect.adjust(zcpPinSize/2,0,-zcpPinSize/2-2,0);
+            c1 = linkRect.topLeft();
+            c2 = linkRect.bottomRight();
+            linkRect = linkRect.normalized();
+
+            bool selfIntersect = (linkRect.intersects(base->geometry()) ||
+                                linkRect.intersects(outPin->toFilter->geometry()));
+            // Check intersection between line framing rect and any components
+            bool noIntersects = true;
+            for (const auto &rect : qAsConst(cmpsRect)) {
+                if (linkRect.intersects(rect))
+                    noIntersects = false;
+            }
+            // If no intersections occurs - simply draw 3-part line
+            if (noIntersects) {
+                int seqMargin = seqMarginStep*outIdx;
+                QPoint c3=QPoint(((c1.x()+c2.x())/2)+seqMargin,c1.y());
+                QPoint c4=QPoint(c3.x(),c2.y());
+                p->setPen(wirePen);
+                p->drawLine(c1,c3);
+                p->drawLine(c3,c4);
+                p->drawLine(c4,c2);
+            } else {
+                int si = -1;
+                if (selfIntersect)
+                    si = 1;
+                int margin = seqMarginStep*walkaroundCmps;
+                // walkaround points
+                QPoint p1; // near pins
+                QPoint p2;
+                QPoint m1; // near schematic border
+                QPoint m2;
+                int dx = c2.x()-c1.x();
+                int dy = c2.y()-c1.y();
+                if ((dy>0 && dx<0) || (dy<0 && dx>0)) {
+                    p1 = QPoint(linkRect.right()+si*(pinSpace+margin),linkRect.top());
+                    p2 = QPoint(linkRect.left()-si*(pinSpace+margin),linkRect.bottom());
+                    c1 = linkRect.topRight();
+                    c2 = linkRect.bottomLeft();
+                    m1 = QPoint(linkRect.right()+si*(pinSpace+margin),framingRect.bottom()+pinSpace+margin);
+                    m2 = QPoint(linkRect.left()-si*(pinSpace+margin),framingRect.bottom()+pinSpace+margin);
+                } else {
+                    p1 = QPoint(linkRect.left()-si*(pinSpace+margin),linkRect.top());
+                    p2 = QPoint(linkRect.right()+si*(pinSpace+margin),linkRect.bottom());
+                    c1 = linkRect.topLeft();
+                    c2 = linkRect.bottomRight();
+                    m1 = QPoint(linkRect.left()-si*(pinSpace+margin),framingRect.bottom()+pinSpace+margin);
+                    m2 = QPoint(linkRect.right()+si*(pinSpace+margin),framingRect.bottom()+pinSpace+margin);
+                }
+                p->setPen(wirePen);
+                p->drawLine(c1,p1);
+                p->drawLine(p2,c2);
+                p->drawLine(p1,m1);
+                p->drawLine(m1,m2);
+                p->drawLine(m2,p2);
+                walkaroundCmps++;
+            }
+            outIdx++;
+            m_connCount++;
+        }
+    }
+}
 
 void ZRenderArea::refreshConnBuilder(const QPoint & atPos)
 {
-    if (!cbBuilding) return;
-    if (cbType==ZCPBase::PinType::ptInput) {
-        cbCurrent=QPoint(cbInput->ownerFilter->pos()+atPos);
+    if (!m_connBuilding) return;
+    if (m_startPinType==ZCPBase::PinType::ptInput) {
+        m_connCursor=QPoint(m_startInput->ownerFilter->pos()+atPos);
     } else {
-        cbCurrent=QPoint(cbOutput->ownerFilter->pos()+atPos);
+        m_connCursor=QPoint(m_startOutput->ownerFilter->pos()+atPos);
     }
     repaintConn();
 }
@@ -171,7 +242,7 @@ void ZRenderArea::refreshConnBuilder(const QPoint & atPos)
 void ZRenderArea::doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput)
 {
     // if we making trace from input to this output...
-    if ((cbType==ZCPBase::PinType::ptInput) && cbInput) {
+    if ((m_startPinType==ZCPBase::PinType::ptInput) && m_startInput) {
         // and we have new output now...
         if (aOutput) {
             // then we remove old connection to this output to connect our new trace to it
@@ -183,15 +254,15 @@ void ZRenderArea::doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* 
             aOutput->toPin=-1;
         }
         // if our input (from that we making connection) is connected - then disconnect it now
-        if ((cbInput->fromPin!=-1) && cbInput->fromFilter) {
-            cbInput->fromFilter->fOutputs[cbInput->fromPin]->toFilter=nullptr;
-            cbInput->fromFilter->fOutputs[cbInput->fromPin]->toPin=-1;
+        if ((m_startInput->fromPin!=-1) && m_startInput->fromFilter) {
+            m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toFilter=nullptr;
+            m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toPin=-1;
         }
-        cbInput->fromFilter=nullptr;
-        cbInput->fromPin=-1;
+        m_startInput->fromFilter=nullptr;
+        m_startInput->fromPin=-1;
     }
     // if we making trace from output to this input...
-    else if (cbOutput) {
+    else if (m_startOutput) {
         // and we have new input now...
         if (aInput) {
             // then we remove old connection to this input
@@ -203,46 +274,46 @@ void ZRenderArea::doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* 
             aInput->fromPin=-1;
         }
         // if our output (from that we making connection) is connected - then disconnect it now
-        if ((cbOutput->toPin!=-1) && cbOutput->toFilter) {
-            cbOutput->toFilter->fInputs[cbOutput->toPin]->fromFilter=nullptr;
-            cbOutput->toFilter->fInputs[cbOutput->toPin]->fromPin=-1;
+        if ((m_startOutput->toPin!=-1) && m_startOutput->toFilter) {
+            m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromFilter=nullptr;
+            m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromPin=-1;
         }
-        cbOutput->toFilter=nullptr;
-        cbOutput->toPin=-1;
+        m_startOutput->toFilter=nullptr;
+        m_startOutput->toPin=-1;
     }
     // if this is simple deletion or incorrect route (in-in, out-out), then delete it
-    if ((aNone) || (aType==cbType)) {
-        cbBuilding=false;
+    if ((aNone) || (aType==m_startPinType)) {
+        m_connBuilding=false;
         repaintConn();
         return;
     }
     // if this output can't possible connect to specified input (np: DMix connecting not to HW), then delete it
     ZCPBase *aTo;
     ZCPBase *aFrom;
-    if (cbType==ZCPBase::PinType::ptInput) {
-        aTo=cbInput->ownerFilter;
+    if (m_startPinType==ZCPBase::PinType::ptInput) {
+        aTo=m_startInput->ownerFilter;
         aFrom=aOutput->ownerFilter;
     } else {
         aTo=aInput->ownerFilter;
-        aFrom=cbOutput->ownerFilter;
+        aFrom=m_startOutput->ownerFilter;
     }
     if ((!aFrom->canConnectOut(aTo)) || (!aTo->canConnectIn(aFrom))) {
-        cbBuilding=false;
+        m_connBuilding=false;
         repaintConn();
         return;
     }
-    if (cbType==ZCPBase::PinType::ptInput) {
-        cbInput->fromFilter=aOutput->ownerFilter;
-        cbInput->fromPin=aPinNum;
-        aOutput->toFilter=cbInput->ownerFilter;
-        aOutput->toPin=cbPinNum;
+    if (m_startPinType==ZCPBase::PinType::ptInput) {
+        m_startInput->fromFilter=aOutput->ownerFilter;
+        m_startInput->fromPin=aPinNum;
+        aOutput->toFilter=m_startInput->ownerFilter;
+        aOutput->toPin=m_startPinNum;
     } else {
-        cbOutput->toFilter=aInput->ownerFilter;
-        cbOutput->toPin=aPinNum;
-        aInput->fromFilter=cbOutput->ownerFilter;
-        aInput->fromPin=cbPinNum;
+        m_startOutput->toFilter=aInput->ownerFilter;
+        m_startOutput->toPin=aPinNum;
+        aInput->fromFilter=m_startOutput->ownerFilter;
+        aInput->fromPin=m_startPinNum;
     }
-    cbBuilding=false;
+    m_connBuilding=false;
     repaintConn();
 }
 
