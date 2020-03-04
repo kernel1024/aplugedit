@@ -17,12 +17,11 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#include <alsa/asoundlib.h>
 #include <QtGui>
 #include <QtCore>
 #include "includes/hwdialog.h"
 #include "includes/cpbase.h"
-
+#include "includes/alsabackend.h"
 
 ZHWDialog::ZHWDialog(QWidget *parent)
     : QDialog(parent)
@@ -32,66 +31,9 @@ ZHWDialog::ZHWDialog(QWidget *parent)
     alCard->addItem(tr("-not specified-"));
     alCard->setCurrentIndex(0);
 
-    // enumerating devices
+    m_cards = gAlsa->cards();
 
-    static snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
-
-    int card = -1;
-    int err;
-    int dev;
-    snd_ctl_t *handle = nullptr;
-
-    snd_ctl_card_info_t *info = nullptr;
-    snd_pcm_info_t *pcminfo = nullptr;
-    snd_ctl_card_info_alloca(&info);
-    snd_pcm_info_alloca(&pcminfo);
-
-    if (snd_card_next(&card) < 0 || card < 0) {
-        qWarning() << "no soundcards found!";
-        return;
-    }
-    // **** List of Hardware Devices ****
-    while (card >= 0) {
-        QString name = QSL("hw:%1").arg(card);
-
-        if ((err = snd_ctl_open(&handle, name.toLatin1().constData(), 0)) < 0) {
-            qWarning() << QSL("control open (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
-            goto next_card;
-        }
-        if ((err = snd_ctl_card_info(handle, info)) < 0) {
-            qWarning() << QSL("control hardware info (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
-            snd_ctl_close(handle);
-            goto next_card;
-        }
-
-        hwCnt << CCardItem(QString::fromUtf8(snd_ctl_card_info_get_name(info)), card);
-        dev = -1;
-        while (true) {
-            unsigned int count;
-            if (snd_ctl_pcm_next_device(handle, &dev)<0)
-                qWarning() << "snd_ctl_pcm_next_device";
-            if (dev < 0)
-                break;
-            snd_pcm_info_set_device(pcminfo, static_cast<unsigned int>(dev));
-            snd_pcm_info_set_subdevice(pcminfo, 0);
-            snd_pcm_info_set_stream(pcminfo, stream);
-            if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
-                if (err != -ENOENT)
-                    qWarning() << QSL("control digital audio info (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
-                continue;
-            }
-            count = snd_pcm_info_get_subdevices_count(pcminfo);
-            hwCnt.last().devices << CDeviceItem(dev,static_cast<int>(count));
-        }
-        if (handle)
-            snd_ctl_close(handle);
-next_card:
-        if (snd_card_next(&card) < 0) {
-            break;
-        }
-    }
-
-    for (const auto &hw : qAsConst(hwCnt))
+    for (const auto &hw : qAsConst(m_cards))
         alCard->addItem(hw.cardName);
 
     connect(alCard,qOverload<int>(&QComboBox::currentIndexChanged),this,&ZHWDialog::cardSelected);
@@ -170,8 +112,8 @@ void ZHWDialog::setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emul
     int devidx=-1;
     int subidx=-1;
 
-    for (int i=0;i<hwCnt.count();i++) {
-        if (hwCnt.at(i).cardNum==mCard)
+    for (int i=0;i<m_cards.count();i++) {
+        if (m_cards.at(i).cardNum==mCard)
         {
             cardidx=i;
             break;
@@ -180,9 +122,8 @@ void ZHWDialog::setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emul
     if (cardidx!=-1)
     {
         alCard->setCurrentIndex(cardidx+1);
-        cardSelected(cardidx+1);
-        for (int i=0;i<hwCnt.at(cardidx).devices.count();i++) {
-            if (hwCnt.at(cardidx).devices.at(i).devNum==mDevice)
+        for (int i=0;i<m_cards.at(cardidx).devices.count();i++) {
+            if (m_cards.at(cardidx).devices.at(i).devNum==mDevice)
             {
                 devidx=i;
                 break;
@@ -191,8 +132,7 @@ void ZHWDialog::setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emul
         if (devidx!=-1)
         {
             alDevice->setCurrentIndex(devidx+1);
-            devSelected(devidx+1);
-            if ((mSubdevice<hwCnt.at(cardidx).devices.at(devidx).subdevices) && (mSubdevice>=0))
+            if ((mSubdevice<m_cards.at(cardidx).devices.at(devidx).subdevices) && (mSubdevice>=0))
             {
                 subidx=mSubdevice;
                 alSubdevice->setCurrentIndex(subidx+1);
@@ -258,9 +198,9 @@ void ZHWDialog::getParams(int &mCard, int &mDevice, int &mSubdevice, int &mMmap_
                           QString &mFormat)
 {
     if (alCard->currentIndex()!=0) {
-        mCard=hwCnt.at(alCard->currentIndex()-1).cardNum;
+        mCard=m_cards.at(alCard->currentIndex()-1).cardNum;
         if (alDevice->currentIndex()!=0) {
-            mDevice=hwCnt.at(alCard->currentIndex()-1).devices.at(alDevice->currentIndex()-1).devNum;
+            mDevice=m_cards.at(alCard->currentIndex()-1).devices.at(alDevice->currentIndex()-1).devNum;
             mSubdevice=alSubdevice->currentIndex()-1;
         } else {
             mDevice=-1;
@@ -327,10 +267,12 @@ void ZHWDialog::cardSelected(int index)
         alDevice->setEnabled(false);
         return;
     }
-    if (hwCnt.count()<=0) return;
+    if (m_cards.isEmpty()) return;
 
-    for (int i=0;i<hwCnt.at(index-1).devices.count();i++)
-        alDevice->addItem(QString::number(hwCnt.at(index-1).devices.at(i).devNum));
+    for (int i=0;i<m_cards.at(index-1).devices.count();i++) {
+        const auto dev = m_cards.at(index-1).devices.at(i);
+        alDevice->addItem(QSL("%1: %2").arg(dev.devNum).arg(dev.devName));
+    }
     alDevice->setCurrentIndex(0);
 
     alDevice->setEnabled(true);
@@ -346,38 +288,13 @@ void ZHWDialog::devSelected(int index)
         alSubdevice->setEnabled(false);
         return;
     }
-    if (hwCnt.count()<=0) return;
-    if (alDevice->currentIndex()<=0) return;
+    if (m_cards.isEmpty()) return;
+    int card = alCard->currentIndex();
+    if (card<=0) return;
 
-    for (int i=0;i<hwCnt.at(index-1).devices.at(alDevice->currentIndex()-1).subdevices;i++)
+    for (int i=0;i<m_cards.at(card-1).devices.at(index-1).subdevices;i++)
         alSubdevice->addItem(QString::number(i));
     alSubdevice->setCurrentIndex(0);
 
     alSubdevice->setEnabled(true);
-}
-
-
-CCardItem::CCardItem(const CCardItem &other)
-{
-    cardName = other.cardName;
-    cardNum = other.cardNum;
-    devices = other.devices;
-}
-
-CCardItem::CCardItem(const QString &aCardName, int aCardNum)
-{
-    cardName = aCardName;
-    cardNum = aCardNum;
-}
-
-CDeviceItem::CDeviceItem(const CDeviceItem &other)
-{
-    devNum = other.devNum;
-    subdevices = other.subdevices;
-}
-
-CDeviceItem::CDeviceItem(int aDevNum, int aSubdevices)
-{
-    devNum = aDevNum;
-    subdevices = aSubdevices;
 }

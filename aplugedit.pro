@@ -1,6 +1,7 @@
 TEMPLATE += app
 QT += widgets
 HEADERS       = includes/cpbase.h \
+                includes/alsabackend.h \
                 includes/convdialog.h \
                 includes/cpplug.h \
                 includes/cpupmix.h \
@@ -24,6 +25,7 @@ HEADERS       = includes/cpbase.h \
                 includes/cpladspa.h \
                 includes/routedialog.h
 SOURCES       = main.cpp \
+                alsabackend.cpp \
                 components/cpplug.cpp \
                 components/cpupmix.cpp \
                 components/cpvdownmix.cpp \

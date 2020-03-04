@@ -17,16 +17,56 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#include <QApplication>
+#ifndef ALSABACKEND_H
+#define ALSABACKEND_H
 
-#include "includes/mainwindow.h"
-#include "includes/alsabackend.h"
+#include <QtCore>
 
-int main(int argc, char *argv[])
+class CDeviceItem
 {
-    QApplication app(argc, argv);
-    gAlsa->initialize();
-    ZMainWindow mainWindow;
-    mainWindow.show();
-    return app.exec();
-}
+public:
+    int devNum { -1 };
+    int subdevices { -1 };
+    QString devName;
+    CDeviceItem() = default;
+    ~CDeviceItem() = default;
+    CDeviceItem(const CDeviceItem& other);
+    CDeviceItem(int aDevNum, int aSubdevices, const QString &aName);
+    CDeviceItem &operator=(const CDeviceItem& other) = default;
+};
+
+class CCardItem
+{
+public:
+    int cardNum { -1 };
+    QString cardName;
+    QList<CDeviceItem> devices;
+    CCardItem() = default;
+    ~CCardItem() = default;
+    CCardItem(const CCardItem& other);
+    CCardItem(const QString& aCardName, int aCardNum);
+    CCardItem &operator=(const CCardItem& other) = default;
+};
+
+class ZAlsaBackend : public QObject
+{
+    Q_OBJECT
+public:
+    explicit ZAlsaBackend(QObject *parent = nullptr);
+    ~ZAlsaBackend() override;
+    static ZAlsaBackend *instance();
+    void initialize();
+
+    QList<CCardItem> cards() const;
+
+private:
+    QList<CCardItem> m_cards;
+
+    Q_DISABLE_COPY(ZAlsaBackend)
+
+    void enumerateCards();
+};
+
+#define gAlsa (ZAlsaBackend::instance())
+
+#endif // ALSABACKEND_H

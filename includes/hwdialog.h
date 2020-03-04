@@ -29,7 +29,7 @@ class ZHWDialog : public QDialog, public Ui::ZHWDialog
 {
     Q_OBJECT
 private:
-    QList<CCardItem> hwCnt;
+    QList<CCardItem> m_cards;
 
 public:
     ZHWDialog(QWidget *parent = nullptr);
@@ -46,31 +46,6 @@ public:
 public Q_SLOTS:
     void cardSelected(int index);
     void devSelected(int index);
-};
-
-class CDeviceItem
-{
-public:
-    int devNum { -1 };
-    int subdevices { -1 };
-    CDeviceItem() = default;
-    ~CDeviceItem() = default;
-    CDeviceItem(const CDeviceItem& other);
-    CDeviceItem(int aDevNum, int aSubdevices);
-    CDeviceItem &operator=(const CDeviceItem& other) = default;
-};
-
-class CCardItem
-{
-public:
-    QString cardName;
-    int cardNum { -1 };
-    QList<CDeviceItem> devices;
-    CCardItem() = default;
-    ~CCardItem() = default;
-    CCardItem(const CCardItem& other);
-    CCardItem(const QString& aCardName, int aCardNum);
-    CCardItem &operator=(const CCardItem& other) = default;
 };
 
 #endif

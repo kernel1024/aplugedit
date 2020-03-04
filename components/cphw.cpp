@@ -56,15 +56,15 @@ void ZCPHW::doInfoGenerate(QTextStream & stream) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type hw") << endl;
-    if (m_card==-1) {
-        stream << QSL("  pcm \"hw:0,0\"") << endl;
-    } else {
+    if (m_card>=0) {
         stream << QSL("  card ") << m_card << endl;
-        if (m_device!=-1) {
+        if (m_device>=0) {
             stream << QSL("  device ") << m_device << endl;
-            if (m_subdevice!=-1)
+            if (m_subdevice>=-1)
                 stream << QSL("  subdevice ") << m_subdevice << endl;
         }
+    } else {
+        stream << QSL("  pcm \"hw:0,0\"") << endl;
     }
     if (m_mmap_emulation==0) {
         stream << QSL("  mmap_emulation false") << endl;
@@ -158,20 +158,22 @@ void ZCPHW::paintEvent(QPaintEvent * event)
     n.setPointSize(n.pointSize()-3);
     p.setPen(QPen(Qt::gray));
     p.setFont(n);
-    QString rate;
-    if (m_rate==-1) {
-        rate=QSL("* Hz");
-    } else if (m_rate<10000) {
-        rate=QSL("%1 Hz").arg(m_rate);
-    } else {
-        rate=QSL("%1 kHz").arg(static_cast<double>(m_rate)/1000,1,'f',1);
+    QString str = QSL("hw:default");
+    if (m_card>=0) {
+        str = QSL("hw:%1").arg(m_card);
+        if (m_device>=0)
+            str.append(QSL(",%1").arg(m_device));
     }
-    QString s=QSL("hw:%1,%2 ch:%3, %4")
-              .arg(m_card)
-              .arg(m_device)
-              .arg(m_channels)
-              .arg(rate);
-    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,s);
+    if (m_channels>0)
+        str.append(QSL(" ch:%1").arg(m_channels));
+    if (m_rate>0) {
+        if (m_rate<10000) {
+            str.append(QSL(" %1 Hz").arg(m_rate));
+        } else {
+            str.append(QSL(" %1 kHz").arg(static_cast<double>(m_rate)/1000,1,'f',1));
+        }
+    }
+    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,str);
 
     p.setFont(of);
     p.setBrush(ob);
