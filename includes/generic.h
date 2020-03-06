@@ -17,56 +17,11 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#include "includes/generic.h"
-#include "includes/cpnull.h"
+#ifndef GENERIC_H
+#define GENERIC_H
 
-ZCPNull::ZCPNull(QWidget *parent, ZRenderArea *aOwner)
-    : ZCPBase(parent,aOwner)
-{
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
-    registerInput(fInp);
-}
+#include <QString>
 
-ZCPNull::~ZCPNull() = default;
+#define QSL QStringLiteral
 
-QSize ZCPNull::minimumSizeHint() const
-{
-    return QSize(150,50);
-}
-
-void ZCPNull::realignPins()
-{
-    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-}
-
-void ZCPNull::doInfoGenerate(QTextStream & stream) const
-{
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type null") << endl;
-    ZCPBase::doInfoGenerate(stream);
-    stream << QSL("}") << endl;
-    stream << endl;
-}
-
-void ZCPNull::paintEvent(QPaintEvent * event)
-{
-    Q_UNUSED(event)
-
-    QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
-
-    paintBase(p);
-
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
-    p.drawText(rect(),Qt::AlignCenter,QSL("Null"));
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);
-}
-
+#endif // GENERIC_H

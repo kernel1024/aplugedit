@@ -100,6 +100,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionToolAllocate"/>
+    <addaction name="actionToolSamplePlayer"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -485,6 +486,14 @@
    </property>
    <property name="statusTip">
     <string>Add block for downmixer from 4-6 channels to 2-channel stereo output</string>
+   </property>
+  </action>
+  <action name="actionToolSamplePlayer">
+   <property name="text">
+    <string>Sample player...</string>
+   </property>
+   <property name="statusTip">
+    <string>GStreamer player</string>
    </property>
   </action>
  </widget>

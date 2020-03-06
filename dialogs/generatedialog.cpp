@@ -18,7 +18,6 @@
 ***************************************************************************/
 
 #include <QtWidgets>
-#include <QtCore>
 #include "includes/generatedialog.h"
 
 ZGenerateDialog::ZGenerateDialog(QWidget *parent)

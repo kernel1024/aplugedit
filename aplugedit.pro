@@ -7,6 +7,7 @@ HEADERS       = includes/cpbase.h \
                 includes/cpupmix.h \
                 includes/cpvdownmix.h \
                 includes/generatedialog.h \
+                includes/generic.h \
                 includes/hwdialog.h \
                 includes/ladspadialog.h \
                 includes/meterdialog.h \
@@ -23,7 +24,8 @@ HEADERS       = includes/cpbase.h \
                 includes/cpmeter.h \
                 includes/cpconv.h \
                 includes/cpladspa.h \
-                includes/routedialog.h
+                includes/routedialog.h \
+                includes/sampleplayer.h
 SOURCES       = main.cpp \
                 alsabackend.cpp \
                 components/cpplug.cpp \
@@ -36,6 +38,7 @@ SOURCES       = main.cpp \
                 dialogs/meterdialog.cpp \
                 dialogs/ratedialog.cpp \
                 dialogs/routedialog.cpp \
+                dialogs/sampleplayer.cpp \
                 renderarea.cpp \
                 mainwindow.cpp \
                 components/cpbase.cpp \
@@ -60,13 +63,26 @@ FORMS         = \
                 ui/meterdlg.ui \
                 ui/ratedlg.ui \
                 ui/routedlg.ui \
+                ui/sampleplayer.ui \
                 ui/upmixdlg.ui
 
 CONFIG += warn_on \
     link_pkgconfig \
+    rtti \
     c++14
 
 PKGCONFIG += alsa
+
+packagesExist(gstreamer-1.0) {
+    PKGCONFIG += gstreamer-1.0
+    CONFIG += use_gst
+    DEFINES += WITH_GST=1
+    message("GStreamer support: YES")
+}
+
+!use_gst {
+    message("GStreamer support: NO")
+}
 
 # warn on *any* usage of deprecated APIs
 DEFINES += QT_DEPRECATED_WARNINGS

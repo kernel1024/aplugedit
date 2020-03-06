@@ -17,10 +17,12 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include "includes/generic.h"
 #include "includes/mainwindow.h"
 #include "includes/generatedialog.h"
 #include "includes/cpbase.h"
 #include "includes/cpconv.h"
+#include "includes/sampleplayer.h"
 
 ZMainWindow::ZMainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -87,12 +89,18 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditImaADPCM,&QAction::triggered,this,&ZMainWindow::editComponent);
 
     connect(actionToolAllocate,&QAction::triggered,this,&ZMainWindow::toolAllocate);
+    connect(actionToolSamplePlayer,&QAction::triggered,this,&ZMainWindow::toolSamplePlayer);
+
     connect(actionHelpAbout,&QAction::triggered,this,&ZMainWindow::helpAbout);
     connect(actionHelpAboutQt,&QAction::triggered,qApp,&QApplication::aboutQt);
 
     connect(&repaintTimer,&QTimer::timeout,this,&ZMainWindow::repaintWithConnections);
 
     qApp->installEventFilter(this);
+
+#ifndef WITH_GST
+    actionToolSamplePlayer->setEnabled(false);
+#endif
 
     modified=false;
     updateStatus();
@@ -292,6 +300,8 @@ void ZMainWindow::fileGenerate()
         QTextStream out(&file);
         generateConfigToFile(out);
         file.close();
+
+        Q_EMIT alsaConfigUpdated();
     }
 }
 
@@ -387,6 +397,18 @@ void ZMainWindow::toolAllocate()
     }
     renderArea->update();
     renderArea->repaintConn();
+}
+
+void ZMainWindow::toolSamplePlayer()
+{
+#ifdef WITH_GST
+    if (!samplePlayer) {
+        auto dlg = new ZSamplePlayer(this);
+        samplePlayer.reset(dlg);
+        connect(this,&ZMainWindow::alsaConfigUpdated,dlg,&ZSamplePlayer::updateSinkList);
+    }
+    samplePlayer->show();
+#endif
 }
 
 void ZMainWindow::helpAbout()

@@ -23,13 +23,11 @@
 *                                                                         *
 ***************************************************************************/
 
-#include <QtWidgets>
-#include <QtCore>
 #include <cmath>
 #include <cfloat>
 #include <ladspa.h>
+#include "includes/generic.h"
 #include "includes/ladspadialog.h"
-#include "includes/cpbase.h"
 
 ZLADSPADialog::ZLADSPADialog(QWidget *parent, int aSampleRate)
     : QDialog(parent)

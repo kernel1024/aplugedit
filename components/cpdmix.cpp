@@ -18,7 +18,7 @@
 ***************************************************************************/
 
 #include <QRandomGenerator>
-#include "includes/cpbase.h"
+#include "includes/generic.h"
 #include "includes/cpdmix.h"
 #include "includes/cphw.h"
 

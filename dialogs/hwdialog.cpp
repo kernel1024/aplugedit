@@ -17,10 +17,8 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#include <QtGui>
-#include <QtCore>
+#include "includes/generic.h"
 #include "includes/hwdialog.h"
-#include "includes/cpbase.h"
 #include "includes/alsabackend.h"
 
 ZHWDialog::ZHWDialog(QWidget *parent)

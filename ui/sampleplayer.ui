@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ZSamplePlayer</class>
+ <widget class="QDialog" name="ZSamplePlayer">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>460</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Sample player</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Media file</string>
+           </property>
+           <property name="buddy">
+            <cstring>editFilename</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="editFilename"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="buttonBrowse">
+           <property name="text">
+            <string>...</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QPushButton" name="buttonPlay">
+            <property name="text">
+             <string>Play</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonStop">
+            <property name="text">
+             <string>Stop</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>ALSA output</string>
+            </property>
+            <property name="buddy">
+             <cstring>comboAlsaSink</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboAlsaSink">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Test source</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QRadioButton" name="radioMediaFile">
+          <property name="text">
+           <string>Media file</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioFuncGenerator">
+          <property name="text">
+           <string>Func generator</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_2">
+       <property name="title">
+        <string>Func generator</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Waveform</string>
+          </property>
+          <property name="buddy">
+           <cstring>comboWaveform</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboWaveform">
+          <item>
+           <property name="text">
+            <string>sine</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>square</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>saw</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>triangle</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>silence</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>white-noise</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>pink-noise</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>sine-table</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ticks</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>gaussian-noise</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>red-noise</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>blue-noise</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>violet-noise</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Frequency</string>
+          </property>
+          <property name="buddy">
+           <cstring>spinFrequency</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="spinFrequency">
+          <property name="suffix">
+           <string> Hz</string>
+          </property>
+          <property name="minimum">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>100000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>440.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>GStreamer debug log</string>
+       </property>
+       <property name="buddy">
+        <cstring>editLog</cstring>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="buttonClearLog">
+       <property name="text">
+        <string>Clear</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="editLog">
+     <property name="lineWrapMode">
+      <enum>QTextEdit::NoWrap</enum>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_5">
+     <item>
+      <widget class="QLabel" name="linesCount">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Powered by GStreamer</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>editFilename</tabstop>
+  <tabstop>buttonBrowse</tabstop>
+  <tabstop>buttonPlay</tabstop>
+  <tabstop>buttonStop</tabstop>
+  <tabstop>comboAlsaSink</tabstop>
+  <tabstop>radioMediaFile</tabstop>
+  <tabstop>radioFuncGenerator</tabstop>
+  <tabstop>comboWaveform</tabstop>
+  <tabstop>spinFrequency</tabstop>
+  <tabstop>buttonClearLog</tabstop>
+  <tabstop>editLog</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonClearLog</sender>
+   <signal>clicked()</signal>
+   <receiver>editLog</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>850</x>
+     <y>131</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>496</x>
+     <y>166</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioFuncGenerator</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>comboWaveform</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>624</x>
+     <y>85</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>797</x>
+     <y>54</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioFuncGenerator</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>spinFrequency</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>584</x>
+     <y>83</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>763</x>
+     <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

@@ -19,12 +19,15 @@
 
 #include <QApplication>
 
+#include "includes/generic.h"
 #include "includes/mainwindow.h"
 #include "includes/alsabackend.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    QCoreApplication::setOrganizationName(QSL("kernel1024"));
+    QCoreApplication::setApplicationName(QSL("aplugedit"));
     gAlsa->initialize();
     ZMainWindow mainWindow;
     mainWindow.show();

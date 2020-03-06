@@ -48,6 +48,18 @@ public:
     CCardItem &operator=(const CCardItem& other) = default;
 };
 
+class CPCMItem
+{
+public:
+    QString name;
+    QStringList description;
+    CPCMItem() = default;
+    ~CPCMItem() = default;
+    CPCMItem(const CPCMItem& other);
+    CPCMItem(const QString& aName, const QStringList& aDescription);
+    CPCMItem &operator=(const CPCMItem& other) = default;
+};
+
 class ZAlsaBackend : public QObject
 {
     Q_OBJECT
@@ -58,6 +70,7 @@ public:
     void initialize();
 
     QList<CCardItem> cards() const;
+    QList<CPCMItem> pcmList() const;
 
 private:
     QList<CCardItem> m_cards;

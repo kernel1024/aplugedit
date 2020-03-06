@@ -18,7 +18,6 @@
 ***************************************************************************/
 
 #include <QtWidgets>
-#include <QtCore>
 #include "includes/meterdialog.h"
 
 ZMeterDialog::ZMeterDialog(QWidget *parent)

@@ -15,11 +15,19 @@
 *   along with this program; if not, write to the                         *
 *   Free Software Foundation, Inc.,                                       *
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+***************************************************************************
+*                                                                         *
+*   Parts of this code from ALSA project aplay.c utility.                 *
+*                                                                         *
+*   Copyright (c) by Jaroslav Kysela <perex@perex.cz>                     *
+*   Based on vplay program by Michael Beck                                *
+*                                                                         *
 ***************************************************************************/
 
+#include <QApplication>
 #include <alsa/asoundlib.h>
+#include "includes/generic.h"
 #include "includes/alsabackend.h"
-#include "includes/cpbase.h"
 
 ZAlsaBackend::ZAlsaBackend(QObject *parent) : QObject(parent)
 {
@@ -119,6 +127,41 @@ QList<CCardItem> ZAlsaBackend::cards() const
     return m_cards;
 }
 
+QList<CPCMItem> ZAlsaBackend::pcmList() const
+{
+    QList<CPCMItem> res;
+
+    void **hints, **n;
+    char *name, *descr, *io;
+    const char *filter = "Output";
+
+    if (snd_device_name_hint(-1, "pcm", &hints) < 0)
+        return res;
+
+    n = hints;
+    while (*n != nullptr) {
+        name = snd_device_name_get_hint(*n, "NAME");
+        descr = snd_device_name_get_hint(*n, "DESC");
+        io = snd_device_name_get_hint(*n, "IOID");
+        if (!(io != nullptr && strcmp(io, filter) != 0)) {
+            QStringList descList;
+            if (descr != nullptr)
+                descList = QString::fromUtf8(descr).split('\n');
+            res.append(CPCMItem(QString::fromUtf8(name),descList));
+        }
+        if (name != nullptr)
+            free(name);
+        if (descr != nullptr)
+            free(descr);
+        if (io != nullptr)
+            free(io);
+        n++;
+    }
+    snd_device_name_free_hint(hints);
+
+    return res;
+}
+
 CCardItem::CCardItem(const CCardItem &other)
 {
     cardName = other.cardName;
@@ -144,4 +187,16 @@ CDeviceItem::CDeviceItem(int aDevNum, int aSubdevices, const QString& aName)
     devNum = aDevNum;
     subdevices = aSubdevices;
     devName = aName;
+}
+
+CPCMItem::CPCMItem(const CPCMItem &other)
+{
+    name = other.name;
+    description = other.description;
+}
+
+CPCMItem::CPCMItem(const QString &aName, const QStringList &aDescription)
+{
+    name = aName;
+    description = aDescription;
 }

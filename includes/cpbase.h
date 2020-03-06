@@ -133,6 +133,4 @@ public:
     bool postLoadBind();
 };
 
-#define QSL QStringLiteral
-
 #endif

@@ -24,6 +24,7 @@
 #include <QtGui>
 #include "ui_mainwindow.h"
 #include "renderarea.h"
+#include "sampleplayer.h"
 
 class ZMainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -36,6 +37,9 @@ private:
     QString workFile;
     QString programTitle;
     QTimer repaintTimer;
+#ifdef WITH_GST
+    QScopedPointer<ZSamplePlayer,QScopedPointerDeleteLater> samplePlayer;
+#endif
 
     void clearSchematic();
 
@@ -54,12 +58,16 @@ public Q_SLOTS:
     void fileGeneratePart();
     void editComponent();
     void toolAllocate();
+    void toolSamplePlayer();
     void helpAbout();
     void repaintWithConnections();
     void changingComponents(ZCPBase *base);
     void updateStatus();
     void loadFile(const QString& fname);
     bool saveFile(const QString& fname);
+
+Q_SIGNALS:
+    void alsaConfigUpdated();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
