@@ -25,7 +25,9 @@ HEADERS       = includes/cpbase.h \
                 includes/cpconv.h \
                 includes/cpladspa.h \
                 includes/routedialog.h \
-                includes/sampleplayer.h
+                includes/sampleplayer.h \
+                jsedit/jsedit.h \
+                jsedit/jsedit_p.h
 SOURCES       = main.cpp \
                 alsabackend.cpp \
                 components/cpplug.cpp \
@@ -39,6 +41,8 @@ SOURCES       = main.cpp \
                 dialogs/ratedialog.cpp \
                 dialogs/routedialog.cpp \
                 dialogs/sampleplayer.cpp \
+                generic.cpp \
+                jsedit/jsedit.cpp \
                 renderarea.cpp \
                 mainwindow.cpp \
                 components/cpbase.cpp \

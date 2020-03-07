@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>559</width>
-    <height>358</height>
+    <width>709</width>
+    <height>415</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -50,7 +50,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QPlainTextEdit" name="configEditor"/>
+    <widget class="JSEdit" name="configEditor">
+     <property name="lineWrapMode">
+      <enum>QPlainTextEdit::NoWrap</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout">
@@ -69,6 +73,13 @@
      <property name="bottomMargin">
       <number>0</number>
      </property>
+     <item>
+      <widget class="QPushButton" name="fontButton">
+       <property name="text">
+        <string>Font...</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <spacer>
        <property name="orientation">
@@ -101,6 +112,13 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="9"/>
+ <customwidgets>
+  <customwidget>
+   <class>JSEdit</class>
+   <extends>QPlainTextEdit</extends>
+   <header location="global">jsedit/jsedit.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>configEditor</tabstop>
   <tabstop>saveButton</tabstop>

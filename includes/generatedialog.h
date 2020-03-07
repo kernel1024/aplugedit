@@ -34,6 +34,7 @@ public:
 
 public Q_SLOTS:
     void saveAs();
+    void fontDlg();
 };
 
 #endif

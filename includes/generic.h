@@ -20,8 +20,19 @@
 #ifndef GENERIC_H
 #define GENERIC_H
 
+#include <QObject>
 #include <QString>
 
 #define QSL QStringLiteral
+
+class ZGenericFuncs : public QObject
+{
+    Q_OBJECT
+public:
+    ZGenericFuncs(QObject *parent);
+    virtual ~ZGenericFuncs();
+
+    static int numDigits(int n);
+};
 
 #endif // GENERIC_H

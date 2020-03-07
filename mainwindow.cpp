@@ -104,6 +104,15 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 
     modified=false;
     updateStatus();
+
+    QStringList fileNames = qApp->arguments();
+    if (!fileNames.isEmpty())
+        fileNames.takeFirst();
+    for (const auto& arg : qAsConst(fileNames)) {
+        QTimer::singleShot(500,this,[this,arg](){
+            loadFile(arg);
+        });
+    }
 }
 
 ZMainWindow::~ZMainWindow() = default;

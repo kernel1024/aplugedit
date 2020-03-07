@@ -18,6 +18,7 @@
 ***************************************************************************/
 
 #include <QtWidgets>
+#include "includes/generic.h"
 #include "includes/generatedialog.h"
 
 ZGenerateDialog::ZGenerateDialog(QWidget *parent)
@@ -25,6 +26,14 @@ ZGenerateDialog::ZGenerateDialog(QWidget *parent)
 {
     setupUi(this);
     connect(saveButton,&QPushButton::clicked,this,&ZGenerateDialog::saveAs);
+    connect(fontButton,&QPushButton::clicked,this,&ZGenerateDialog::fontDlg);
+
+    QSettings stg;
+    stg.beginGroup(QSL("generateDialog"));
+    QFont editorFont;
+    if (editorFont.fromString(stg.value(QSL("editorFont"),QSL("Monospace")).toString()))
+        configEditor->setFont(editorFont);
+    stg.endGroup();
 }
 
 void ZGenerateDialog::setConfigText(const QString &text)
@@ -32,7 +41,13 @@ void ZGenerateDialog::setConfigText(const QString &text)
     configEditor->setPlainText(text);
 }
 
-ZGenerateDialog::~ZGenerateDialog() = default;
+ZGenerateDialog::~ZGenerateDialog()
+{
+    QSettings stg;
+    stg.beginGroup(QSL("generateDialog"));
+    stg.setValue(QSL("editorFont"),configEditor->font().toString());
+    stg.endGroup();
+}
 
 void ZGenerateDialog::saveAs()
 {
@@ -46,5 +61,13 @@ void ZGenerateDialog::saveAs()
     }
     file.write(configEditor->toPlainText().toUtf8());
     file.close();
+}
+
+void ZGenerateDialog::fontDlg()
+{
+    bool ok;
+    QFont font = QFontDialog::getFont(&ok,configEditor->font(),this,tr("Editor font"),QFontDialog::MonospacedFonts);
+    if (ok)
+        configEditor->setFont(font);
 }
 
