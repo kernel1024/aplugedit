@@ -21,6 +21,11 @@
 #include "includes/renderarea.h"
 #include "includes/cpinp.h"
 
+QString ZCPInp::dspName() const
+{
+    return m_dspName;
+}
+
 ZCPInp::ZCPInp(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {

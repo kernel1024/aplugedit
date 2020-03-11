@@ -23,49 +23,25 @@
 #ifdef WITH_GST
 
 #include <gst/gst.h>
-#include <QDialog>
-#include <QSyntaxHighlighter>
+#include <QtCore>
+#include <QtWidgets>
+#include "renderarea.h"
+#include "sampleplayer_p.h"
 
 namespace Ui {
 class ZSamplePlayer;
 }
-
-class CStreamerData
-{
-public:
-    GstElement *pipeline { nullptr };
-    GstElement *source { nullptr };
-    GstElement *audioconvert { nullptr };
-    GstElement *audioresample { nullptr };
-    GstElement *alsasink { nullptr };
-    guint busWatchID { 0 };
-    CStreamerData() {}
-    void clear();
-};
-
-class CSpecLogHighlighter : public QSyntaxHighlighter {
-    Q_OBJECT
-public:
-    explicit CSpecLogHighlighter(QTextDocument* parent);
-protected:
-    void highlightBlock(const QString& text) override;
-private:
-    void formatBlock(const QString& text,
-                     const QRegularExpression& exp,
-                     const QColor& color = Qt::black,
-                     bool weight = false,
-                     bool italic = false,
-                     bool underline = false,
-                     bool strikeout = false);
-};
 
 class ZSamplePlayer : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ZSamplePlayer(QWidget *parent = nullptr);
+    explicit ZSamplePlayer(QWidget *parent, ZRenderArea* renderArea);
     ~ZSamplePlayer() override;
+
+Q_SIGNALS:
+    void stopped();
 
 public Q_SLOTS:
     void play();
@@ -73,10 +49,19 @@ public Q_SLOTS:
     void browseFile();
     void addAuxMessage(const QString& msg);
     void updateSinkList();
+    void updateLevelIndicator(double rmsL, double rmsR, double peakL, double peakR);
+    void updatePosition();
+    void updateVolume(int value);
+    void getSinkInfo();
+
+protected:
+    bool event(QEvent *event) override;
 
 private:
     Ui::ZSamplePlayer *ui;
-    CSpecLogHighlighter *syntax;
+    ZSpecLogHighlighter *m_syntax;
+    ZRenderArea *m_renderArea;
+    QTimer *m_positionTimer;
     CStreamerData m_data;
     QStringList m_log;
 

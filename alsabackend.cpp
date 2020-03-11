@@ -122,27 +122,26 @@ next_card:
     }
 }
 
-QList<CCardItem> ZAlsaBackend::cards() const
+QVector<CCardItem> ZAlsaBackend::cards() const
 {
     return m_cards;
 }
 
-QList<CPCMItem> ZAlsaBackend::pcmList() const
+QVector<CPCMItem> ZAlsaBackend::pcmList() const
 {
-    QList<CPCMItem> res;
+    QVector<CPCMItem> res;
 
-    void **hints, **n;
-    char *name, *descr, *io;
     const char *filter = "Output";
 
+    void **hints;
     if (snd_device_name_hint(-1, "pcm", &hints) < 0)
         return res;
 
-    n = hints;
+    void **n = hints;
     while (*n != nullptr) {
-        name = snd_device_name_get_hint(*n, "NAME");
-        descr = snd_device_name_get_hint(*n, "DESC");
-        io = snd_device_name_get_hint(*n, "IOID");
+        char *name = snd_device_name_get_hint(*n, "NAME");
+        char *descr = snd_device_name_get_hint(*n, "DESC");
+        char *io = snd_device_name_get_hint(*n, "IOID");
         if (!(io != nullptr && strcmp(io, filter) != 0)) {
             QStringList descList;
             if (descr != nullptr)

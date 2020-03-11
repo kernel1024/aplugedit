@@ -29,7 +29,7 @@ class ZHWDialog : public QDialog, public Ui::ZHWDialog
 {
     Q_OBJECT
 private:
-    QList<CCardItem> m_cards;
+    QVector<CCardItem> m_cards;
 
 public:
     ZHWDialog(QWidget *parent = nullptr);

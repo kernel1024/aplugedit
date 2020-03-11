@@ -26,6 +26,7 @@ HEADERS       = includes/cpbase.h \
                 includes/cpladspa.h \
                 includes/routedialog.h \
                 includes/sampleplayer.h \
+                includes/sampleplayer_p.h \
                 jsedit/jsedit.h \
                 jsedit/jsedit_p.h
 SOURCES       = main.cpp \
@@ -41,6 +42,7 @@ SOURCES       = main.cpp \
                 dialogs/ratedialog.cpp \
                 dialogs/routedialog.cpp \
                 dialogs/sampleplayer.cpp \
+                dialogs/sampleplayer_p.cpp \
                 generic.cpp \
                 jsedit/jsedit.cpp \
                 renderarea.cpp \

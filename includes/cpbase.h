@@ -57,6 +57,8 @@ public:
     void registerOutput(ZCPOutput* out);
     virtual ZCPOutput* getMainOutput() const;
 
+    QString getHint() const;
+
 private:
     bool m_isDragging { false };
     bool m_hintShow { true };

@@ -41,6 +41,8 @@ public:
     QJsonValue storeToJson() const override;
 
     QSize minimumSizeHint() const override;
+    QString dspName() const;
+
 protected:
     void paintEvent (QPaintEvent * event) override;
     void realignPins() override;

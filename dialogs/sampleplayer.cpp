@@ -27,13 +27,14 @@
 #include "ui_sampleplayer.h"
 #include <QDebug>
 
-ZSamplePlayer::ZSamplePlayer(QWidget *parent) :
+ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     QDialog(parent),
-    ui(new Ui::ZSamplePlayer)
+    ui(new Ui::ZSamplePlayer),
+    m_renderArea(renderArea)
 {
     ui->setupUi(this);
 
-    syntax = new CSpecLogHighlighter(ui->editLog->document());
+    m_syntax = new ZSpecLogHighlighter(ui->editLog->document());
 
     connect(ui->buttonPlay,&QPushButton::clicked,this,&ZSamplePlayer::play);
     connect(ui->buttonStop,&QPushButton::clicked,this,&ZSamplePlayer::stop);
@@ -41,16 +42,28 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent) :
     connect(ui->editLog, &QTextEdit::textChanged,this,[this](){
         ui->linesCount->setText(tr("%1 messages").arg(ui->editLog->document()->lineCount() - 1));
     });
+    connect(this,&ZSamplePlayer::stopped,ui->levelL,&ZLevelMeter::reset);
+    connect(this,&ZSamplePlayer::stopped,ui->levelR,&ZLevelMeter::reset);
+    connect(ui->sliderVolume,&QSlider::valueChanged,this,&ZSamplePlayer::updateVolume);
 
     QSettings stg;
     stg.beginGroup(QSL("SamplePlayer"));
     ui->editFilename->setText(stg.value(QSL("sampleFile"),QString()).toString());
     ui->comboWaveform->setCurrentText(stg.value(QSL("generatorWaveform"),QSL("sine")).toString());
     ui->spinFrequency->setValue(stg.value(QSL("generatorFreq"),440.0).toDouble());
+    ui->sliderVolume->setValue(stg.value(QSL("volume"),90).toInt());
 
     ui->radioFuncGenerator->setChecked(true); // force widged disabling logic
     ui->radioMediaFile->setChecked(!(stg.value(QSL("funcGenerator"),false).toBool()));
     stg.endGroup();
+
+    ui->comboAlsaSink->setItemDelegate(new ZAlsaPCMItemDelegate());
+
+    ui->labelClock->clear();
+    m_positionTimer = new QTimer(this);
+    connect(m_positionTimer,&QTimer::timeout,this,&ZSamplePlayer::updatePosition);
+    m_positionTimer->setInterval(500);
+    m_positionTimer->start();
 
     updateSinkList();
     initGstreamer();
@@ -66,6 +79,7 @@ ZSamplePlayer::~ZSamplePlayer()
     stg.setValue(QSL("generatorWaveform"),ui->comboWaveform->currentText());
     stg.setValue(QSL("generatorFreq"),ui->spinFrequency->value());
     stg.setValue(QSL("funcGenerator"),ui->radioFuncGenerator->isChecked());
+    stg.setValue(QSL("volume"),ui->sliderVolume->value());
     stg.endGroup();
 
     delete ui;
@@ -91,7 +105,6 @@ gboolean ZSamplePlayer::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
                 });
             }
             break;
-
         case GST_MESSAGE_ERROR:   gst_message_parse_error(msg, &error, &debug); prefix = QSL("ERROR"); break;
         case GST_MESSAGE_WARNING: gst_message_parse_warning(msg,&error,&debug);  prefix = QSL("WARN"); break;
         case GST_MESSAGE_INFO:    gst_message_parse_info(msg, &error, &debug); prefix = QSL("INFO"); break;
@@ -105,10 +118,63 @@ gboolean ZSamplePlayer::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
                 message = QSL("STATE: Pipeline: %1 -> %2")
                           .arg(QString::fromUtf8(gst_element_state_get_name(olds)),
                                QString::fromUtf8(gst_element_state_get_name(news)));
+
+                if (news==GST_STATE_PLAYING)
+                    QMetaObject::invokeMethod(dlg,&ZSamplePlayer::getSinkInfo);
             }
             break;
         }
+        case GST_MESSAGE_ELEMENT: {
+            const GstStructure *s = gst_message_get_structure(msg);
+            const gchar *name = gst_structure_get_name(s);
 
+            if (strcmp(name, "level") == 0) {
+                guint channels;
+                gdouble rms_dB;
+                gdouble peak_dB;
+                gdouble rmsL;
+                gdouble rmsR;
+                gdouble peakL;
+                gdouble peakR;
+                const GValue *array_val;
+                const GValue *valueRms;
+                const GValue *valuePeak;
+                GValueArray *rms_arr;
+                GValueArray *peak_arr;
+
+                /* the values are packed into GValueArrays with the value per channel */
+                array_val = gst_structure_get_value (s, "rms");
+                rms_arr = static_cast<GValueArray *>(g_value_get_boxed (array_val));
+
+                array_val = gst_structure_get_value (s, "peak");
+                peak_arr = static_cast<GValueArray *>(g_value_get_boxed (array_val));
+
+                /* we can get the number of channels as the length of any of the value
+                   * arrays */
+                channels = rms_arr->n_values;
+                if (channels>0) {
+                    valueRms = rms_arr->values;
+                    rms_dB = g_value_get_double(valueRms);
+                    valuePeak = peak_arr->values;
+                    peak_dB = g_value_get_double(valuePeak);
+                    rmsL = pow(10, rms_dB / 20);
+                    peakL = pow(10, peak_dB / 20);
+                    if (channels>1) {
+                        rms_dB = g_value_get_double(++valueRms);
+                        peak_dB = g_value_get_double(++valuePeak);
+                        rmsR = pow(10, rms_dB / 20);
+                        peakR = pow(10, peak_dB / 20);
+                    } else {
+                        rmsR = rmsL;
+                        peakR = peakL;
+                    }
+                    QMetaObject::invokeMethod(dlg,[rmsL,rmsR,peakL,peakR,dlg](){
+                        dlg->updateLevelIndicator(rmsL,rmsR,peakL,peakR);
+                    });
+                }
+            }
+            break;
+        }
         default:
             break;
     }
@@ -248,10 +314,12 @@ bool ZSamplePlayer::startGstreamer()
     }
     m_data.audioconvert = gst_element_factory_make("audioconvert", "convert");
     m_data.audioresample = gst_element_factory_make("audioresample", "resample");
+    m_data.meter = gst_element_factory_make("level", "meter");
+    m_data.volume = gst_element_factory_make("volume", nullptr);
     m_data.alsasink = gst_element_factory_make("alsasink", "sink");
 
     if (!m_data.pipeline || !m_data.source || !m_data.audioconvert
-            || !m_data.audioresample || !m_data.alsasink) {
+            || !m_data.audioresample || !m_data.meter || !m_data.volume || !m_data.alsasink) {
         addAuxMessage(tr("APlugEdit: one of pipeline element could not be created."));
         return false;
     }
@@ -260,8 +328,9 @@ bool ZSamplePlayer::startGstreamer()
 
     /* we add all elements into the pipeline */
     gst_bin_add_many(GST_BIN(m_data.pipeline),m_data.source,m_data.audioconvert,
-                     m_data.audioresample,m_data.alsasink,nullptr);
-    if (gst_element_link_many(m_data.audioconvert, m_data.audioresample, m_data.alsasink, nullptr) == FALSE) {
+                     m_data.audioresample,m_data.meter,m_data.volume,m_data.alsasink,nullptr);
+    if (gst_element_link_many(m_data.audioconvert, m_data.audioresample,m_data.meter,
+                              m_data.volume,m_data.alsasink, nullptr) == FALSE) {
         addAuxMessage(tr("APlugEdit: Unable to link pipeline."));
         stop();
         return false;
@@ -291,6 +360,9 @@ bool ZSamplePlayer::startGstreamer()
         g_signal_connect(m_data.source, "pad-added", G_CALLBACK(pad_added_handler), this);
     }
 
+    /* make sure we'll get messages from meter */
+    g_object_set (m_data.meter, "post-messages", TRUE, NULL);
+
     QByteArray bsink = ui->comboAlsaSink->currentText().toLatin1();
     if (!bsink.isEmpty())
         g_object_set(m_data.alsasink,"device", bsink.constData(), nullptr);
@@ -300,6 +372,10 @@ bool ZSamplePlayer::startGstreamer()
     m_data.busWatchID = gst_bus_add_watch(bus, bus_call, this);
     gst_object_unref(bus);
 
+    m_data.positionQuery = gst_query_new_position(GST_FORMAT_TIME);
+
+    updateVolume(ui->sliderVolume->value());
+
     /* Start playing */
     GstStateChangeReturn ret = gst_element_set_state(m_data.pipeline, GST_STATE_PLAYING);
     if (ret == GST_STATE_CHANGE_FAILURE) {
@@ -307,8 +383,6 @@ bool ZSamplePlayer::startGstreamer()
         stop();
         return false;
     }
-
-    // TODO: catch play progress events, display alsasink.device-name and .card-name
 
     return true;
 }
@@ -323,6 +397,7 @@ void ZSamplePlayer::stop()
     if (m_data.pipeline) {
         gst_element_set_state(m_data.pipeline, GST_STATE_NULL);
 
+        gst_object_unref(GST_OBJECT(m_data.positionQuery));
         gst_object_unref(GST_OBJECT(m_data.pipeline));
 
         if (m_data.busWatchID>0)
@@ -332,6 +407,8 @@ void ZSamplePlayer::stop()
 
         gst_debug_add_log_function(gst_debug_log_default,stderr,nullptr);
         gst_debug_remove_log_function(debug_logger);
+
+        Q_EMIT stopped();
     }
 }
 
@@ -367,80 +444,99 @@ void ZSamplePlayer::addAuxMessage(const QString &msg)
 
 void ZSamplePlayer::updateSinkList()
 {
+    int savedIdx = -1;
+    int defaultIdx = -1;
+    QString savedPcm = ui->comboAlsaSink->currentText();
+
     ui->comboAlsaSink->clear();
 
-    // TODO: show description with delegate
-    // TODO: add all DSP's from editor (even without hint) - aquire list from MainWindow via config write signal?
-    const auto pcms = gAlsa->pcmList();
+    const auto pcms = m_renderArea->getAllPCMNames();
     for (const auto& pcm : pcms) {
-        ui->comboAlsaSink->addItem(pcm.name);
+        QStringList desc = pcm.description;
+        if (desc.isEmpty())
+             desc.append(tr("DSP from editor"));
+        ui->comboAlsaSink->addItem(pcm.name,desc);
+        int lastIdx = ui->comboAlsaSink->count()-1;
+        ui->comboAlsaSink->setItemData(lastIdx,0,Qt::UserRole+1);
+        if (pcm.name == savedPcm)
+            savedIdx = lastIdx;
+    }
+    const auto alsaPcms = gAlsa->pcmList();
+    for (const auto& pcm : alsaPcms) {
+        ui->comboAlsaSink->addItem(pcm.name,pcm.description);
+        int lastIdx = ui->comboAlsaSink->count()-1;
+        ui->comboAlsaSink->setItemData(lastIdx,pcm.description.join(QSL("\n")),Qt::ToolTipRole);
+        ui->comboAlsaSink->setItemData(lastIdx,1,Qt::UserRole+1);
+        if (pcm.name == savedPcm && savedIdx<0)
+            savedIdx = lastIdx;
+        if (pcm.name == QSL("default"))
+            defaultIdx = lastIdx;
+    }
+
+    if (savedIdx>=0) {
+        ui->comboAlsaSink->setCurrentIndex(savedIdx);
+    } else if (defaultIdx>=0) {
+        ui->comboAlsaSink->setCurrentIndex(defaultIdx);
     }
 }
 
-void CStreamerData::clear()
+void ZSamplePlayer::updateLevelIndicator(double rmsL, double rmsR, double peakL, double peakR)
 {
-    pipeline = nullptr;
-    source = nullptr;
-    audioconvert = nullptr;
-    audioresample = nullptr;
-    alsasink = nullptr;
-    busWatchID = 0;
+    ui->levelL->levelChanged(rmsL,peakL,8192);
+    ui->levelR->levelChanged(rmsR,peakR,8192);
 }
 
-CSpecLogHighlighter::CSpecLogHighlighter(QTextDocument *parent)
-    : QSyntaxHighlighter(parent)
+void ZSamplePlayer::updatePosition()
 {
-
-}
-
-void CSpecLogHighlighter::highlightBlock(const QString &text)
-{
-    formatBlock(text,QRegularExpression(QSL("^\\S{,8}"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::black,true);
-    formatBlock(text,QRegularExpression(QSL("\\s(DEBUG|MSG):\\s"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::black,true);
-    formatBlock(text,QRegularExpression(QSL("\\sWARN:\\s"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::darkRed,true);
-    formatBlock(text,QRegularExpression(QSL("\\sERROR:\\s"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::red,true);
-    formatBlock(text,QRegularExpression(QSL("\\sINFO:\\s"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::darkBlue,true);
-    formatBlock(text,QRegularExpression(QSL("\\s(FIXME|LOG|TRACE|MEMDUMP):\\s"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::darkCyan,true);
-    formatBlock(text,QRegularExpression(QSL("\\sSTATE:\\s"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::blue,true);
-    formatBlock(text,QRegularExpression(QSL("\\sAPlugEdit:\\s"),
-                                        QRegularExpression::NoPatternOption),Qt::black,true);
-    formatBlock(text,QRegularExpression(QSL("\\(\\S+\\)$"),
-                                        QRegularExpression::CaseInsensitiveOption),Qt::gray,false,true);
-}
-
-void CSpecLogHighlighter::formatBlock(const QString &text,
-                                      const QRegularExpression &exp,
-                                      const QColor &color,
-                                      bool weight,
-                                      bool italic,
-                                      bool underline,
-                                      bool strikeout)
-{
-    if (text.isEmpty()) return;
-
-    QTextCharFormat fmt;
-    fmt.setForeground(color);
-    if (weight) {
-        fmt.setFontWeight(QFont::Bold);
-    } else {
-        fmt.setFontWeight(QFont::Normal);
+    ui->labelClock->clear();
+    QString spos;
+    if (m_data.pipeline) {
+        if (gst_element_query(m_data.pipeline,m_data.positionQuery) == TRUE) {
+            gint64 pos;
+            gst_query_parse_position(m_data.positionQuery,nullptr,&pos);
+            if (GST_CLOCK_TIME_IS_VALID(pos)) {
+                gint64 s = (pos / GST_SECOND) % 60;
+                gint64 m = (pos / (GST_SECOND * 60)) % 60;
+                gint64 h = (pos / (GST_SECOND * 60 * 60));
+                spos = QSL("%1:%2:%3").arg(h).arg(m,2,10,QChar('0')).arg(s,2,10,QChar('0'));
+            }
+        }
+        if (!spos.isEmpty())
+            ui->labelClock->setText(spos);
     }
-    fmt.setFontItalic(italic);
-    fmt.setFontUnderline(underline);
-    fmt.setFontStrikeOut(strikeout);
+}
 
-    auto it = exp.globalMatch(text);
-    while (it.hasNext()) {
-        auto match = it.next();
-        setFormat(match.capturedStart(), match.capturedLength(), fmt);
+void ZSamplePlayer::updateVolume(int value)
+{
+    if (m_data.volume) {
+        gdouble vol = (2.0 - log10(100.0 - static_cast<double>(value))) / 2.0;
+        ui->labelGstreamer->setText(QSL("%1").arg(vol));
+        g_object_set(m_data.volume, "volume", vol, nullptr);
     }
+}
+
+void ZSamplePlayer::getSinkInfo()
+{
+    if (m_data.alsasink) {
+        gchar *card;
+        gchar *device;
+        g_object_get(m_data.alsasink,
+                     "card-name",&card,
+                     "device-name",&device, nullptr);
+        addAuxMessage(tr("APlugEdit: alsasink card: \"%1\", device: \"%2\".").arg(
+                          QString::fromUtf8(card),
+                          QString::fromUtf8(device)));
+        g_free(card);
+        g_free(device);
+    }
+}
+
+bool ZSamplePlayer::event(QEvent *event)
+{
+    if (event->type() == QEvent::WindowActivate) {
+        updateSinkList();
+    }
+    return QDialog::event(event);
 }
 
 #endif // WITH_GST

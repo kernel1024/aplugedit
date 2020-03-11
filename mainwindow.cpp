@@ -412,7 +412,7 @@ void ZMainWindow::toolSamplePlayer()
 {
 #ifdef WITH_GST
     if (!samplePlayer) {
-        auto dlg = new ZSamplePlayer(this);
+        auto dlg = new ZSamplePlayer(this,renderArea);
         samplePlayer.reset(dlg);
         connect(this,&ZMainWindow::alsaConfigUpdated,dlg,&ZSamplePlayer::updateSinkList);
     }

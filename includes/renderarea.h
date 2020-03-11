@@ -23,6 +23,7 @@
 #include <QtCore>
 #include <QtGui>
 #include "cpbase.h"
+#include "alsabackend.h"
 
 class ZRenderArea : public QFrame
 {
@@ -57,6 +58,8 @@ public:
 
     void repaintConn();
     void doGenerate(QTextStream& stream);
+
+    QVector<CPCMItem> getAllPCMNames() const;
 
     void deleteComponents();
     int componentCount() const;

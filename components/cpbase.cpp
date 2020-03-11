@@ -288,6 +288,11 @@ ZCPOutput *ZCPBase::getMainOutput() const
     return nullptr;
 }
 
+QString ZCPBase::getHint() const
+{
+    return m_hint;
+}
+
 void ZCPBase::mousePressEvent(QMouseEvent * event)
 {
     raise();

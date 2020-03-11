@@ -346,6 +346,18 @@ void ZRenderArea::doGenerate(QTextStream & stream)
     stream << "# Generation successfully completted." << endl;
 }
 
+QVector<CPCMItem> ZRenderArea::getAllPCMNames() const
+{
+    QVector<CPCMItem> res;
+    res.reserve(children().count());
+    for (const auto &a : children()) {
+        auto inp = qobject_cast<ZCPInp*>(a);
+        if (inp)
+            res.append(CPCMItem(inp->dspName(),QStringList({inp->getHint()})));
+    }
+    return res;
+}
+
 int ZRenderArea::componentCount() const
 {
     int c=0;

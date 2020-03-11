@@ -69,11 +69,11 @@ public:
     static ZAlsaBackend *instance();
     void initialize();
 
-    QList<CCardItem> cards() const;
-    QList<CPCMItem> pcmList() const;
+    QVector<CCardItem> cards() const;
+    QVector<CPCMItem> pcmList() const;
 
 private:
-    QList<CCardItem> m_cards;
+    QVector<CCardItem> m_cards;
 
     Q_DISABLE_COPY(ZAlsaBackend)
 
