@@ -166,7 +166,13 @@ void ZLevelMeter::paintEvent(QPaintEvent *event)
     Q_UNUSED(event)
 
     QPainter painter(this);
+    painter.save();
+
     painter.fillRect(rect(), Qt::black);
+
+    QFont f = painter.font();
+    f.setBold(true);
+    painter.setFont(f);
 
     QRect bar = rect();
 
@@ -180,6 +186,12 @@ void ZLevelMeter::paintEvent(QPaintEvent *event)
 
     bar.setTop(rect().top() + static_cast<int>((1.0 - m_rmsLevel) * rect().height()));
     painter.fillRect(bar, m_rmsColor);
+
+    bar.setTop(rect().bottom() - 2 * painter.fontMetrics().height());
+    painter.setPen(Qt::yellow);
+    painter.drawText(bar,Qt::AlignCenter,objectName().right(1));
+
+    painter.restore();
 }
 
 ZAlsaPCMItemDelegate::ZAlsaPCMItemDelegate(QObject *parent)
@@ -197,10 +209,10 @@ void ZAlsaPCMItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     const bool selected = ((option.state & QStyle::State_Selected) > 0);
     if (selected) {
         painter->fillRect(option.rect,option.palette.highlight());
-        painter->setBrush(option.palette.highlightedText());
+        painter->setPen(option.palette.highlightedText().color());
     } else {
         painter->fillRect(option.rect,option.palette.base());
-        painter->setBrush(option.palette.text());
+        painter->setPen(option.palette.text().color());
     }
 
     if (index.isValid()) {
@@ -221,8 +233,10 @@ void ZAlsaPCMItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
             r.setHeight(r.height()/3);
             painter->drawText(r,Qt::AlignLeft | Qt::AlignVCenter,name);
 
+            if (!selected)
+                painter->setPen(Qt::darkGray);
+
             f = option.font;
-            painter->setBrush(QBrush(Qt::darkGray));
             f.setPointSize(f.pointSize()-3);
             painter->setFont(f);
             r.translate(0,r.height());

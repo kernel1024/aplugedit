@@ -56,8 +56,11 @@ public:
     CPCMItem() = default;
     ~CPCMItem() = default;
     CPCMItem(const CPCMItem& other);
+    explicit CPCMItem(const QString& aName);
     CPCMItem(const QString& aName, const QStringList& aDescription);
     CPCMItem &operator=(const CPCMItem& other) = default;
+    bool operator==(const CPCMItem &s) const;
+    bool operator!=(const CPCMItem &s) const;
 };
 
 class ZAlsaBackend : public QObject
@@ -71,6 +74,7 @@ public:
 
     QVector<CCardItem> cards() const;
     QVector<CPCMItem> pcmList() const;
+    bool getCardNumber(const QString &name, QString &cardId, unsigned int* devNum, unsigned int *subdevNum) const;
 
 private:
     QVector<CCardItem> m_cards;

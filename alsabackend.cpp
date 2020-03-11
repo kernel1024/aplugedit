@@ -161,6 +161,46 @@ QVector<CPCMItem> ZAlsaBackend::pcmList() const
     return res;
 }
 
+bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned int *devNum, unsigned int *subdevNum) const
+{
+    int err;
+    QByteArray deviceName = name.toUtf8();
+    snd_ctl_t *ctl;
+    snd_ctl_card_info_t *info;
+    snd_ctl_card_info_alloca(&info);
+    snd_pcm_info_t *pcminfo;
+    snd_pcm_info_alloca(&pcminfo);
+
+    err = snd_ctl_open(&ctl, deviceName.constData(), SND_CTL_NONBLOCK);
+    if (err < 0) {
+        qDebug() << "Failed to open ctl device: " << deviceName << snd_strerror(err);
+        return false;
+    }
+
+    err = snd_ctl_card_info(ctl,info);
+    if (err < 0) {
+        qDebug() << "Failed to get ctl device info: " << deviceName << snd_strerror(err);
+        snd_ctl_close(ctl);
+        return false;
+    }
+
+    cardId = QString::fromUtf8(snd_ctl_card_info_get_id(info));
+
+    err = snd_ctl_pcm_info(ctl,pcminfo);
+    if (err < 0) {
+        qDebug() << "Failed to get ctl device pcm info: " << deviceName << snd_strerror(err);
+        snd_ctl_close(ctl);
+        return false;
+    }
+
+    *devNum = snd_pcm_info_get_device(pcminfo);
+    *subdevNum = snd_pcm_info_get_subdevice(pcminfo);
+
+    snd_ctl_close(ctl);
+
+    return true;
+}
+
 CCardItem::CCardItem(const CCardItem &other)
 {
     cardName = other.cardName;
@@ -194,8 +234,23 @@ CPCMItem::CPCMItem(const CPCMItem &other)
     description = other.description;
 }
 
+CPCMItem::CPCMItem(const QString &aName)
+{
+    name = aName;
+}
+
 CPCMItem::CPCMItem(const QString &aName, const QStringList &aDescription)
 {
     name = aName;
     description = aDescription;
+}
+
+bool CPCMItem::operator==(const CPCMItem &s) const
+{
+    return (name == s.name);
+}
+
+bool CPCMItem::operator!=(const CPCMItem &s) const
+{
+    return !operator==(s);
 }

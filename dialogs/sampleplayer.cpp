@@ -319,7 +319,7 @@ bool ZSamplePlayer::startGstreamer()
     m_data.alsasink = gst_element_factory_make("alsasink", "sink");
 
     if (!m_data.pipeline || !m_data.source || !m_data.audioconvert
-            || !m_data.audioresample || !m_data.meter || !m_data.volume || !m_data.alsasink) {
+            || !m_data.audioresample || !m_data.volume || !m_data.alsasink) {
         addAuxMessage(tr("APlugEdit: one of pipeline element could not be created."));
         return false;
     }
@@ -328,9 +328,20 @@ bool ZSamplePlayer::startGstreamer()
 
     /* we add all elements into the pipeline */
     gst_bin_add_many(GST_BIN(m_data.pipeline),m_data.source,m_data.audioconvert,
-                     m_data.audioresample,m_data.meter,m_data.volume,m_data.alsasink,nullptr);
-    if (gst_element_link_many(m_data.audioconvert, m_data.audioresample,m_data.meter,
-                              m_data.volume,m_data.alsasink, nullptr) == FALSE) {
+                     m_data.audioresample,m_data.volume,m_data.alsasink,nullptr);
+    if (m_data.meter)
+        gst_bin_add(GST_BIN(m_data.pipeline),m_data.meter);
+
+    gboolean lnkres = FALSE;
+    if (m_data.meter) {
+        lnkres = gst_element_link_many(m_data.audioconvert, m_data.audioresample,m_data.meter,
+                                       m_data.volume,m_data.alsasink, nullptr);
+    } else {
+        lnkres = gst_element_link_many(m_data.audioconvert, m_data.audioresample,
+                                       m_data.volume,m_data.alsasink, nullptr);
+    }
+
+    if (lnkres == FALSE) {
         addAuxMessage(tr("APlugEdit: Unable to link pipeline."));
         stop();
         return false;
@@ -361,7 +372,8 @@ bool ZSamplePlayer::startGstreamer()
     }
 
     /* make sure we'll get messages from meter */
-    g_object_set (m_data.meter, "post-messages", TRUE, NULL);
+    if (m_data.meter)
+        g_object_set (m_data.meter, "post-messages", TRUE, NULL);
 
     QByteArray bsink = ui->comboAlsaSink->currentText().toLatin1();
     if (!bsink.isEmpty())
@@ -451,6 +463,18 @@ void ZSamplePlayer::updateSinkList()
     ui->comboAlsaSink->clear();
 
     const auto pcms = m_renderArea->getAllPCMNames();
+    const auto alsaPcms = gAlsa->pcmList();
+
+    const auto allPcms = pcms + alsaPcms;
+    if (!allPcms.contains(CPCMItem(QSL("default")))) {
+        QString desc = tr("Automatically added default DSP");
+        ui->comboAlsaSink->addItem(QSL("default"),desc);
+        int lastIdx = ui->comboAlsaSink->count()-1;
+        ui->comboAlsaSink->setItemData(lastIdx,desc,Qt::ToolTipRole);
+        ui->comboAlsaSink->setItemData(lastIdx,1,Qt::UserRole+1);
+        defaultIdx = lastIdx;
+    }
+
     for (const auto& pcm : pcms) {
         QStringList desc = pcm.description;
         if (desc.isEmpty())
@@ -461,7 +485,6 @@ void ZSamplePlayer::updateSinkList()
         if (pcm.name == savedPcm)
             savedIdx = lastIdx;
     }
-    const auto alsaPcms = gAlsa->pcmList();
     for (const auto& pcm : alsaPcms) {
         ui->comboAlsaSink->addItem(pcm.name,pcm.description);
         int lastIdx = ui->comboAlsaSink->count()-1;
@@ -469,7 +492,7 @@ void ZSamplePlayer::updateSinkList()
         ui->comboAlsaSink->setItemData(lastIdx,1,Qt::UserRole+1);
         if (pcm.name == savedPcm && savedIdx<0)
             savedIdx = lastIdx;
-        if (pcm.name == QSL("default"))
+        if (pcm.name.contains(QSL("default")) && defaultIdx<0)
             defaultIdx = lastIdx;
     }
 
@@ -510,7 +533,6 @@ void ZSamplePlayer::updateVolume(int value)
 {
     if (m_data.volume) {
         gdouble vol = (2.0 - log10(100.0 - static_cast<double>(value))) / 2.0;
-        ui->labelGstreamer->setText(QSL("%1").arg(vol));
         g_object_set(m_data.volume, "volume", vol, nullptr);
     }
 }
@@ -519,15 +541,40 @@ void ZSamplePlayer::getSinkInfo()
 {
     if (m_data.alsasink) {
         gchar *card;
+        gchar *deviceName;
         gchar *device;
         g_object_get(m_data.alsasink,
                      "card-name",&card,
-                     "device-name",&device, nullptr);
-        addAuxMessage(tr("APlugEdit: alsasink card: \"%1\", device: \"%2\".").arg(
+                     "device-name",&deviceName,
+                     "device",&device,nullptr);
+        QString sdevice = QString::fromUtf8(device);
+        addAuxMessage(tr(R"(APlugEdit: alsasink card: "%1", device name: "%2", ALSA output device: "%3".)").arg(
                           QString::fromUtf8(card),
-                          QString::fromUtf8(device)));
+                          QString::fromUtf8(deviceName),
+                          sdevice));
         g_free(card);
+        g_free(deviceName);
         g_free(device);
+
+        // get hw_info
+        QString cardId;
+        unsigned int devNum;
+        unsigned int subdevNum;
+        if (gAlsa->getCardNumber(sdevice,cardId,&devNum,&subdevNum)) {
+            QString procName = QSL("/proc/asound/%1/pcm%2p/sub%3/hw_params").arg(cardId).arg(devNum).arg(subdevNum);
+            addAuxMessage(tr(R"(APlugEdit: parsed procfs path for device "%1" is "%2".)").arg(sdevice,procName));
+            QFile f(procName);
+            if (f.open(QIODevice::ReadOnly)) {
+                QString info = tr("APlugEdit: card hardware info for selected device:\n");
+                info.append(QString::fromUtf8(f.readAll()));
+                addAuxMessage(info);
+                f.close();
+            } else {
+                addAuxMessage(tr("APlugEdit: error: unable to open procfs file."));
+            }
+        } else {
+            addAuxMessage(tr("APlugEdit: error: unable to get card info for selected device."));
+        }
     }
 }
 
