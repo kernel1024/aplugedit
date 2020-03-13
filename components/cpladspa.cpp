@@ -57,6 +57,7 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
         stream << QSL("    pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
         stream << QSL("  }") << endl;
         stream << QSL("  channels %1").arg(m_channels) << endl;
+        stream << QSL("  path \"%1\"").arg(ZGenericFuncs::getLADSPAPath()) << endl;
 
         if (!m_plugins.isEmpty()) {
             stream << QSL("  plugins {") << endl;
@@ -68,7 +69,7 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
                     policy = QSL("duplicate");
 
                 stream << QSL("    %1 {").arg(idx++) << endl;
-                stream << QSL("      label %1").arg(plug.plugLabel) << endl;
+                stream << QSL("      id %1  # Label: '%2'").arg(plug.plugID).arg(plug.plugLabel) << endl;
                 stream << QSL("      filename \"%1\"").arg(fi.absoluteFilePath()) << endl;
                 if (plug.usePolicy)
                     stream << QSL("      policy %1").arg(policy) << endl;
@@ -170,7 +171,10 @@ void ZCPLADSPA::readFromStreamLegacy( QDataStream & stream )
 
     // create simple instance plugin
     m_plugins.clear();
-    m_plugins.append(CLADSPAPlugItem(plugLabel,plugID,plugName,plugLibrary,controls));
+    bool ok;
+    qint64 pID = plugID.toLong(&ok);
+    if (ok)
+        m_plugins.append(CLADSPAPlugItem(plugLabel,pID,plugName,plugLibrary,controls));
 }
 
 void ZCPLADSPA::readFromJson(const QJsonValue &json)
@@ -234,7 +238,6 @@ int ZCPLADSPA::searchSampleRate()
         sampleRateWarn=true;
         sampleRate=48000;
         // TODO: Only FLOAT is supported by LADSPA. Suggest plug plugins - check for plug before hw/dmix?
-        // TODO: plugin sorting
     }
     return sampleRate;
 }

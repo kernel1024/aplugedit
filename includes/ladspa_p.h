@@ -88,27 +88,31 @@ public:
 class CLADSPAPlugItem
 {
 public:
+    bool usePolicy { false };
+    ZLADSPA::Policy policy { ZLADSPA::Policy::plDuplicate };
+    qint64 plugID { 0 };
+
     QString plugLabel;
-    qint64 plugID;
     QString plugName;
     QString plugLibrary;
-    ZLADSPA::Policy policy { ZLADSPA::Policy::plDuplicate };
-    bool usePolicy { false };
     CInOutBindings inputBindings;
     CInOutBindings outputBindings;
     QVector<ZLADSPAControlItem> plugControls;
+
     CLADSPAPlugItem() = default;
     ~CLADSPAPlugItem() = default;
     CLADSPAPlugItem(const CLADSPAPlugItem& other) = default;
     explicit CLADSPAPlugItem(const QJsonValue &json);
     CLADSPAPlugItem(const QString &AplugLabel,
-                    const qint64 &AplugID,
+                    qint64 AplugID,
                     const QString &AplugName,
                     const QString &AplugLibrary,
-                    const QVector<ZLADSPAControlItem> &aPlugControls, bool aUsePolicy = false,
+                    const QVector<ZLADSPAControlItem> &aPlugControls,
+                    bool aUsePolicy = false,
                     ZLADSPA::Policy aPolicy = ZLADSPA::Policy::plDuplicate,
                     const CInOutBindings &aInputBindings = CInOutBindings(),
                     const CInOutBindings &aOutputBindings = CInOutBindings());
+
     QJsonValue storeToJson() const;
     QStringList getBindingsDesc() const;
 };

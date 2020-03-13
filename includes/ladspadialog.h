@@ -38,7 +38,7 @@ public:
     int getChannels() const;
 
 private Q_SLOTS:
-    void changeLADSPA(int index);
+    void comboPluginIndexChanged(int index);
     void valueChanged(double value);
     void stateChanged(int value);
     void addInputBinding();
@@ -57,13 +57,14 @@ private:
     QHash<qint64,QString> m_pluginName;
     QHash<qint64,QString> m_pluginLabel;
     QVector<ZLADSPAControlItem> m_controlItems;
+
     QVector<ZLADSPAControlItem> m_preservedControlItems;
-    QString m_preservedPlugLabel;
-    qint64 m_preservedPlugID;
 
     QStringList m_selectedPluginValidInputs;
     QStringList m_selectedPluginValidOutputs;
-    qint64 m_selectedPlugin { 0L };
+
+    qint64 m_selectedPluginID { 0L };
+    qint64 m_preservedPlugID { 0 };
     int m_sampleRate { 48000 };
     int m_channels { 2 };
     bool m_isShowed { false };

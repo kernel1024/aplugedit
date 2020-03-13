@@ -121,7 +121,7 @@ ZLADSPAControlItem::ZLADSPAControlItem(const QJsonValue &json)
 CLADSPAPlugItem::CLADSPAPlugItem(const QJsonValue &json)
 {
     plugName = json.toObject().value(QSL("name")).toString();
-    plugID = json.toObject().value(QSL("ID")).toString();
+    plugID = static_cast<qint64>(json.toObject().value(QSL("ID")).toInt(0));
     plugLabel = json.toObject().value(QSL("label")).toString();
     plugLibrary = json.toObject().value(QSL("library")).toString();
 
@@ -152,7 +152,7 @@ CLADSPAPlugItem::CLADSPAPlugItem(const QJsonValue &json)
         plugControls.append(ZLADSPAControlItem(item));
 }
 
-CLADSPAPlugItem::CLADSPAPlugItem(const QString &AplugLabel, const qint64 &AplugID, const QString &AplugName,
+CLADSPAPlugItem::CLADSPAPlugItem(const QString &AplugLabel, qint64 AplugID, const QString &AplugName,
                                  const QString &AplugLibrary, const QVector<ZLADSPAControlItem> &aPlugControls, bool aUsePolicy,
                                  ZLADSPA::Policy aPolicy, const CInOutBindings &aInputBindings,
                                  const CInOutBindings &aOutputBindings)
@@ -172,7 +172,7 @@ QJsonValue CLADSPAPlugItem::storeToJson() const
 {
     QJsonObject jplug;
     jplug.insert(QSL("name"),plugName);
-    jplug.insert(QSL("ID"),plugID);
+    jplug.insert(QSL("ID"),static_cast<int>(plugID));
     jplug.insert(QSL("label"),plugLabel);
     jplug.insert(QSL("library"),plugLibrary);
     jplug.insert(QSL("usePolicy"),usePolicy);
@@ -503,9 +503,10 @@ QVariant ZLADSPAListModel::data(const QModelIndex &index, int role) const
     int idx = index.row();
     switch (role) {
         case Qt::DisplayRole:
-            return QSL("%1 (%2/%3)").arg(m_items.at(idx).plugName,
-                                         m_items.at(idx).plugID,
-                                         m_items.at(idx).plugLabel);
+            return QSL("%1 (%2/%3)")
+                    .arg(m_items.at(idx).plugName)
+                    .arg(m_items.at(idx).plugID)
+                    .arg(m_items.at(idx).plugLabel);
         case Qt::UserRole:
             return m_items.at(idx).getBindingsDesc();
         default:

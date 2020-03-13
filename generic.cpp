@@ -1,3 +1,4 @@
+#include <QtWidgets>
 #include <cmath>
 #include <cfloat>
 #include "includes/generic.h"
@@ -29,6 +30,24 @@ int ZGenericFuncs::numDigits(int n) {
 int ZGenericFuncs::truncDouble(double num)
 {
     return static_cast<int>(std::trunc(num));
+}
+
+QString ZGenericFuncs::getLADSPAPath()
+{
+    static QString ladspa_path;
+    if (ladspa_path.isEmpty()) {
+        ladspa_path=qEnvironmentVariable("LADSPA_PATH");
+        if (ladspa_path.isEmpty()) {
+            ladspa_path = QSL("/usr/lib/ladspa:/usr/local/lib/ladspa");
+            QWidget* w = nullptr;
+            if (!(qApp->topLevelWidgets().isEmpty()))
+                w = qApp->topLevelWidgets().first();
+            QMessageBox::warning(w,tr("LADSPA warning"),
+                                 tr("Warning: You do not have a LADSPA_PATH environment variable set.\n"
+                                    "Defaulting to /usr/lib/ladspa, /usr/local/lib/ladspa."));
+        }
+    }
+    return ladspa_path;
 }
 
 ZDescListItemDelegate::ZDescListItemDelegate(QObject *parent)

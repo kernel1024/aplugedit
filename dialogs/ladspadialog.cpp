@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include <cfloat>
+#include <algorithm>
 #include <ladspa.h>
 #include "includes/generic.h"
 #include "includes/ladspadialog.h"
@@ -63,7 +64,7 @@ ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
 
     checkPolicy->setCheckState(Qt::PartiallyChecked);
 
-    connect(comboPlugin,qOverload<int>(&QComboBox::currentIndexChanged),this,&ZLADSPADialog::changeLADSPA);
+    connect(comboPlugin,qOverload<int>(&QComboBox::currentIndexChanged),this,&ZLADSPADialog::comboPluginIndexChanged);
     connect(buttonAddInput,&QPushButton::clicked,this,&ZLADSPADialog::addInputBinding);
     connect(buttonDeleteInput,&QPushButton::clicked,this,&ZLADSPADialog::deleteInputBinding);
     connect(buttonAddOutput,&QPushButton::clicked,this,&ZLADSPADialog::addOutputBinding);
@@ -73,16 +74,19 @@ ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
 
 ZLADSPADialog::~ZLADSPADialog() = default;
 
-void ZLADSPADialog::changeLADSPA(int index)
+void ZLADSPADialog::comboPluginIndexChanged(int index)
 {
-    m_selectedPlugin = comboPlugin->itemData(index).toLongLong();
+    if (index<0) {
+        m_selectedPluginID = 0L;
+    } else {
+        m_selectedPluginID = comboPlugin->itemData(index).toLongLong();
+    }
     analyzePlugin();
 }
 
 void ZLADSPADialog::setPlugItem(const CLADSPAPlugItem &item)
 {
     m_isShowed=false;
-    m_preservedPlugLabel=item.plugLabel;
     m_preservedPlugID=item.plugID;
     m_preservedControlItems=item.plugControls;
 
@@ -103,21 +107,22 @@ void ZLADSPADialog::showEvent(QShowEvent * event)
     Q_UNUSED(event)
 
     if (m_isShowed) return;
-    m_isShowed=true;
+    m_isShowed = true;
+
     scanPlugins();
-    if (m_pluginLabel.count()==0) {
-        changeLADSPA(-1);
+
+    if (m_pluginLabel.isEmpty()) {
+        comboPluginIndexChanged(-1);
         return;
     }
-    int idx = -1;
-    if (!m_pluginLabel.isEmpty() && m_preservedPlugID > 0)
-        idx = m_pluginLabel.indexOf(m_preservedPlugLabel);
-    if ((idx==-1) || (m_pluginID.indexOf(m_preservedPlugID)!=idx)) {
+
+    int listIdx = comboPlugin->findData(m_preservedPlugID);
+    if (listIdx < 0) {
         comboPlugin->setCurrentIndex(0);
-        changeLADSPA(0);
         return;
     }
-    comboPlugin->setCurrentIndex(idx);
+
+    comboPlugin->setCurrentIndex(listIdx);
     for (int i=0;i<m_preservedControlItems.count();i++) {
         if (i>=m_controlItems.count()) continue;
         if (m_controlItems.at(i).portName!=m_preservedControlItems.at(i).portName) continue;
@@ -148,7 +153,7 @@ void ZLADSPADialog::showEvent(QShowEvent * event)
 
 CLADSPAPlugItem ZLADSPADialog::getPlugItem() const
 {
-    if (m_selectedPlugin <= 0L) return CLADSPAPlugItem();
+    if (m_selectedPluginID == 0L) return CLADSPAPlugItem();
 
     QVector<ZLADSPAControlItem> controls;
     controls.reserve(m_controlItems.count());
@@ -166,10 +171,10 @@ CLADSPAPlugItem ZLADSPADialog::getPlugItem() const
         usePolicy = true;
     }
 
-    CLADSPAPlugItem item(m_pluginLabel.value(m_selectedPlugin),
-                         m_selectedPlugin,
-                         m_pluginName.value(m_selectedPlugin),
-                         m_pluginFile.value(m_selectedPlugin),
+    CLADSPAPlugItem item(m_pluginLabel.value(m_selectedPluginID),
+                         m_selectedPluginID,
+                         m_pluginName.value(m_selectedPluginID),
+                         m_pluginFile.value(m_selectedPluginID),
                          controls,usePolicy,policy,m_inputsModel->getBindings(),
                          m_outputsModel->getBindings());
 
@@ -268,7 +273,7 @@ void ZLADSPADialog::readInfoFromControls()
 
 void ZLADSPADialog::scanPlugins()
 {
-    m_selectedPlugin = 0L;
+    m_selectedPluginID = 0L;
     comboPlugin->clear();
     m_pluginFile.clear();
     m_pluginName.clear();
@@ -278,18 +283,10 @@ void ZLADSPADialog::scanPlugins()
     clearCItems();
     m_controls->resize(sizeHint());
 
-    static QString ladspa_path;
-    if (ladspa_path.isEmpty()) {
-        ladspa_path=qEnvironmentVariable("LADSPA_PATH");
-        if (ladspa_path.isEmpty()) {
-            ladspa_path = QSL("/usr/lib/ladspa:/usr/local/lib/ladspa");
-            QMessageBox::warning(this,tr("LADSPA warning"),
-                                 tr("Warning: You do not have a LADSPA_PATH environment variable set.\n"
-                                    "Defaulting to /usr/lib/ladspa, /usr/local/lib/ladspa."));
-        }
-    }
+    using CComboPair = QPair<QString,qint64>;
+    QVector<CComboPair> comboItems;
 
-    const QStringList ladspa_dirs=ladspa_path.split(':',QString::SkipEmptyParts);
+    const QStringList ladspa_dirs=ZGenericFuncs::getLADSPAPath().split(':',QString::SkipEmptyParts);
     for (const auto &dir : ladspa_dirs) {
         QDir ladspa_dir(dir);
         ladspa_dir.setFilter(QDir::Files);
@@ -302,20 +299,27 @@ void ZLADSPADialog::scanPlugins()
                     for (unsigned long lIndex=0;(psDescriptor=fDescriptorFunction(lIndex))!=nullptr;lIndex++) {
                         QString pluginName = QString::fromUtf8(psDescriptor->Name);
                         QString pluginLabel = QString::fromUtf8(psDescriptor->Label);
-                        qint64 plugID = static_cast<qint64>(psDescriptor->UniqueID);
+                        auto plugID = static_cast<qint64>(psDescriptor->UniqueID);
                         m_pluginFile[plugID] = ladspa_dir.filePath(ladspa_dir[j]);
                         m_pluginName[plugID] = pluginName;
                         m_pluginLabel[plugID] = pluginLabel;
-                        comboPlugin->addItem(QSL("%1 (%2/%3)")
-                                             .arg(pluginName)
-                                             .arg(plugID)
-                                             .arg(pluginLabel),plugID);
+                        comboItems.append(qMakePair(QSL("%1 (%2/%3)")
+                                                    .arg(pluginName)
+                                                    .arg(plugID)
+                                                    .arg(pluginLabel),plugID));
                     }
                 }
                 plugin.unload();
             }
         }
     }
+    std::sort(comboItems.begin(),comboItems.end(),[](const CComboPair &a, const CComboPair &b){
+        return (a.first < b.first);
+    });
+    comboPlugin->blockSignals(true);
+    for (const auto &i : qAsConst(comboItems))
+        comboPlugin->addItem(i.first,i.second);
+    comboPlugin->blockSignals(false);
 }
 
 void ZLADSPADialog::analyzePlugin()
@@ -329,8 +333,9 @@ void ZLADSPADialog::analyzePlugin()
     clearCItems();
     m_controls->resize(sizeHint());
 
-    if (m_selectedPlugin <= 0) return;
-    QLibrary plugin(m_pluginFile[m_selectedPlugin]);
+    if (m_selectedPluginID == 0L) return;
+
+    QLibrary plugin(m_pluginFile.value(m_selectedPluginID));
     if (plugin.load()) {
         auto pfDescriptorFunction = reinterpret_cast<LADSPA_Descriptor_Function>(plugin.resolve("ladspa_descriptor"));
         if (pfDescriptorFunction) {
@@ -340,7 +345,7 @@ void ZLADSPADialog::analyzePlugin()
             LADSPA_PortRangeHintDescriptor iHintDescriptor;
             LADSPA_Data fBound;
             LADSPA_Data fDefault;
-            QString sPluginLabel = m_pluginLabel[m_selectedPlugin];
+            QString sPluginLabel = m_pluginLabel.value(m_selectedPluginID);
             bool foundPlugin=false;
 
             for (lPluginIndex = 0;; lPluginIndex++) {
@@ -356,7 +361,7 @@ void ZLADSPADialog::analyzePlugin()
                 pinfo+=tr("Plugin Unique ID: <b>%1</b><br/>").arg(psDescriptor->UniqueID);
                 pinfo+=tr("Maker: <b>\"%1\"</b><br/>").arg(QString::fromUtf8(psDescriptor->Maker));
                 pinfo+=tr("Copyright: <b>\"%1\"</b><br/>").arg(QString::fromUtf8(psDescriptor->Copyright));
-                pinfo+=tr("Plugin library: <b>\"%1\"</b><br/><br/>").arg(m_pluginFile[m_selectedPlugin]);
+                pinfo+=tr("Plugin library: <b>\"%1\"</b><br/><br/>").arg(m_pluginFile.value(m_selectedPluginID));
 
                 if (LADSPA_IS_REALTIME(psDescriptor->Properties)) {
                     pinfo+=tr("Must Run Real-Time: <b>Yes</b><br/>");
@@ -407,15 +412,22 @@ void ZLADSPADialog::analyzePlugin()
                 if (psDescriptor->PortCount == 0)
                     pinfo+=tr("<b><font color=\"#8B0000\">ERROR: PLUGIN HAS NO PORTS.</font></b><br/>");
 
+                pinfo+=tr("Ports:<br/>");
+
                 for (lPortIndex = 0;lPortIndex < psDescriptor->PortCount;lPortIndex++) {
+
+                    QString name = QString::fromUtf8(psDescriptor->PortNames[lPortIndex]);
+
                     if (LADSPA_IS_PORT_AUDIO(psDescriptor->PortDescriptors[lPortIndex]) &&
                             LADSPA_IS_PORT_INPUT(psDescriptor->PortDescriptors[lPortIndex])) {
-                        m_selectedPluginValidInputs.append(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
+                        m_selectedPluginValidInputs.append(name);
+                        pinfo+=tr("    <b>\"%1\"</b> input, audio<br/>").arg(name);
                     }
 
                     if (LADSPA_IS_PORT_AUDIO(psDescriptor->PortDescriptors[lPortIndex]) &&
                             LADSPA_IS_PORT_OUTPUT(psDescriptor->PortDescriptors[lPortIndex])) {
-                        m_selectedPluginValidOutputs.append(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
+                        m_selectedPluginValidOutputs.append(name);
+                        pinfo+=tr("    <b>\"%1\"</b> output, audio<br/>").arg(name);
                     }
 
                     if (LADSPA_IS_PORT_CONTROL(psDescriptor->PortDescriptors[lPortIndex]) &&
@@ -433,17 +445,16 @@ void ZLADSPADialog::analyzePlugin()
                                         | LADSPA_HINT_DEFAULT_1)) {
                                 pinfo+=tr("<b><font color=\"#8B0000\">ERROR: TOGGLED INCOMPATIBLE WITH OTHER HINT</font></b><br/>");
                             } else {
-                                auto acheckBox = new QCheckBox(
-                                                     tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
-                                                     m_controls);
+                                auto acheckBox = new QCheckBox(QSL("%1").arg(name),m_controls);
                                 bool toggledState=false;
                                 if (LADSPA_IS_HINT_DEFAULT_1(iHintDescriptor)) toggledState=true;
                                 m_controlItems << ZLADSPAControlItem(
-                                                      tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
+                                                      QSL("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
                                                       ZLADSPA::aacToggle,toggledState,0.0,acheckBox,nullptr,nullptr);
                                 acheckBox->setObjectName(tr("checkBox#%1").arg(m_controlItems.size()-1));
                                 m_controls->layout()->addWidget(acheckBox);
                                 connect(acheckBox,SIGNAL(stateChanged(int)),this,SLOT(stateChanged(int)));
+                                pinfo+=tr("    <b>\"%1\"</b> input, control, toggle, default: %2<br/>").arg(name).arg(toggledState);
                             }
                         } else {
                             auto ahboxLayout = new QHBoxLayout();
@@ -455,10 +466,10 @@ void ZLADSPADialog::analyzePlugin()
                             } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
                                 alabel->setText(tr("%1 (in Hz)").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
                             } else {
-                                alabel->setText(tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
+                                alabel->setText(QSL("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
                             }
                             auto aspinBox=new QDoubleSpinBox(m_controls);
-                            QString pname=tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
+                            QString pname=QSL("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
 
                             ZLADSPA::Control ciType;
                             if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
@@ -644,6 +655,11 @@ void ZLADSPADialog::analyzePlugin()
                             } else {
                                 m_controlItems.last().aasValue=aspinBox->value();
                             }
+
+                            pinfo+=tr("    <b>\"%1\"</b> input, control, %2 to %3, default: %4<br/>")
+                                    .arg(name).arg(aspinBox->minimum()).arg(aspinBox->maximum()).arg(aspinBox->value());
+
+
                         } // else ... (LADSPA_IS_HINT_TOGGLED(iHintDescriptor))
 
                     } // if (LADSPA_IS_PORT_CONTROL...

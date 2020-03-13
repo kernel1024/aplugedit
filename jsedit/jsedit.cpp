@@ -92,6 +92,7 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("output"),
                    QSL("controls"),
                    QSL("filename"),
+                   QSL("id"),
                    QSL("policy")
                  };
 

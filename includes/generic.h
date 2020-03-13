@@ -36,6 +36,7 @@ public:
 
     static int numDigits(int n);
     static int truncDouble(double num);
+    static QString getLADSPAPath();
 };
 
 class ZDescListItemDelegate : public QStyledItemDelegate

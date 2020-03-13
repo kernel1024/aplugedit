@@ -292,6 +292,8 @@ void ZSamplePlayer::initGstreamer()
     }
 
     gstInitialized = true;
+
+    // TODO: do not use alsasink. output directly to alsa, avoiding alsa config caching by gstreamer
 }
 
 bool ZSamplePlayer::startGstreamer()
