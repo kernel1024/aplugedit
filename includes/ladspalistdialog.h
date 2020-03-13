@@ -17,66 +17,39 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef LADSPADLG_H
-#define LADSPADLG_H
-#include <QtWidgets>
-#include <QtCore>
-#include "ladspa_p.h"
-#include "ui_ladspadlg.h"
+#ifndef LADSPALISTDIALOG_H
+#define LADSPALISTDIALOG_H
 
-class ZLADSPADialog : public QDialog, public Ui::ZLADSPADialog
+#include <QtCore>
+#include <QtWidgets>
+#include "cpbase.h"
+#include "ladspadialog.h"
+#include "ladspa_p.h"
+
+namespace Ui {
+class ZLADSPAListDialog;
+}
+
+class ZLADSPAListDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    ZLADSPADialog(QWidget *parent, int channels, int sampleRate);
-    ~ZLADSPADialog() override;
+    explicit ZLADSPAListDialog(QWidget *parent, int sampleRate);
+    ~ZLADSPAListDialog();
 
-    void setPlugItem(const CLADSPAPlugItem& item);
-    CLADSPAPlugItem getPlugItem() const;
-
-    int getChannels() const;
+    void setParams(int channels, const QVector<CLADSPAPlugItem> &plugins);
+    void getParams(int &channels, QVector<CLADSPAPlugItem> &plugins);
 
 private Q_SLOTS:
-    void changeLADSPA(int index);
-    void valueChanged(double value);
-    void stateChanged(int value);
-    void addInputBinding();
-    void deleteInputBinding();
-    void addOutputBinding();
-    void deleteOutputBinding();
-    void policyChanged(bool status);
+    void addPlugin();
+    void deletePlugin();
+    void editPlugin();
 
 private:
-    ZResizableFrame* m_controls;
-    QVBoxLayout* m_vboxLayout;
-    ZLADSPABindingsModel* m_inputsModel;
-    ZLADSPABindingsModel* m_outputsModel;
-
-    QStringList m_pluginFile;
-    QStringList m_pluginName;
-    QStringList m_pluginID;
-    QStringList m_pluginLabel;
-    QVector<ZLADSPAControlItem> m_controlItems;
-    QVector<ZLADSPAControlItem> m_preservedControlItems;
-    QString m_preservedPlugLabel;
-    QString m_preservedPlugID;
-
-    QStringList m_selectedPluginValidInputs;
-    QStringList m_selectedPluginValidOutputs;
-    int m_selectedPlugin { 0 };
+    Ui::ZLADSPAListDialog *ui;
+    ZLADSPAListModel *model;
     int m_sampleRate { 48000 };
-    int m_channels { 2 };
-    bool m_isShowed { false };
-
-    void scanPlugins();
-    void analyzePlugin(int index);
-    void clearCItems();
-    void readInfoFromControls();
-
-protected:
-    void closeEvent(QCloseEvent *event) override;
-    void showEvent (QShowEvent *event) override;
 };
 
-#endif
+#endif // LADSPALISTDIALOG_H

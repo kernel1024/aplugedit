@@ -9,7 +9,9 @@ HEADERS       = includes/cpbase.h \
                 includes/generatedialog.h \
                 includes/generic.h \
                 includes/hwdialog.h \
+                includes/ladspa_p.h \
                 includes/ladspadialog.h \
+                includes/ladspalistdialog.h \
                 includes/meterdialog.h \
                 includes/ratedialog.h \
                 includes/renderarea.h \
@@ -38,6 +40,7 @@ SOURCES       = main.cpp \
                 dialogs/generatedialog.cpp \
                 dialogs/hwdialog.cpp \
                 dialogs/ladspadialog.cpp \
+                dialogs/ladspalistdialog.cpp \
                 dialogs/meterdialog.cpp \
                 dialogs/ratedialog.cpp \
                 dialogs/routedialog.cpp \
@@ -45,6 +48,7 @@ SOURCES       = main.cpp \
                 dialogs/sampleplayer_p.cpp \
                 generic.cpp \
                 jsedit/jsedit.cpp \
+                ladspa_p.cpp \
                 renderarea.cpp \
                 mainwindow.cpp \
                 components/cpbase.cpp \
@@ -65,6 +69,7 @@ FORMS         = \
                 ui/hintdlg.ui \
                 ui/hwdlg.ui \
                 ui/ladspadlg.ui \
+                ui/ladspalistdialog.ui \
                 ui/mainwindow.ui \
                 ui/meterdlg.ui \
                 ui/ratedlg.ui \

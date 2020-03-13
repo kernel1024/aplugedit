@@ -33,3 +33,9 @@ int main(int argc, char *argv[])
     mainWindow.show();
     return app.exec();
 }
+
+// TODO: multi (with optional plug/table adaptor) with multiple outputs
+// TODO: softvol
+// TODO: allow multi links to single input and link parameters tracking (channels, samplerate, format)
+// TODO: ctl branch management for softvol (and ladspa controls?)
+// TODO: alsamixer GUI, with staled soft-controls (from plugins) cleaner

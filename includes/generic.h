@@ -22,6 +22,8 @@
 
 #include <QObject>
 #include <QString>
+#include <QStyledItemDelegate>
+#include <QPainter>
 
 #define QSL QStringLiteral
 
@@ -33,6 +35,21 @@ public:
     virtual ~ZGenericFuncs();
 
     static int numDigits(int n);
+    static int truncDouble(double num);
+};
+
+class ZDescListItemDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+private:
+    Q_DISABLE_COPY(ZDescListItemDelegate)
+public:
+    explicit ZDescListItemDelegate(QObject *parent = nullptr);
+    ~ZDescListItemDelegate() override;
+
+protected:
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
 
 #endif // GENERIC_H

@@ -23,18 +23,17 @@
 #include <QtCore>
 #include <QtGui>
 #include "cpbase.h"
-#include "ladspadialog.h"
+#include "ladspalistdialog.h"
 
 class ZCPLADSPA : public ZCPBase
 {
     Q_OBJECT
 private:
-    QString m_plugLabel;
-    QString m_plugID;
-    QString m_plugName;
-    QString m_plugLibrary;
-    ZLADSPAControlItems m_plugControls;
+    int m_channels { 2 };
+    QVector<CLADSPAPlugItem> m_plugins;
+
     int searchSampleRate();
+    QStringList getPlugNames() const;
 
 public:
     ZCPInput* fInp { nullptr };

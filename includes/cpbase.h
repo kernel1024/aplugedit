@@ -80,7 +80,7 @@ private:
     Q_DISABLE_COPY(ZCPBase)
 
 protected:
-    void paintBase(QPainter &p);
+    int paintBase(QPainter &p, bool isGrowable = false);
     void mouseMoveEvent(QMouseEvent * event) override;
     void mousePressEvent(QMouseEvent * event) override;
     void mouseReleaseEvent(QMouseEvent * event) override;

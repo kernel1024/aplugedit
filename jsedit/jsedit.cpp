@@ -90,12 +90,16 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("label"),
                    QSL("input"),
                    QSL("output"),
-                   QSL("controls")
+                   QSL("controls"),
+                   QSL("filename"),
+                   QSL("policy")
                  };
 
     // ALSA built-in plugins and parameter values
     m_knownIds = { QSL("on"),
                    QSL("off"),
+                   QSL("none"),
+                   QSL("duplicate"),
                    QSL("linear"),
                    QSL("lfloat"),
                    QSL("iec958"),

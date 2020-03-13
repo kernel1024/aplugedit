@@ -29,151 +29,151 @@
 #include "includes/generic.h"
 #include "includes/ladspadialog.h"
 
-ZLADSPADialog::ZLADSPADialog(QWidget *parent, int aSampleRate)
+ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
     : QDialog(parent)
 {
     setupUi(this);
 
-    auto alScroller=new QScrollArea(alTabSettings);
+    auto alScroller=new QScrollArea(tabSettings);
     alScroller->setWidgetResizable(true);
 
-    alControls = new ZResizableFrame(alScroller);
-    alControls->setObjectName(QSL("alControls"));
-    alControls->setFrameShape(QFrame::StyledPanel);
-    alControls->setFrameShadow(QFrame::Plain);
-    if (auto vl=qobject_cast<QGridLayout*>(alTabSettings->layout()))
+    m_controls = new ZResizableFrame(alScroller);
+    m_controls->setObjectName(QSL("alControls"));
+    m_controls->setFrameShape(QFrame::StyledPanel);
+    m_controls->setFrameShadow(QFrame::Plain);
+    if (auto vl=qobject_cast<QGridLayout*>(tabSettings->layout()))
         vl->addWidget(alScroller,0,0,1,1);
-    alControls->setMaximumSize(QSize(5*alTabSettings->width()/6,3000));
-    alScroller->setWidget(alControls);
+    m_controls->setMaximumSize(QSize(5*tabSettings->width()/6,3000));
+    alScroller->setWidget(m_controls);
 
-    vboxCLayout = new QVBoxLayout(alControls);
-    vboxCLayout->setSpacing(6);
-    vboxCLayout->setMargin(9);
-    vboxCLayout->setObjectName(QSL("vboxCLayout"));
+    m_vboxLayout = new QVBoxLayout(m_controls);
+    m_vboxLayout->setSpacing(6);
+    m_vboxLayout->setMargin(9);
+    m_vboxLayout->setObjectName(QSL("vboxCLayout"));
 
-    alSampleRate=aSampleRate;
+    m_sampleRate = sampleRate;
+    m_channels = channels;
 
-    connect(alPlugin,qOverload<int>(&QComboBox::currentIndexChanged),this,&ZLADSPADialog::changeLADSPA);
+    m_inputsModel = new ZLADSPABindingsModel(this);
+    m_outputsModel = new ZLADSPABindingsModel(this);
+    tableInputs->setModel(m_inputsModel);
+    tableOutputs->setModel(m_outputsModel);
+    tableInputs->setItemDelegateForColumn(1, new ZLADSPAPortEditDelegate(this));
+    tableOutputs->setItemDelegateForColumn(1, new ZLADSPAPortEditDelegate(this));
+
+    checkPolicy->setCheckState(Qt::PartiallyChecked);
+
+    connect(comboPlugin,qOverload<int>(&QComboBox::currentIndexChanged),this,&ZLADSPADialog::changeLADSPA);
+    connect(buttonAddInput,&QPushButton::clicked,this,&ZLADSPADialog::addInputBinding);
+    connect(buttonDeleteInput,&QPushButton::clicked,this,&ZLADSPADialog::deleteInputBinding);
+    connect(buttonAddOutput,&QPushButton::clicked,this,&ZLADSPADialog::addOutputBinding);
+    connect(buttonDeleteOutput,&QPushButton::clicked,this,&ZLADSPADialog::deleteOutputBinding);
+    connect(checkPolicy,&QCheckBox::clicked,this,&ZLADSPADialog::policyChanged);
 }
 
 ZLADSPADialog::~ZLADSPADialog() = default;
 
-ZResizableFrame::ZResizableFrame(QWidget *parent)
-    : QFrame(parent)
-{
-    alScroller=qobject_cast<QScrollArea*>(parent);
-}
-
-QSize ZResizableFrame::minimumSizeHint() const
-{
-    QRect r(0,0,width(),0);
-    for (int i=0;i<children().count();i++)
-    {
-        QWidget* w=qobject_cast<QWidget*>(children().at(i));
-        if (!w) continue;
-        if ((qobject_cast<QCheckBox*>(w)) || (qobject_cast<QDoubleSpinBox*>(w)))
-        {
-            r.adjust(0,0,0,7*w->sizeHint().height()/5);
-        }
-    }
-    if (r.height()==0)
-        return QSize(r.width(),r.height());
-
-    return size().expandedTo(QSize(r.width(),r.height()));
-}
-
-QSize ZResizableFrame::sizeHint() const
-{
-    return minimumSizeHint();
-}
-
 void ZLADSPADialog::changeLADSPA(int index)
 {
-    selectedPlugin=index;
+    m_selectedPlugin=index;
     analyzePlugin(index);
 }
 
-void ZLADSPADialog::setParams(const QString &plugLabel, const QString &plugID,
-                              const ZLADSPAControlItems &controlItems)
+void ZLADSPADialog::setPlugItem(const CLADSPAPlugItem &item)
 {
-    isShowed=false;
-    m_preservedPlugLabel=plugLabel;
-    m_preservedPlugID=plugID;
-    m_preservedControlItems=controlItems;
+    m_isShowed=false;
+    m_preservedPlugLabel=item.plugLabel;
+    m_preservedPlugID=item.plugID;
+    m_preservedControlItems=item.plugControls;
+
+    if (!item.usePolicy) {
+        checkPolicy->setCheckState(Qt::PartiallyChecked);
+    } else if (item.policy==ZLADSPA::Policy::plDuplicate) {
+        checkPolicy->setCheckState(Qt::Checked);
+    } else {
+        checkPolicy->setCheckState(Qt::Unchecked);
+    }
+
+    m_inputsModel->setBindings(item.inputBindings);
+    m_outputsModel->setBindings(item.outputBindings);
 }
 
 void ZLADSPADialog::showEvent(QShowEvent * event)
 {
     Q_UNUSED(event)
 
-    if (isShowed) return;
-    isShowed=true;
+    if (m_isShowed) return;
+    m_isShowed=true;
     scanPlugins();
-    controlsRequested=true;
-    if (lsPluginLabel.count()==0) {
+    if (m_pluginLabel.count()==0) {
         changeLADSPA(-1);
         return;
     }
     int idx = -1;
-    if (!lsPluginLabel.isEmpty() && !m_preservedPlugID.isEmpty())
-        idx = lsPluginLabel.indexOf(m_preservedPlugLabel);
-    if ((idx==-1) || (lsPluginID.indexOf(m_preservedPlugID)!=idx)) {
-        alPlugin->setCurrentIndex(0);
+    if (!m_pluginLabel.isEmpty() && !m_preservedPlugID.isEmpty())
+        idx = m_pluginLabel.indexOf(m_preservedPlugLabel);
+    if ((idx==-1) || (m_pluginID.indexOf(m_preservedPlugID)!=idx)) {
+        comboPlugin->setCurrentIndex(0);
         changeLADSPA(0);
         return;
     }
-    alPlugin->setCurrentIndex(idx);
+    comboPlugin->setCurrentIndex(idx);
     for (int i=0;i<m_preservedControlItems.count();i++) {
-        if (i>=alCItems.count()) continue;
-        if (alCItems.at(i).portName!=m_preservedControlItems.at(i).portName) continue;
-        alCItems[i].aatType = m_preservedControlItems.at(i).aatType;
-        alCItems[i].aasToggle = m_preservedControlItems.at(i).aasToggle;
-        alCItems[i].aasValue = m_preservedControlItems.at(i).aasValue;
-        alCItems[i].aasFreq = m_preservedControlItems.at(i).aasFreq;
-        alCItems[i].aasInt = m_preservedControlItems.at(i).aasInt;
-        if (alCItems.at(i).aatType==ZLADSPA::aacToggle) {
-            if (auto w=qobject_cast<QCheckBox*>(alCItems.at(i).aawControl)) {
-                if (alCItems.at(i).aasToggle) {
+        if (i>=m_controlItems.count()) continue;
+        if (m_controlItems.at(i).portName!=m_preservedControlItems.at(i).portName) continue;
+        m_controlItems[i].aatType = m_preservedControlItems.at(i).aatType;
+        m_controlItems[i].aasToggle = m_preservedControlItems.at(i).aasToggle;
+        m_controlItems[i].aasValue = m_preservedControlItems.at(i).aasValue;
+        m_controlItems[i].aasFreq = m_preservedControlItems.at(i).aasFreq;
+        m_controlItems[i].aasInt = m_preservedControlItems.at(i).aasInt;
+        if (m_controlItems.at(i).aatType==ZLADSPA::aacToggle) {
+            if (auto w=qobject_cast<QCheckBox*>(m_controlItems.at(i).aawControl)) {
+                if (m_controlItems.at(i).aasToggle) {
                     w->setCheckState(Qt::Checked);
                 } else {
                     w->setCheckState(Qt::Unchecked);
                 }
             }
-        } else if (auto w=qobject_cast<QDoubleSpinBox*>(alCItems.at(i).aawControl)) {
-            if (alCItems.at(i).aatType==ZLADSPA::aacInteger) {
-                w->setValue(alCItems.at(i).aasInt);
-            } else if (alCItems.at(i).aatType==ZLADSPA::aacFreq) {
-                w->setValue(alCItems.at(i).aasFreq);
+        } else if (auto w=qobject_cast<QDoubleSpinBox*>(m_controlItems.at(i).aawControl)) {
+            if (m_controlItems.at(i).aatType==ZLADSPA::aacInteger) {
+                w->setValue(m_controlItems.at(i).aasInt);
+            } else if (m_controlItems.at(i).aatType==ZLADSPA::aacFreq) {
+                w->setValue(m_controlItems.at(i).aasFreq);
             } else {
-                w->setValue(alCItems.at(i).aasValue);
+                w->setValue(m_controlItems.at(i).aasValue);
             }
         }
     }
 }
 
-void ZLADSPADialog::getParams(QString &plugLabel, QString &plugID, QString &plugName, QString &plugFile,
-                              ZLADSPAControlItems &aCItems)
+CLADSPAPlugItem ZLADSPADialog::getPlugItem() const
 {
-    plugLabel.clear();
-    plugID.clear();
-    plugName.clear();
-    plugFile.clear();
-    aCItems.clear();
-    if (selectedPlugin==-1) return;
+    if (m_selectedPlugin==-1) return CLADSPAPlugItem();
 
-    plugLabel=lsPluginLabel.at(selectedPlugin);
-    plugID=lsPluginID.at(selectedPlugin);
-    plugName=lsPluginName.at(selectedPlugin);
-    plugFile=lsPluginFile.at(selectedPlugin);
-    for (const auto &item : qAsConst(alCItems)) {
-        aCItems.append(item);
-        aCItems.last().disconnectFromControls();
+    QVector<ZLADSPAControlItem> controls;
+    controls.reserve(m_controlItems.count());
+    for (const auto &item : qAsConst(m_controlItems)) {
+        controls.append(item);
+        controls.last().disconnectFromControls();
     }
-}
 
-int ZLADSPADialog::truncDouble(double num)
-{
-    return static_cast<int>(std::trunc(num));
+    ZLADSPA::Policy policy = ZLADSPA::Policy::plNone;
+    bool usePolicy = false;
+    if (checkPolicy->checkState() == Qt::Checked) {
+        policy = ZLADSPA::Policy::plDuplicate;
+        usePolicy = true;
+    } else if (checkPolicy->checkState() == Qt::Unchecked) {
+        usePolicy = true;
+    }
+
+    CLADSPAPlugItem item(m_pluginLabel.at(m_selectedPlugin),
+                         m_pluginID.at(m_selectedPlugin),
+                         m_pluginName.at(m_selectedPlugin),
+                         m_pluginFile.at(m_selectedPlugin),
+                         controls,usePolicy,policy,m_inputsModel->getBindings(),
+                         m_outputsModel->getBindings());
+
+    return item;
 }
 
 void ZLADSPADialog::valueChanged(double value)
@@ -188,41 +188,95 @@ void ZLADSPADialog::stateChanged(int value)
     readInfoFromControls();
 }
 
+void ZLADSPADialog::addInputBinding()
+{
+    m_inputsModel->appendRow();
+}
+
+void ZLADSPADialog::deleteInputBinding()
+{
+    QModelIndex idx = tableInputs->currentIndex();
+    m_inputsModel->deleteRow(idx);
+}
+
+void ZLADSPADialog::addOutputBinding()
+{
+    m_outputsModel->appendRow();
+}
+
+void ZLADSPADialog::deleteOutputBinding()
+{
+    QModelIndex idx = tableOutputs->currentIndex();
+    m_outputsModel->deleteRow(idx);
+}
+
+void ZLADSPADialog::policyChanged(bool status)
+{
+    Q_UNUSED(status)
+
+    buttonAddInput->setEnabled(checkPolicy->checkState()!=Qt::Checked);
+    buttonDeleteInput->setEnabled(checkPolicy->checkState()!=Qt::Checked);
+    buttonAddOutput->setEnabled(checkPolicy->checkState()!=Qt::Checked);
+    buttonDeleteOutput->setEnabled(checkPolicy->checkState()!=Qt::Checked);
+
+    if (checkPolicy->checkState()==Qt::Checked) {
+        // Only one binding allowed for duplicate policy
+        int count = m_inputsModel->rowCount();
+        if (count < 1) {
+            m_inputsModel->appendRow();
+        } else if (count > 1) {
+            m_inputsModel->removeRows(1, count - 1);
+        }
+
+        count = m_outputsModel->rowCount();
+        if (count < 1) {
+            m_outputsModel->appendRow();
+        } else if (count > 1) {
+            m_outputsModel->removeRows(1, count - 1);
+        }
+    }
+}
+
+int ZLADSPADialog::getChannels() const
+{
+    return m_channels;
+}
+
 void ZLADSPADialog::readInfoFromControls()
 {
-    for (int i=0;i<alCItems.count();i++) {
-        if (alCItems.at(i).aawControl==nullptr) continue;
-        if (alCItems.at(i).aatType==ZLADSPA::aacToggle) {
-            if (auto w=qobject_cast<QCheckBox*>(alCItems.at(i).aawControl))
-                alCItems[i].aasToggle=(w->checkState()==Qt::Checked);
-        } else if (auto w=qobject_cast<QDoubleSpinBox*>(alCItems.at(i).aawControl)) {
-            if (alCItems.at(i).aatType==ZLADSPA::aacInteger) {
-                alCItems[i].aasInt=truncDouble(w->value());
-            } else if (alCItems.at(i).aatType==ZLADSPA::aacFreq) {
-                alCItems[i].aasFreq=truncDouble(w->value());
+    for (int i=0;i<m_controlItems.count();i++) {
+        if (m_controlItems.at(i).aawControl==nullptr) continue;
+        if (m_controlItems.at(i).aatType==ZLADSPA::aacToggle) {
+            if (auto w=qobject_cast<QCheckBox*>(m_controlItems.at(i).aawControl))
+                m_controlItems[i].aasToggle=(w->checkState()==Qt::Checked);
+        } else if (auto w=qobject_cast<QDoubleSpinBox*>(m_controlItems.at(i).aawControl)) {
+            if (m_controlItems.at(i).aatType==ZLADSPA::aacInteger) {
+                m_controlItems[i].aasInt=ZGenericFuncs::truncDouble(w->value());
+            } else if (m_controlItems.at(i).aatType==ZLADSPA::aacFreq) {
+                m_controlItems[i].aasFreq=ZGenericFuncs::truncDouble(w->value());
             } else {
-                alCItems[i].aasValue=w->value();
+                m_controlItems[i].aasValue=w->value();
             }
         } else {
-            alCItems[i].aasToggle=false;
-            alCItems[i].aasValue=0.0;
-            alCItems[i].aasFreq=0;
-            alCItems[i].aasInt=0;
+            m_controlItems[i].aasToggle=false;
+            m_controlItems[i].aasValue=0.0;
+            m_controlItems[i].aasFreq=0;
+            m_controlItems[i].aasInt=0;
         }
     }
 }
 
 void ZLADSPADialog::scanPlugins()
 {
-    alPlugin->clear();
-    lsPluginFile.clear();
-    lsPluginName.clear();
-    lsPluginID.clear();
-    lsPluginLabel.clear();
-    alPluginInfo->clear();
+    comboPlugin->clear();
+    m_pluginFile.clear();
+    m_pluginName.clear();
+    m_pluginID.clear();
+    m_pluginLabel.clear();
+    editPluginInfo->clear();
 
     clearCItems();
-    alControls->resize(sizeHint());
+    m_controls->resize(sizeHint());
 
     static QString ladspa_path;
     if (ladspa_path.isEmpty()) {
@@ -249,34 +303,33 @@ void ZLADSPADialog::scanPlugins()
                         QString pluginName = QString::fromUtf8(psDescriptor->Name);
                         QString pluginID = QSL("%1").arg(psDescriptor->UniqueID);
                         QString pluginLabel = QString::fromUtf8(psDescriptor->Label);
-                        lsPluginFile << ladspa_dir.filePath(ladspa_dir[j]);
-                        lsPluginName << pluginName;
-                        lsPluginID << pluginID;
-                        lsPluginLabel << pluginLabel;
-                        alPlugin->addItem(QSL("%1 (%2/%3)").arg(pluginName,pluginID,pluginLabel));
+                        m_pluginFile << ladspa_dir.filePath(ladspa_dir[j]);
+                        m_pluginName << pluginName;
+                        m_pluginID << pluginID;
+                        m_pluginLabel << pluginLabel;
+                        comboPlugin->addItem(QSL("%1 (%2/%3)").arg(pluginName,pluginID,pluginLabel));
                     }
                 }
                 plugin.unload();
             }
         }
     }
-    selectedPlugin=-1;
+    m_selectedPlugin=-1;
 }
-
-// TODO: add LADSPA pin enumeration and config (for multichannel plugins)
 
 void ZLADSPADialog::analyzePlugin(int index)
 {
     const float nearZero = 0.00001F;
-    alPluginInfo->clear();
-    if (!controlsRequested) return;
+    editPluginInfo->clear();
+    m_selectedPluginValidInputs.clear();
+    m_selectedPluginValidOutputs.clear();
     QString pinfo = QSL("<html><head><meta name=\"qrichtext\" content=\"1\" /></head><body style=\"white-space: pre-wrap;\">");
 
     clearCItems();
-    alControls->resize(sizeHint());
+    m_controls->resize(sizeHint());
 
     if (index==-1) return;
-    QLibrary plugin(lsPluginFile[index]);
+    QLibrary plugin(m_pluginFile[index]);
     if (plugin.load()) {
         auto pfDescriptorFunction = reinterpret_cast<LADSPA_Descriptor_Function>(plugin.resolve("ladspa_descriptor"));
         if (pfDescriptorFunction) {
@@ -286,7 +339,7 @@ void ZLADSPADialog::analyzePlugin(int index)
             LADSPA_PortRangeHintDescriptor iHintDescriptor;
             LADSPA_Data fBound;
             LADSPA_Data fDefault;
-            QString sPluginLabel = lsPluginLabel[index];
+            QString sPluginLabel = m_pluginLabel[index];
             bool foundPlugin=false;
 
             for (lPluginIndex = 0;; lPluginIndex++) {
@@ -302,7 +355,7 @@ void ZLADSPADialog::analyzePlugin(int index)
                 pinfo+=tr("Plugin Unique ID: <b>%1</b><br/>").arg(psDescriptor->UniqueID);
                 pinfo+=tr("Maker: <b>\"%1\"</b><br/>").arg(QString::fromUtf8(psDescriptor->Maker));
                 pinfo+=tr("Copyright: <b>\"%1\"</b><br/>").arg(QString::fromUtf8(psDescriptor->Copyright));
-                pinfo+=tr("Plugin library: <b>\"%1\"</b><br/><br/>").arg(lsPluginFile[index]);
+                pinfo+=tr("Plugin library: <b>\"%1\"</b><br/><br/>").arg(m_pluginFile[index]);
 
                 if (LADSPA_IS_REALTIME(psDescriptor->Properties)) {
                     pinfo+=tr("Must Run Real-Time: <b>Yes</b><br/>");
@@ -354,233 +407,245 @@ void ZLADSPADialog::analyzePlugin(int index)
                     pinfo+=tr("<b><font color=\"#8B0000\">ERROR: PLUGIN HAS NO PORTS.</font></b><br/>");
 
                 for (lPortIndex = 0;lPortIndex < psDescriptor->PortCount;lPortIndex++) {
-                    if (!(LADSPA_IS_PORT_CONTROL(psDescriptor->PortDescriptors[lPortIndex]) &&
-                          LADSPA_IS_PORT_INPUT(psDescriptor->PortDescriptors[lPortIndex])))
-                        continue;
+                    if (LADSPA_IS_PORT_AUDIO(psDescriptor->PortDescriptors[lPortIndex]) &&
+                            LADSPA_IS_PORT_INPUT(psDescriptor->PortDescriptors[lPortIndex])) {
+                        m_selectedPluginValidInputs.append(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
+                    }
 
-                    iHintDescriptor
-                            = psDescriptor->PortRangeHints[lPortIndex].HintDescriptor;
+                    if (LADSPA_IS_PORT_AUDIO(psDescriptor->PortDescriptors[lPortIndex]) &&
+                            LADSPA_IS_PORT_OUTPUT(psDescriptor->PortDescriptors[lPortIndex])) {
+                        m_selectedPluginValidOutputs.append(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
+                    }
 
-                    if (LADSPA_IS_HINT_TOGGLED(iHintDescriptor)) {
-                        if ((iHintDescriptor
-                             | LADSPA_HINT_DEFAULT_0
-                             | LADSPA_HINT_DEFAULT_1)
-                                != (LADSPA_HINT_TOGGLED
-                                    | LADSPA_HINT_DEFAULT_0
-                                    | LADSPA_HINT_DEFAULT_1)) {
-                            pinfo+=tr("<b><font color=\"#8B0000\">ERROR: TOGGLED INCOMPATIBLE WITH OTHER HINT</font></b><br/>");
-                        } else {
-                            auto acheckBox = new QCheckBox(tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
-                                                           alControls);
-                            bool toggledState=false;
-                            if (LADSPA_IS_HINT_DEFAULT_1(iHintDescriptor)) toggledState=true;
-                            alCItems << ZLADSPAControlItem(tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
-                                                           ZLADSPA::aacToggle,toggledState,0.0,acheckBox,nullptr,nullptr);
-                            acheckBox->setObjectName(tr("checkBox#%1").arg(alCItems.size()-1));
-                            alControls->layout()->addWidget(acheckBox);
-                            connect(acheckBox,SIGNAL(stateChanged(int)),this,SLOT(stateChanged(int)));
-                        }
-                    } else {
-                        auto ahboxLayout = new QHBoxLayout();
-                        ahboxLayout->setSpacing(6);
-                        ahboxLayout->setMargin(0);
-                        auto alabel=new QLabel(alControls);
-                        if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
-                            alabel->setText(tr("%1 (in dB)").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
-                        } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
-                            alabel->setText(tr("%1 (in Hz)").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
-                        } else {
-                            alabel->setText(tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
-                        }
-                        auto aspinBox=new QDoubleSpinBox(alControls);
-                        QString pname=tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
+                    if (LADSPA_IS_PORT_CONTROL(psDescriptor->PortDescriptors[lPortIndex]) &&
+                            LADSPA_IS_PORT_INPUT(psDescriptor->PortDescriptors[lPortIndex])) {
 
-                        ZLADSPA::Control ciType;
-                        if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
-                            ciType=ZLADSPA::aacInteger;
-                        } else if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
-                            ciType=ZLADSPA::aacLogarithmic;
-                        } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
-                            ciType=ZLADSPA::aacFreq;
-                        } else {
-                            ciType=ZLADSPA::aacLinear;
-                        }
-                        alCItems << ZLADSPAControlItem(pname,ciType,false,0.0,aspinBox,ahboxLayout,alabel);
-                        ahboxLayout->setObjectName(tr("hboxlayout#%1").arg(alCItems.size()-1));
-                        alabel->setObjectName(tr("alabel#%1").arg(alCItems.size()-1));
-                        aspinBox->setObjectName(tr("aspinBox#%1").arg(alCItems.size()-1));
+                        iHintDescriptor
+                                = psDescriptor->PortRangeHints[lPortIndex].HintDescriptor;
 
-                        alabel->setBuddy(aspinBox);
-                        ahboxLayout->addWidget(alabel);
-                        ahboxLayout->addWidget(aspinBox);
-                        aspinBox->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed));
-                        vboxCLayout->addLayout(ahboxLayout);
-                        connect(aspinBox,SIGNAL(valueChanged(double)),this,SLOT(valueChanged(double)));
-
-                        aspinBox->setValue(0.0);
-                        if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
-                            aspinBox->setDecimals(0);
-                            aspinBox->setMinimum(-1000);
-                            aspinBox->setMaximum(1000);
-                            aspinBox->setSingleStep(1);
-                            if (LADSPA_IS_HINT_BOUNDED_BELOW(iHintDescriptor)) {
-                                aspinBox->setMinimum(static_cast<double>(
-                                                         truncf(psDescriptor->PortRangeHints[lPortIndex].LowerBound)));
-                            }
-                            if (LADSPA_IS_HINT_BOUNDED_ABOVE(iHintDescriptor)) {
-                                aspinBox->setMaximum(static_cast<double>(
-                                                         truncf(psDescriptor->PortRangeHints[lPortIndex].UpperBound)));
-                            }
-                        } else {
-                            aspinBox->setMaximum(3.3e+37);
-                            if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
-                                aspinBox->setDecimals(0);
-                                aspinBox->setSingleStep(1);
-                                aspinBox->setMinimum(0);
+                        if (LADSPA_IS_HINT_TOGGLED(iHintDescriptor)) {
+                            if ((iHintDescriptor
+                                 | LADSPA_HINT_DEFAULT_0
+                                 | LADSPA_HINT_DEFAULT_1)
+                                    != (LADSPA_HINT_TOGGLED
+                                        | LADSPA_HINT_DEFAULT_0
+                                        | LADSPA_HINT_DEFAULT_1)) {
+                                pinfo+=tr("<b><font color=\"#8B0000\">ERROR: TOGGLED INCOMPATIBLE WITH OTHER HINT</font></b><br/>");
                             } else {
-                                aspinBox->setDecimals(2);
-                                aspinBox->setSingleStep(0.01);
-                                aspinBox->setMinimum(-3.3e+37);
+                                auto acheckBox = new QCheckBox(
+                                                     tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
+                                                     m_controls);
+                                bool toggledState=false;
+                                if (LADSPA_IS_HINT_DEFAULT_1(iHintDescriptor)) toggledState=true;
+                                m_controlItems << ZLADSPAControlItem(
+                                                      tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
+                                                      ZLADSPA::aacToggle,toggledState,0.0,acheckBox,nullptr,nullptr);
+                                acheckBox->setObjectName(tr("checkBox#%1").arg(m_controlItems.size()-1));
+                                m_controls->layout()->addWidget(acheckBox);
+                                connect(acheckBox,SIGNAL(stateChanged(int)),this,SLOT(stateChanged(int)));
                             }
-                            if (LADSPA_IS_HINT_BOUNDED_BELOW(iHintDescriptor)) {
-                                fBound = psDescriptor->PortRangeHints[lPortIndex].LowerBound;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fBound)>nearZero) {
-                                    aspinBox->setMinimum(static_cast<double>(fBound*alSampleRate));
-                                } else {
-                                    aspinBox->setMinimum(static_cast<double>(fBound));
-                                }
-                            }
-                            if (LADSPA_IS_HINT_BOUNDED_ABOVE(iHintDescriptor)) {
-                                fBound = psDescriptor->PortRangeHints[lPortIndex].UpperBound;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fBound)>nearZero) {
-                                    aspinBox->setMaximum(static_cast<double>(fBound*alSampleRate));
-                                } else {
-                                    aspinBox->setMaximum(static_cast<double>(fBound));
-                                }
-                            }
-                        }
-                        switch (iHintDescriptor & LADSPA_HINT_DEFAULT_MASK) {
-                            case LADSPA_HINT_DEFAULT_NONE:
-                                break;
-                            case LADSPA_HINT_DEFAULT_MINIMUM:
-                                fDefault = psDescriptor->PortRangeHints[lPortIndex].LowerBound;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_LOW:
-                                if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
-                                    fDefault = expf(logf(psDescriptor->PortRangeHints[lPortIndex].LowerBound) * 0.75F
-                                                    + logf(psDescriptor->PortRangeHints[lPortIndex].UpperBound) * 0.25F);
-                                } else {
-                                    fDefault = (psDescriptor->PortRangeHints[lPortIndex].LowerBound * 0.75F
-                                                + psDescriptor->PortRangeHints[lPortIndex].UpperBound * 0.25F);
-                                }
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_MIDDLE:
-                                if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
-                                    fDefault = sqrtf(psDescriptor->PortRangeHints[lPortIndex].LowerBound
-                                                     * psDescriptor->PortRangeHints[lPortIndex].UpperBound);
-                                } else {
-                                    fDefault = 0.5F * (psDescriptor->PortRangeHints[lPortIndex].LowerBound
-                                                       + psDescriptor->PortRangeHints[lPortIndex].UpperBound);
-                                }
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_HIGH:
-                                if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
-                                    fDefault = expf(logf(psDescriptor->PortRangeHints[lPortIndex].LowerBound) * 0.25F
-                                                    + logf(psDescriptor->PortRangeHints[lPortIndex].UpperBound) * 0.75F);
-                                } else {
-                                    fDefault = (psDescriptor->PortRangeHints[lPortIndex].LowerBound * 0.25F
-                                                + psDescriptor->PortRangeHints[lPortIndex].UpperBound * 0.75F);
-                                }
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_MAXIMUM:
-                                fDefault = psDescriptor->PortRangeHints[lPortIndex].UpperBound;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_0:
-                                fDefault=0.0F;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_1:
-                                fDefault=1.0F;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_100:
-                                fDefault=100.0F;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                            case LADSPA_HINT_DEFAULT_440:
-                                fDefault=440.0F;
-                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(fDefault*alSampleRate));
-                                } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                    aspinBox->setValue(static_cast<double>(truncf(fDefault)));
-                                } else {
-                                    aspinBox->setValue(static_cast<double>(fDefault));
-                                }
-                                break;
-                        } // switch (iHintDescriptor & LADSPA_HINT_DEFAULT_MASK)
-
-                        if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
-                            alCItems.last().aasInt=truncDouble(aspinBox->value());
-                        } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
-                            alCItems.last().aasFreq=truncDouble(aspinBox->value());
                         } else {
-                            alCItems.last().aasValue=aspinBox->value();
-                        }
-                    } // else ... (LADSPA_IS_HINT_TOGGLED(iHintDescriptor))
+                            auto ahboxLayout = new QHBoxLayout();
+                            ahboxLayout->setSpacing(6);
+                            ahboxLayout->setMargin(0);
+                            auto alabel=new QLabel(m_controls);
+                            if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
+                                alabel->setText(tr("%1 (in dB)").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
+                            } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
+                                alabel->setText(tr("%1 (in Hz)").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
+                            } else {
+                                alabel->setText(tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
+                            }
+                            auto aspinBox=new QDoubleSpinBox(m_controls);
+                            QString pname=tr("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
 
+                            ZLADSPA::Control ciType;
+                            if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
+                                ciType=ZLADSPA::aacInteger;
+                            } else if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
+                                ciType=ZLADSPA::aacLogarithmic;
+                            } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
+                                ciType=ZLADSPA::aacFreq;
+                            } else {
+                                ciType=ZLADSPA::aacLinear;
+                            }
+                            m_controlItems << ZLADSPAControlItem(pname,ciType,false,0.0,aspinBox,ahboxLayout,alabel);
+                            ahboxLayout->setObjectName(tr("hboxlayout#%1").arg(m_controlItems.size()-1));
+                            alabel->setObjectName(tr("alabel#%1").arg(m_controlItems.size()-1));
+                            aspinBox->setObjectName(tr("aspinBox#%1").arg(m_controlItems.size()-1));
+
+                            alabel->setBuddy(aspinBox);
+                            ahboxLayout->addWidget(alabel);
+                            ahboxLayout->addWidget(aspinBox);
+                            aspinBox->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed));
+                            m_vboxLayout->addLayout(ahboxLayout);
+                            connect(aspinBox,SIGNAL(valueChanged(double)),this,SLOT(valueChanged(double)));
+
+                            aspinBox->setValue(0.0);
+                            if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
+                                aspinBox->setDecimals(0);
+                                aspinBox->setMinimum(-1000);
+                                aspinBox->setMaximum(1000);
+                                aspinBox->setSingleStep(1);
+                                if (LADSPA_IS_HINT_BOUNDED_BELOW(iHintDescriptor)) {
+                                    aspinBox->setMinimum(static_cast<double>(
+                                                             truncf(psDescriptor->PortRangeHints[lPortIndex].LowerBound)));
+                                }
+                                if (LADSPA_IS_HINT_BOUNDED_ABOVE(iHintDescriptor)) {
+                                    aspinBox->setMaximum(static_cast<double>(
+                                                             truncf(psDescriptor->PortRangeHints[lPortIndex].UpperBound)));
+                                }
+                            } else {
+                                aspinBox->setMaximum(3.3e+37);
+                                if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
+                                    aspinBox->setDecimals(0);
+                                    aspinBox->setSingleStep(1);
+                                    aspinBox->setMinimum(0);
+                                } else {
+                                    aspinBox->setDecimals(2);
+                                    aspinBox->setSingleStep(0.01);
+                                    aspinBox->setMinimum(-3.3e+37);
+                                }
+                                if (LADSPA_IS_HINT_BOUNDED_BELOW(iHintDescriptor)) {
+                                    fBound = psDescriptor->PortRangeHints[lPortIndex].LowerBound;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fBound)>nearZero) {
+                                        aspinBox->setMinimum(static_cast<double>(fBound*m_sampleRate));
+                                    } else {
+                                        aspinBox->setMinimum(static_cast<double>(fBound));
+                                    }
+                                }
+                                if (LADSPA_IS_HINT_BOUNDED_ABOVE(iHintDescriptor)) {
+                                    fBound = psDescriptor->PortRangeHints[lPortIndex].UpperBound;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fBound)>nearZero) {
+                                        aspinBox->setMaximum(static_cast<double>(fBound*m_sampleRate));
+                                    } else {
+                                        aspinBox->setMaximum(static_cast<double>(fBound));
+                                    }
+                                }
+                            }
+                            switch (iHintDescriptor & LADSPA_HINT_DEFAULT_MASK) {
+                                case LADSPA_HINT_DEFAULT_NONE:
+                                    break;
+                                case LADSPA_HINT_DEFAULT_MINIMUM:
+                                    fDefault = psDescriptor->PortRangeHints[lPortIndex].LowerBound;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_LOW:
+                                    if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
+                                        fDefault = expf(logf(psDescriptor->PortRangeHints[lPortIndex].LowerBound) * 0.75F
+                                                        + logf(psDescriptor->PortRangeHints[lPortIndex].UpperBound) * 0.25F);
+                                    } else {
+                                        fDefault = (psDescriptor->PortRangeHints[lPortIndex].LowerBound * 0.75F
+                                                    + psDescriptor->PortRangeHints[lPortIndex].UpperBound * 0.25F);
+                                    }
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_MIDDLE:
+                                    if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
+                                        fDefault = sqrtf(psDescriptor->PortRangeHints[lPortIndex].LowerBound
+                                                         * psDescriptor->PortRangeHints[lPortIndex].UpperBound);
+                                    } else {
+                                        fDefault = 0.5F * (psDescriptor->PortRangeHints[lPortIndex].LowerBound
+                                                           + psDescriptor->PortRangeHints[lPortIndex].UpperBound);
+                                    }
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_HIGH:
+                                    if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
+                                        fDefault = expf(logf(psDescriptor->PortRangeHints[lPortIndex].LowerBound) * 0.25F
+                                                        + logf(psDescriptor->PortRangeHints[lPortIndex].UpperBound) * 0.75F);
+                                    } else {
+                                        fDefault = (psDescriptor->PortRangeHints[lPortIndex].LowerBound * 0.25F
+                                                    + psDescriptor->PortRangeHints[lPortIndex].UpperBound * 0.75F);
+                                    }
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_MAXIMUM:
+                                    fDefault = psDescriptor->PortRangeHints[lPortIndex].UpperBound;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_0:
+                                    fDefault=0.0F;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_1:
+                                    fDefault=1.0F;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_100:
+                                    fDefault=100.0F;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                                case LADSPA_HINT_DEFAULT_440:
+                                    fDefault=440.0F;
+                                    if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                    } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
+                                        aspinBox->setValue(static_cast<double>(truncf(fDefault)));
+                                    } else {
+                                        aspinBox->setValue(static_cast<double>(fDefault));
+                                    }
+                                    break;
+                            } // switch (iHintDescriptor & LADSPA_HINT_DEFAULT_MASK)
+
+                            if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
+                                m_controlItems.last().aasInt=ZGenericFuncs::truncDouble(aspinBox->value());
+                            } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
+                                m_controlItems.last().aasFreq=ZGenericFuncs::truncDouble(aspinBox->value());
+                            } else {
+                                m_controlItems.last().aasValue=aspinBox->value();
+                            }
+                        } // else ... (LADSPA_IS_HINT_TOGGLED(iHintDescriptor))
+
+                    } // if (LADSPA_IS_PORT_CONTROL...
                 } // for (port enumeration)
                 break;
             } // for (plugin search)
@@ -594,9 +659,12 @@ void ZLADSPADialog::analyzePlugin(int index)
         pinfo+=tr("<b><font color=\"#8B0000\">ERROR: PLUGIN LIBRARY NOT FOUND.</font></b><br/>");
     }
     pinfo+=tr("</body></html>");
-    alPluginInfo->setHtml(pinfo);
-    alControls->resize(sizeHint());
-    alControls->update();
+    editPluginInfo->setHtml(pinfo);
+    m_controls->resize(sizeHint());
+    m_controls->update();
+
+    m_inputsModel->setValidPorts(m_selectedPluginValidInputs);
+    m_outputsModel->setValidPorts(m_selectedPluginValidOutputs);
 
     // update element placement in vboxCLayout
     static bool updresize=false;
@@ -616,78 +684,8 @@ void ZLADSPADialog::closeEvent(QCloseEvent *event)
 
 void ZLADSPADialog::clearCItems()
 {
-    for (auto & item : alCItems)
+    for (auto & item : m_controlItems)
         item.destroyControls();
 
-    alCItems.clear();
-}
-
-/* --------- ZLADSPAControlItem ------------*/
-
-ZLADSPAControlItem::ZLADSPAControlItem(const QString &AportName, ZLADSPA::Control AaatType,
-                                       bool AaasToggle, double AaasValue, QWidget* AaawControl,
-                                       QLayout* AaawLayout, QLabel* AaawLabel)
-{
-    aatType=AaatType;
-    aasToggle=AaasToggle;
-    aasValue=AaasValue;
-    aasFreq=ZLADSPADialog::truncDouble(aasValue);
-    aasInt=ZLADSPADialog::truncDouble(aasValue);
-    portName=AportName;
-    aawControl=AaawControl;
-    aawLayout=AaawLayout;
-    aawLabel=AaawLabel;
-}
-
-QJsonValue ZLADSPAControlItem::storeToJson() const
-{
-    QJsonObject data;
-
-    auto typeEnum = QMetaEnum::fromType<ZLADSPA::Control>();
-    data.insert(QSL("type"),typeEnum.valueToKey(aatType));
-
-    data.insert(QSL("toggle"),static_cast<int>(aasToggle));
-    data.insert(QSL("value"),aasValue);
-    data.insert(QSL("freq"),aasFreq);
-    data.insert(QSL("int"),aasInt);
-    data.insert(QSL("portName"),portName);
-
-    return data;
-}
-
-void ZLADSPAControlItem::destroyControls()
-{
-    if (aawControl)
-        aawControl->deleteLater();
-    if (aawLayout)
-        aawLayout->deleteLater();
-    if (aawLabel)
-        aawLabel->deleteLater();
-    disconnectFromControls();
-}
-
-void ZLADSPAControlItem::disconnectFromControls()
-{
-    aawControl=nullptr;
-    aawLayout=nullptr;
-    aawLabel=nullptr;
-}
-
-ZLADSPAControlItem::ZLADSPAControlItem(QDataStream &s)
-{
-    s.readRawData(reinterpret_cast<char*>(&(aatType)),sizeof(aatType));
-    s >> aasToggle >> aasValue >> aasFreq >> aasInt >> portName;
-}
-
-ZLADSPAControlItem::ZLADSPAControlItem(const QJsonValue &json)
-{
-    auto typeEnum = QMetaEnum::fromType<ZLADSPA::Control>();
-    aatType = static_cast<ZLADSPA::Control>(typeEnum.keyToValue(json.toObject().value(QSL("type"))
-                                                                .toString().toLatin1().constData()));
-
-    aasToggle = static_cast<bool>(json.toObject().value(QSL("toggle")).toInt(0));
-    aasValue = json.toObject().value(QSL("value")).toDouble(0.0);
-    aasFreq = json.toObject().value(QSL("freq")).toInt(0);
-    aasInt = json.toObject().value(QSL("int")).toInt(0);
-    portName = json.toObject().value(QSL("portName")).toString();
+    m_controlItems.clear();
 }

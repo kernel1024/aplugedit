@@ -106,18 +106,6 @@ private:
 
 };
 
-class ZAlsaPCMItemDelegate : public QStyledItemDelegate
-{
-    Q_OBJECT
-public:
-    explicit ZAlsaPCMItemDelegate(QObject *parent = nullptr);
-    ~ZAlsaPCMItemDelegate() override;
-
-protected:
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-};
-
 #endif // WITH_GST
 
 #endif // SAMPLEPLAYER_P_H

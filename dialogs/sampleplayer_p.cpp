@@ -194,66 +194,6 @@ void ZLevelMeter::paintEvent(QPaintEvent *event)
     painter.restore();
 }
 
-ZAlsaPCMItemDelegate::ZAlsaPCMItemDelegate(QObject *parent)
-    : QStyledItemDelegate(parent)
-{
-
-}
-
-ZAlsaPCMItemDelegate::~ZAlsaPCMItemDelegate() = default;
-
-void ZAlsaPCMItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-    painter->save();
-
-    const bool selected = ((option.state & QStyle::State_Selected) > 0);
-    if (selected) {
-        painter->fillRect(option.rect,option.palette.highlight());
-        painter->setPen(option.palette.highlightedText().color());
-    } else {
-        painter->fillRect(option.rect,option.palette.base());
-        painter->setPen(option.palette.text().color());
-    }
-
-    if (index.isValid()) {
-        QString name = index.model()->data(index,Qt::DisplayRole).toString();
-        QStringList desc = index.model()->data(index,Qt::UserRole).toStringList();
-        bool internal = (index.model()->data(index,Qt::UserRole+1).toInt() == 0);
-        if (!name.isEmpty()) {
-            QFont f = option.font;
-            f.setBold(true);
-            if (internal) {
-                f.setItalic(true);
-                name.append(tr(" (editor)"));
-            }
-            painter->setFont(f);
-
-            QRect r = option.rect;
-            r.adjust(5,0,-5,0);
-            r.setHeight(r.height()/3);
-            painter->drawText(r,Qt::AlignLeft | Qt::AlignVCenter,name);
-
-            if (!selected)
-                painter->setPen(Qt::darkGray);
-
-            f = option.font;
-            f.setPointSize(f.pointSize()-3);
-            painter->setFont(f);
-            r.translate(0,r.height());
-            r.setHeight(2*option.rect.height()/3);
-            painter->drawText(r,Qt::AlignLeft | Qt::AlignVCenter,desc.join(QSL("\n")));
-        }
-    }
-
-    painter->restore();
-}
-
-QSize ZAlsaPCMItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-    Q_UNUSED(index)
-    return QSize(100,3*option.fontMetrics.height());
-}
-
 ZLogScale::ZLogScale(QWidget *parent)
     : QWidget(parent)
 {

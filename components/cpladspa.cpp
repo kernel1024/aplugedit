@@ -32,14 +32,14 @@ ZCPLADSPA::ZCPLADSPA(QWidget *parent, ZRenderArea *aOwner)
     fOut->pinName=QSL("out");
     registerOutput(fOut);
 
-    m_plugName=tr("<please select filter!!!>");
+    setMinimumHeight(60);
 }
 
 ZCPLADSPA::~ZCPLADSPA() = default;
 
 QSize ZCPLADSPA::minimumSizeHint() const
 {
-    return QSize(200,50);
+    return QSize(200,minimumHeight());
 }
 
 void ZCPLADSPA::realignPins()
@@ -52,43 +52,59 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type ladspa") << endl;
-    if (fOut->toFilter)
-    {
+    if (fOut->toFilter) {
         stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+        stream << QSL("    pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
         stream << QSL("  }") << endl;
-        if (!m_plugLabel.isEmpty())
-        {
-            QFileInfo fi(m_plugLibrary);
-            stream << QSL("  path \"") << fi.path() << QSL("\"") << endl;
-            stream << QSL("  plugins [") << endl;
-            stream << QSL("    {") << endl;
-            stream << QSL("      label ") << m_plugLabel << endl;
-            stream << QSL("      input {") << endl;
-            stream << QSL("        controls [ ");
-            for (int i=0;i<m_plugControls.count();i++)
-            {
-                switch (m_plugControls.at(i).aatType)
-                {
-                    case ZLADSPA::aacToggle:
-                        if (m_plugControls.at(i).aasToggle) {
-                            stream << QSL("1");
-                        } else {
-                            stream << QSL("0");
-                        }
-                        break;
-                    case ZLADSPA::aacFreq: stream << m_plugControls.at(i).aasFreq; break;
-                    case ZLADSPA::aacInteger: stream << m_plugControls.at(i).aasInt; break;
-                    default: stream << m_plugControls.at(i).aasValue;
+        stream << QSL("  channels %1").arg(m_channels) << endl;
+
+        if (!m_plugins.isEmpty()) {
+            stream << QSL("  plugins {") << endl;
+            int idx = 0;
+            for (const auto& plug : qAsConst(m_plugins)) {
+                QFileInfo fi(plug.plugLibrary);
+                QString policy = QSL("none");
+                if (plug.policy == ZLADSPA::Policy::plDuplicate)
+                    policy = QSL("duplicate");
+
+                stream << QSL("    %1 {").arg(idx++) << endl;
+                stream << QSL("      label %1").arg(plug.plugLabel) << endl;
+                stream << QSL("      filename \"%1\"").arg(fi.absoluteFilePath()) << endl;
+                if (plug.usePolicy)
+                    stream << QSL("      policy %1").arg(policy) << endl;
+                for (const auto& inp : qAsConst(plug.inputBindings)) {
+                    stream << QSL("      input.bindings.%1 \"%2\"")
+                              .arg(inp.first).arg(inp.second) << endl;
                 }
-                stream << QSL(" ");
+                for (const auto& out : qAsConst(plug.outputBindings)) {
+                    stream << QSL("      output.bindings.%1 \"%2\"")
+                              .arg(out.first).arg(out.second) << endl;
+                }
+                stream << QSL("      input {") << endl;
+                stream << QSL("        controls [ ");
+                for (const auto& ctl : qAsConst(plug.plugControls)) {
+                    switch (ctl.aatType)
+                    {
+                        case ZLADSPA::aacToggle:
+                            if (ctl.aasToggle) {
+                                stream << QSL("1");
+                            } else {
+                                stream << QSL("0");
+                            }
+                            break;
+                        case ZLADSPA::aacFreq: stream << ctl.aasFreq; break;
+                        case ZLADSPA::aacInteger: stream << ctl.aasInt; break;
+                        default: stream << ctl.aasValue;
+                    }
+                    stream << QSL(" ");
+                }
+                stream << QSL("]") << endl
+                       << QSL("      }") << endl
+                       << QSL("    }") << endl;
             }
-            stream << QSL("]") << endl
-                          << QSL("      }") << endl
-                          << QSL("    }") << endl
-                          << QSL("  ]") << endl;
         }
     }
+    stream << QSL("  }") << endl;
     ZCPBase::doInfoGenerate(stream);
     stream << QSL("}") << endl;
     stream << endl;
@@ -103,20 +119,32 @@ void ZCPLADSPA::paintEvent(QPaintEvent * event)
     QBrush ob=p.brush();
     QFont of=p.font();
 
-    paintBase(p);
+    int hintHeight = paintBase(p,true);
 
     QFont n=of;
     n.setBold(true);
     n.setPointSize(n.pointSize()+1);
     p.setFont(n);
-    p.drawText(rect(),Qt::AlignCenter,QSL("LADSPA"));
+    QRect trect(0,hintHeight,width(),p.fontMetrics().height()+5);
+    p.drawText(trect,Qt::AlignCenter,QSL("LADSPA"));
 
     n.setBold(false);
     n.setPointSize(n.pointSize()-3);
     p.setPen(QPen(Qt::gray));
     p.setFont(n);
+    QRect drect(0,hintHeight+trect.height(),
+                width(),height()-hintHeight-trect.height());
+    QString filters = tr("<please select filter!!!>");
+    if (!m_plugins.isEmpty())
+        filters = getPlugNames().join(QSL(", "));
+    filters.prepend(tr("channels: %1\n").arg(m_channels));
+
+    int minHeight = hintHeight + trect.height() +
+                    (filters.split(QChar('\n')).count() * p.fontMetrics().height()) + 5;
+    if (minimumHeight()!=minHeight)
+        setMinimumHeight(minHeight);
     
-    p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,m_plugName);
+    p.drawText(drect,Qt::AlignCenter | Qt::TextWordWrap,filters);
 
     p.setFont(of);
     p.setBrush(ob);
@@ -126,39 +154,47 @@ void ZCPLADSPA::paintEvent(QPaintEvent * event)
 void ZCPLADSPA::readFromStreamLegacy( QDataStream & stream )
 {
     ZCPBase::readFromStreamLegacy(stream);
-    stream >> m_plugName >> m_plugID >> m_plugLabel >> m_plugLibrary;
+    QString plugName;
+    QString plugID;
+    QString plugLabel;
+    QString plugLibrary;
+
+    // read legacy info
+    stream >> plugName >> plugID >> plugLabel >> plugLibrary;
     int cn;
     stream >> cn;
+    QVector<ZLADSPAControlItem> controls;
+    controls.reserve(cn);
     for (int i=0;i<cn;i++)
-        m_plugControls << ZLADSPAControlItem(stream);
+        controls << ZLADSPAControlItem(stream);
+
+    // create simple instance plugin
+    m_plugins.clear();
+    m_plugins.append(CLADSPAPlugItem(plugLabel,plugID,plugName,plugLibrary,controls));
 }
 
 void ZCPLADSPA::readFromJson(const QJsonValue &json)
 {
     ZCPBase::readFromJson(json.toObject().value(QSL("base")));
-    m_plugName = json.toObject().value(QSL("plugName")).toString();
-    m_plugID = json.toObject().value(QSL("plugID")).toString();
-    m_plugLabel = json.toObject().value(QSL("plugLabel")).toString();
-    m_plugLibrary = json.toObject().value(QSL("plugLibrary")).toString();
 
-    const QJsonArray controls = json.toObject().value(QSL("controls")).toArray();
-    for (const auto& item : controls)
-        m_plugControls << ZLADSPAControlItem(item);
+    m_channels = json.toObject().value(QSL("channels")).toInt(2);
+
+    m_plugins.clear();
+    const QJsonArray plugins = json.toObject().value(QSL("plugins")).toArray();
+    for (const auto& plug : plugins)
+        m_plugins.append(CLADSPAPlugItem(plug));
 }
 
 QJsonValue ZCPLADSPA::storeToJson() const
 {
     QJsonObject data;
     data.insert(QSL("base"),ZCPBase::storeToJson());
-    data.insert(QSL("plugName"),m_plugName);
-    data.insert(QSL("plugID"),m_plugID);
-    data.insert(QSL("plugLabel"),m_plugLabel);
-    data.insert(QSL("plugLibrary"),m_plugLibrary);
+    data.insert(QSL("channels"),m_channels);
 
-    QJsonArray controls;
-    for (int i=0;i<m_plugControls.count();i++)
-        controls.append(m_plugControls[i].storeToJson());
-    data.insert(QSL("controls"),controls);
+    QJsonArray plugs;
+    for (const auto& plug : qAsConst(m_plugins))
+        plugs.append(plug.storeToJson());
+    data.insert(QSL("plugins"),plugs);
 
     return data;
 }
@@ -197,22 +233,33 @@ int ZCPLADSPA::searchSampleRate()
         }
         sampleRateWarn=true;
         sampleRate=48000;
-        // TODO: add checks for FLOAT data type. Only FLOAT is supported by LADSPA. Suggest plug plugins. We need to add plug plugin too.
+        // TODO: Only FLOAT is supported by LADSPA. Suggest plug plugins - check for plug before hw/dmix?
+        // TODO: plugin sorting
     }
     return sampleRate;
 }
 
+QStringList ZCPLADSPA::getPlugNames() const
+{
+    QStringList res;
+    res.reserve(m_plugins.count());
+    for (const auto& plug : qAsConst(m_plugins))
+        res.append(plug.plugName);
+
+    return res;
+}
+
 void ZCPLADSPA::showSettingsDlg()
 {
-    ZLADSPADialog d(topLevelWidget(),searchSampleRate());
+    ZLADSPAListDialog d(topLevelWidget(),searchSampleRate());
 
-    d.setParams(m_plugLabel,m_plugID,m_plugControls);
+    d.setParams(m_channels,m_plugins);
 
     if (d.exec()==QDialog::Rejected) return;
 
     Q_EMIT componentChanged(this);
 
-    d.getParams(m_plugLabel,m_plugID,m_plugName,m_plugLibrary,m_plugControls);
+    d.getParams(m_channels,m_plugins);
     update();
 }
 

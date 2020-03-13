@@ -57,7 +57,7 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     ui->radioMediaFile->setChecked(!(stg.value(QSL("funcGenerator"),false).toBool()));
     stg.endGroup();
 
-    ui->comboAlsaSink->setItemDelegate(new ZAlsaPCMItemDelegate());
+    ui->comboAlsaSink->setItemDelegate(new ZDescListItemDelegate());
 
     ui->labelClock->clear();
     m_positionTimer = new QTimer(this);

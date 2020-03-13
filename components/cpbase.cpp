@@ -236,7 +236,7 @@ void ZCPBase::mouseMoveEvent(QMouseEvent * event)
     }
 }
 
-void ZCPBase::paintBase(QPainter &p)
+int ZCPBase::paintBase(QPainter &p, bool isGrowable)
 {
     QPen pn=QPen(Qt::black);
     pn.setWidth(2);
@@ -252,18 +252,27 @@ void ZCPBase::paintBase(QPainter &p)
 
     redrawPins(p);
 
+    int hintHeight = 0;
+
     if (!m_hint.isEmpty()) {
         QFont n=of;
         n.setBold(false);
         n.setPointSize(n.pointSize()-3);
         p.setPen(QPen(Qt::blue));
         p.setFont(n);
-        p.drawText(QRect(0,0,width(),height()/3),Qt::AlignCenter,m_hint);
+        hintHeight = height()/3;
+        if (isGrowable)
+            hintHeight = p.fontMetrics().height()+5;
+        QRect hrect(0,0,width(),hintHeight);
+
+        p.drawText(hrect,Qt::AlignCenter,m_hint);
     }
 
     p.setPen(op);
     p.setBrush(ob);
     p.setFont(of);
+
+    return hintHeight;
 }
 
 void ZCPBase::doInfoGenerate(QTextStream &stream) const

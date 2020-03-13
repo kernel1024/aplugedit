@@ -417,6 +417,7 @@ void ZMainWindow::toolSamplePlayer()
         connect(this,&ZMainWindow::alsaConfigUpdated,dlg,&ZSamplePlayer::updateSinkList);
     }
     samplePlayer->show();
+    samplePlayer->showNormal();
 #endif
 }
 
