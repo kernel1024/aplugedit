@@ -53,24 +53,23 @@ private:
     ZLADSPABindingsModel* m_inputsModel;
     ZLADSPABindingsModel* m_outputsModel;
 
-    QStringList m_pluginFile;
-    QStringList m_pluginName;
-    QStringList m_pluginID;
-    QStringList m_pluginLabel;
+    QHash<qint64,QString> m_pluginFile;
+    QHash<qint64,QString> m_pluginName;
+    QHash<qint64,QString> m_pluginLabel;
     QVector<ZLADSPAControlItem> m_controlItems;
     QVector<ZLADSPAControlItem> m_preservedControlItems;
     QString m_preservedPlugLabel;
-    QString m_preservedPlugID;
+    qint64 m_preservedPlugID;
 
     QStringList m_selectedPluginValidInputs;
     QStringList m_selectedPluginValidOutputs;
-    int m_selectedPlugin { 0 };
+    qint64 m_selectedPlugin { 0L };
     int m_sampleRate { 48000 };
     int m_channels { 2 };
     bool m_isShowed { false };
 
     void scanPlugins();
-    void analyzePlugin(int index);
+    void analyzePlugin();
     void clearCItems();
     void readInfoFromControls();
 

@@ -89,7 +89,7 @@ class CLADSPAPlugItem
 {
 public:
     QString plugLabel;
-    QString plugID;
+    qint64 plugID;
     QString plugName;
     QString plugLibrary;
     ZLADSPA::Policy policy { ZLADSPA::Policy::plDuplicate };
@@ -102,7 +102,7 @@ public:
     CLADSPAPlugItem(const CLADSPAPlugItem& other) = default;
     explicit CLADSPAPlugItem(const QJsonValue &json);
     CLADSPAPlugItem(const QString &AplugLabel,
-                    const QString &AplugID,
+                    const qint64 &AplugID,
                     const QString &AplugName,
                     const QString &AplugLibrary,
                     const QVector<ZLADSPAControlItem> &aPlugControls, bool aUsePolicy = false,

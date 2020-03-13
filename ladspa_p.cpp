@@ -152,7 +152,7 @@ CLADSPAPlugItem::CLADSPAPlugItem(const QJsonValue &json)
         plugControls.append(ZLADSPAControlItem(item));
 }
 
-CLADSPAPlugItem::CLADSPAPlugItem(const QString &AplugLabel, const QString &AplugID, const QString &AplugName,
+CLADSPAPlugItem::CLADSPAPlugItem(const QString &AplugLabel, const qint64 &AplugID, const QString &AplugName,
                                  const QString &AplugLibrary, const QVector<ZLADSPAControlItem> &aPlugControls, bool aUsePolicy,
                                  ZLADSPA::Policy aPolicy, const CInOutBindings &aInputBindings,
                                  const CInOutBindings &aOutputBindings)
