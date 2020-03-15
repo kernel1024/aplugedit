@@ -30,10 +30,12 @@ ZLADSPAListDialog::ZLADSPAListDialog(QWidget *parent, int sampleRate) :
     model = new ZLADSPAListModel(this);
     ui->listPlugins->setModel(model);
     ui->listPlugins->setItemDelegate(new ZDescListItemDelegate());
+    ui->listPlugins->viewport()->setAcceptDrops(true);
 
     connect(ui->buttonAdd,&QPushButton::clicked,this,&ZLADSPAListDialog::addPlugin);
     connect(ui->buttonDelete,&QPushButton::clicked,this,&ZLADSPAListDialog::deletePlugin);
     connect(ui->buttonEdit,&QPushButton::clicked,this,&ZLADSPAListDialog::editPlugin);
+    connect(ui->listPlugins,&QListView::doubleClicked,this,&ZLADSPAListDialog::showEditPluginDialog);
 }
 
 ZLADSPAListDialog::~ZLADSPAListDialog()
@@ -76,10 +78,15 @@ void ZLADSPAListDialog::deletePlugin()
 
 void ZLADSPAListDialog::editPlugin()
 {
-    int idx = model->getRowIndex(ui->listPlugins->currentIndex());
+    showEditPluginDialog(ui->listPlugins->currentIndex());
+}
+
+void ZLADSPAListDialog::showEditPluginDialog(const QModelIndex &index)
+{
+    int idx = model->getRowIndex(index);
+    if (idx<0) return;
 
     ZLADSPADialog dlg(topLevelWidget(),ui->spinChannels->value(),m_sampleRate);
-
     dlg.setPlugItem(model->items().at(idx));
 
     if (dlg.exec()==QDialog::Rejected) return;

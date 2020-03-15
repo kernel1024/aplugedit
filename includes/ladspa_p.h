@@ -46,7 +46,7 @@ using CInOutBindings = QVector<QPair<int,QString> >;
 
 class ZLADSPADialog;
 
-class ZLADSPAControlItem
+class CLADSPAControlItem
 {
 public:
     ZLADSPA::Control aatType { ZLADSPA::aacToggle };
@@ -59,11 +59,11 @@ public:
     QLayout* aawLayout { nullptr };
     QLabel* aawLabel { nullptr };
 
-    ZLADSPAControlItem() = default;
-    explicit ZLADSPAControlItem(QDataStream &s);
-    explicit ZLADSPAControlItem(const QJsonValue &json);
-    ZLADSPAControlItem(const ZLADSPAControlItem& other) = default;
-    ZLADSPAControlItem(const QString &AportName, ZLADSPA::Control AaatType, bool AaasToggle,
+    CLADSPAControlItem() = default;
+    explicit CLADSPAControlItem(QDataStream &s);
+    explicit CLADSPAControlItem(const QJsonValue &json);
+    CLADSPAControlItem(const CLADSPAControlItem& other) = default;
+    CLADSPAControlItem(const QString &AportName, ZLADSPA::Control AaatType, bool AaasToggle,
                        double AaasValue, QWidget* AaawControl, QLayout* AaawLayout, QLabel* AaawLabel);
 
     QJsonValue storeToJson() const;
@@ -72,8 +72,8 @@ public:
 
 };
 
-QDataStream &operator<<(QDataStream &, const ZLADSPAControlItem* &);
-QDataStream &operator>>(QDataStream &, ZLADSPAControlItem* &);
+QDataStream &operator<<(QDataStream &out, const CLADSPAControlItem &item);
+QDataStream &operator>>(QDataStream &in, CLADSPAControlItem &item);
 
 class ZResizableFrame : public QFrame
 {
@@ -97,7 +97,7 @@ public:
     QString plugLibrary;
     CInOutBindings inputBindings;
     CInOutBindings outputBindings;
-    QVector<ZLADSPAControlItem> plugControls;
+    QVector<CLADSPAControlItem> plugControls;
 
     CLADSPAPlugItem() = default;
     ~CLADSPAPlugItem() = default;
@@ -107,7 +107,7 @@ public:
                     qint64 AplugID,
                     const QString &AplugName,
                     const QString &AplugLibrary,
-                    const QVector<ZLADSPAControlItem> &aPlugControls,
+                    const QVector<CLADSPAControlItem> &aPlugControls,
                     bool aUsePolicy = false,
                     ZLADSPA::Policy aPolicy = ZLADSPA::Policy::plDuplicate,
                     const CInOutBindings &aInputBindings = CInOutBindings(),
@@ -116,6 +116,9 @@ public:
     QJsonValue storeToJson() const;
     QStringList getBindingsDesc() const;
 };
+
+QDataStream &operator<<(QDataStream &out, const CLADSPAPlugItem &item);
+QDataStream &operator>>(QDataStream &in, CLADSPAPlugItem &item);
 
 class ZLADSPAPortEditDelegate : public QStyledItemDelegate
 {
@@ -168,6 +171,7 @@ class ZLADSPAListModel : public QAbstractListModel
     Q_OBJECT
 private:
     QVector<CLADSPAPlugItem> m_items;
+    QString m_mimeType;
 
     Q_DISABLE_COPY(ZLADSPAListModel)
 
@@ -178,16 +182,15 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
     int rowCount(const QModelIndex & parent = QModelIndex()) const override;
-
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
-
-    bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
-                  const QModelIndex &destinationParent, int destinationChild) override;
-
+    QMimeData *mimeData(const QModelIndexList &indexes) const override;
+    QStringList mimeTypes() const override;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                      const QModelIndex &parent) override;
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                         const QModelIndex &parent) const override;
     Qt::DropActions supportedDropActions() const override;
-
-    int getRowIndex(const QModelIndex &index);
 
     QVector<CLADSPAPlugItem> items() const;
     void setItems(const QVector<CLADSPAPlugItem> &items);
@@ -197,6 +200,12 @@ public:
     void addItem(const CLADSPAPlugItem& item);
     void insertItem(int row, const CLADSPAPlugItem &item);
     void setItem(int row, const CLADSPAPlugItem &item);
+    int getRowIndex(const QModelIndex &index) const;
+
+private:
+    bool insertRowsPriv(int row, int count, const QModelIndex &parent = QModelIndex(),
+                        const QVector<CLADSPAPlugItem> &items = { });
+    CLADSPAPlugItem item(const QModelIndex& index) const;
 };
 
 #endif // LADSPA_P_H

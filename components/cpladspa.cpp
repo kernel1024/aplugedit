@@ -140,8 +140,8 @@ void ZCPLADSPA::paintEvent(QPaintEvent * event)
         filters = getPlugNames().join(QSL(", "));
     filters.prepend(tr("channels: %1\n").arg(m_channels));
 
-    int minHeight = hintHeight + trect.height() +
-                    (filters.split(QChar('\n')).count() * p.fontMetrics().height()) + 5;
+    int minHeight = hintHeight+trect.height()+
+            p.fontMetrics().boundingRect(0,0,width(),0,Qt::AlignCenter | Qt::TextWordWrap,filters).height()+2;
     if (minimumHeight()!=minHeight)
         setMinimumHeight(minHeight);
     
@@ -164,10 +164,10 @@ void ZCPLADSPA::readFromStreamLegacy( QDataStream & stream )
     stream >> plugName >> plugID >> plugLabel >> plugLibrary;
     int cn;
     stream >> cn;
-    QVector<ZLADSPAControlItem> controls;
+    QVector<CLADSPAControlItem> controls;
     controls.reserve(cn);
     for (int i=0;i<cn;i++)
-        controls << ZLADSPAControlItem(stream);
+        controls << CLADSPAControlItem(stream);
 
     // create simple instance plugin
     m_plugins.clear();

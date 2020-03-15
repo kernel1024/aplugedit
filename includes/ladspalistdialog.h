@@ -45,6 +45,7 @@ private Q_SLOTS:
     void addPlugin();
     void deletePlugin();
     void editPlugin();
+    void showEditPluginDialog(const QModelIndex &index);
 
 private:
     Ui::ZLADSPAListDialog *ui;

@@ -56,9 +56,9 @@ private:
     QHash<qint64,QString> m_pluginFile;
     QHash<qint64,QString> m_pluginName;
     QHash<qint64,QString> m_pluginLabel;
-    QVector<ZLADSPAControlItem> m_controlItems;
+    QVector<CLADSPAControlItem> m_controlItems;
 
-    QVector<ZLADSPAControlItem> m_preservedControlItems;
+    QVector<CLADSPAControlItem> m_preservedControlItems;
 
     QStringList m_selectedPluginValidInputs;
     QStringList m_selectedPluginValidOutputs;

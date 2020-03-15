@@ -50,7 +50,7 @@ QSize ZResizableFrame::sizeHint() const
     return minimumSizeHint();
 }
 
-ZLADSPAControlItem::ZLADSPAControlItem(const QString &AportName, ZLADSPA::Control AaatType,
+CLADSPAControlItem::CLADSPAControlItem(const QString &AportName, ZLADSPA::Control AaatType,
                                        bool AaasToggle, double AaasValue, QWidget* AaawControl,
                                        QLayout* AaawLayout, QLabel* AaawLabel)
 {
@@ -65,7 +65,7 @@ ZLADSPAControlItem::ZLADSPAControlItem(const QString &AportName, ZLADSPA::Contro
     aawLabel=AaawLabel;
 }
 
-QJsonValue ZLADSPAControlItem::storeToJson() const
+QJsonValue CLADSPAControlItem::storeToJson() const
 {
     QJsonObject data;
 
@@ -81,7 +81,7 @@ QJsonValue ZLADSPAControlItem::storeToJson() const
     return data;
 }
 
-void ZLADSPAControlItem::destroyControls()
+void CLADSPAControlItem::destroyControls()
 {
     if (aawControl)
         aawControl->deleteLater();
@@ -92,20 +92,20 @@ void ZLADSPAControlItem::destroyControls()
     disconnectFromControls();
 }
 
-void ZLADSPAControlItem::disconnectFromControls()
+void CLADSPAControlItem::disconnectFromControls()
 {
     aawControl=nullptr;
     aawLayout=nullptr;
     aawLabel=nullptr;
 }
 
-ZLADSPAControlItem::ZLADSPAControlItem(QDataStream &s)
+CLADSPAControlItem::CLADSPAControlItem(QDataStream &s)
 {
     s.readRawData(reinterpret_cast<char*>(&(aatType)),sizeof(aatType));
     s >> aasToggle >> aasValue >> aasFreq >> aasInt >> portName;
 }
 
-ZLADSPAControlItem::ZLADSPAControlItem(const QJsonValue &json)
+CLADSPAControlItem::CLADSPAControlItem(const QJsonValue &json)
 {
     auto typeEnum = QMetaEnum::fromType<ZLADSPA::Control>();
     aatType = static_cast<ZLADSPA::Control>(typeEnum.keyToValue(json.toObject().value(QSL("type"))
@@ -149,11 +149,11 @@ CLADSPAPlugItem::CLADSPAPlugItem(const QJsonValue &json)
     const QJsonArray jcontrols = json.toObject().value(QSL("controls")).toArray();
     plugControls.reserve(jcontrols.count());
     for (const auto& item : jcontrols)
-        plugControls.append(ZLADSPAControlItem(item));
+        plugControls.append(CLADSPAControlItem(item));
 }
 
 CLADSPAPlugItem::CLADSPAPlugItem(const QString &AplugLabel, qint64 AplugID, const QString &AplugName,
-                                 const QString &AplugLibrary, const QVector<ZLADSPAControlItem> &aPlugControls, bool aUsePolicy,
+                                 const QString &AplugLibrary, const QVector<CLADSPAControlItem> &aPlugControls, bool aUsePolicy,
                                  ZLADSPA::Policy aPolicy, const CInOutBindings &aInputBindings,
                                  const CInOutBindings &aOutputBindings)
 {
@@ -480,65 +480,11 @@ void ZLADSPAPortEditDelegate::updateEditorGeometry(QWidget *editor, const QStyle
 
 ZLADSPAListModel::ZLADSPAListModel(QObject *parent)
     : QAbstractListModel(parent)
+    , m_mimeType(QSL("application/ladspa-plugin-list"))
 {
 }
 
 ZLADSPAListModel::~ZLADSPAListModel() = default;
-
-Qt::ItemFlags ZLADSPAListModel::flags(const QModelIndex &index) const
-{
-    if (!index.isValid())
-        return Qt::NoItemFlags;
-
-    Qt::ItemFlags flags = Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsDragEnabled;
-
-    return flags;
-}
-
-QVariant ZLADSPAListModel::data(const QModelIndex &index, int role) const
-{
-    if (!checkIndex(index,CheckIndexOption::IndexIsValid | CheckIndexOption::ParentIsInvalid))
-        return QVariant();
-
-    int idx = index.row();
-    switch (role) {
-        case Qt::DisplayRole:
-            return QSL("%1 (%2/%3)")
-                    .arg(m_items.at(idx).plugName)
-                    .arg(m_items.at(idx).plugID)
-                    .arg(m_items.at(idx).plugLabel);
-        case Qt::UserRole:
-            return m_items.at(idx).getBindingsDesc();
-        default:
-            break;
-    }
-
-    return QVariant();
-}
-
-int ZLADSPAListModel::rowCount(const QModelIndex &parent) const
-{
-    if (!checkIndex(parent))
-        return 0;
-    if (parent.isValid())
-        return 0;
-
-    return m_items.count();
-}
-
-bool ZLADSPAListModel::insertRows(int row, int count, const QModelIndex &parent)
-{
-    if (!checkIndex(parent))
-        return false;
-    if (parent.isValid())
-        return false;
-
-    beginInsertRows(QModelIndex(), row, row+count-1);
-    for (int i=0;i<count;i++)
-        m_items.insert(row,CLADSPAPlugItem());
-    endInsertRows();
-    return true;
-}
 
 void ZLADSPAListModel::setItems(const QVector<CLADSPAPlugItem> &items)
 {
@@ -582,6 +528,77 @@ void ZLADSPAListModel::setItem(int row, const CLADSPAPlugItem &item)
     Q_EMIT dataChanged(index(row),index(row));
 }
 
+Qt::ItemFlags ZLADSPAListModel::flags(const QModelIndex &index) const
+{
+    Qt::ItemFlags flags = QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
+
+    if (!index.isValid())
+        return flags;
+
+    flags = flags | Qt::ItemIsDragEnabled;
+
+    return flags;
+}
+
+QVariant ZLADSPAListModel::data(const QModelIndex &index, int role) const
+{
+    if (!checkIndex(index,CheckIndexOption::IndexIsValid | CheckIndexOption::ParentIsInvalid))
+        return QVariant();
+
+    int idx = index.row();
+    switch (role) {
+        case Qt::DisplayRole:
+            return QSL("%1 (%2/%3)")
+                    .arg(m_items.at(idx).plugName)
+                    .arg(m_items.at(idx).plugID)
+                    .arg(m_items.at(idx).plugLabel);
+        case Qt::UserRole:
+            return m_items.at(idx).getBindingsDesc();
+        default:
+            break;
+    }
+
+    return QVariant();
+}
+
+int ZLADSPAListModel::rowCount(const QModelIndex &parent) const
+{
+    if (!checkIndex(parent))
+        return 0;
+    if (parent.isValid())
+        return 0;
+
+    return m_items.count();
+}
+
+bool ZLADSPAListModel::insertRows(int row, int count, const QModelIndex &parent)
+{
+    return insertRowsPriv(row, count, parent);
+}
+
+bool ZLADSPAListModel::insertRowsPriv(int row, int count, const QModelIndex &parent, const QVector<CLADSPAPlugItem> &items)
+{
+    if (!checkIndex(parent))
+        return false;
+    if (parent.isValid())
+        return false;
+
+    int cnt = count;
+    if (!items.isEmpty())
+        cnt = items.count();
+
+    beginInsertRows(QModelIndex(), row, row+cnt-1);
+    for (int i=(count-1);i>=0;i--) {
+        if (!items.isEmpty()) {
+            m_items.insert(row,items.at(i));
+        } else {
+            m_items.insert(row,CLADSPAPlugItem());
+        }
+    }
+    endInsertRows();
+    return true;
+}
+
 bool ZLADSPAListModel::removeRows(int row, int count, const QModelIndex &parent)
 {
     if (!checkIndex(parent))
@@ -596,23 +613,78 @@ bool ZLADSPAListModel::removeRows(int row, int count, const QModelIndex &parent)
     return true;
 }
 
-bool ZLADSPAListModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
-                                const QModelIndex &destinationParent, int destinationChild)
+QMimeData *ZLADSPAListModel::mimeData(const QModelIndexList &indexes) const
 {
-    // TODO: this is for drag&drop within the list. or not...
+    auto mimeData = new QMimeData();
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    for (const QModelIndex& index : indexes) {
+        if (index.isValid())
+            stream << item(index);
+    }
+    mimeData->setData(m_mimeType, data);
+    return mimeData;
+}
 
-    if (!checkIndex(sourceParent)) return false;
-    if (sourceParent.isValid()) return false;
-    if (!checkIndex(destinationParent)) return false;
-    if (destinationParent.isValid()) return false;
+QStringList ZLADSPAListModel::mimeTypes() const
+{
+    return QStringList({ m_mimeType });
+}
 
-    beginMoveRows(QModelIndex(),sourceRow,sourceRow+count-1,
-                  QModelIndex(),destinationChild);
-    auto cut = m_items.mid(sourceRow,count);
-    m_items.remove(sourceRow,count);
-    for (int i=0;i<cut.length();i++)
-        m_items.insert(destinationChild+i,cut.at(i));
-    endMoveRows();
+bool ZLADSPAListModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                                    const QModelIndex &parent)
+{
+    Q_UNUSED(column)
+
+    if (!checkIndex(parent))
+        return false;
+    if (parent.isValid())
+        return false;
+
+    if (action == Qt::IgnoreAction)
+        return true;
+
+    if (!data->hasFormat(m_mimeType))
+        return false;
+
+    QByteArray ba = data->data(m_mimeType);
+    QDataStream stream(&ba, QIODevice::ReadOnly);
+    if (stream.atEnd())
+        return false;
+
+    QVector<CLADSPAPlugItem> items;
+    while (!stream.atEnd()) {
+        CLADSPAPlugItem item;
+        stream >> item;
+        items.append(item);
+    }
+
+    int beginRow;
+    if (row != -1) {
+        beginRow = row;
+    } else {
+        beginRow = rowCount();
+    }
+
+    insertRowsPriv(beginRow, items.count(), QModelIndex(), items);
+
+    return true;
+}
+
+bool ZLADSPAListModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                                       const QModelIndex &parent) const
+{
+    Q_UNUSED(action)
+    Q_UNUSED(row)
+    Q_UNUSED(column)
+
+    if (!checkIndex(parent))
+        return false;
+    if (parent.isValid())
+        return false;
+
+    if (!data->hasFormat(m_mimeType))
+        return false;
 
     return true;
 }
@@ -622,7 +694,7 @@ Qt::DropActions ZLADSPAListModel::supportedDropActions() const
     return Qt::MoveAction;
 }
 
-int ZLADSPAListModel::getRowIndex(const QModelIndex &index)
+int ZLADSPAListModel::getRowIndex(const QModelIndex &index) const
 {
     if (!checkIndex(index,CheckIndexOption::IndexIsValid | CheckIndexOption::ParentIsInvalid))
         return -1;
@@ -633,4 +705,42 @@ int ZLADSPAListModel::getRowIndex(const QModelIndex &index)
 QVector<CLADSPAPlugItem> ZLADSPAListModel::items() const
 {
     return m_items;
+}
+
+CLADSPAPlugItem ZLADSPAListModel::item(const QModelIndex &index) const
+{
+    int row = getRowIndex(index);
+    if (row>=0)
+        return m_items.at(row);
+
+    return CLADSPAPlugItem();
+}
+
+QDataStream &operator<<(QDataStream &out, const CLADSPAPlugItem &item)
+{
+    out << item.usePolicy << item.policy << item.plugID << item.plugLabel << item.plugName
+        << item.plugLibrary << item.inputBindings << item.outputBindings << item.plugControls;
+    return out;
+}
+
+QDataStream &operator>>(QDataStream &in, CLADSPAPlugItem &item)
+{
+    in >> item.usePolicy >> item.policy >> item.plugID >> item.plugLabel >> item.plugName
+       >> item.plugLibrary >> item.inputBindings >> item.outputBindings >> item.plugControls;
+    return in;
+}
+
+QDataStream &operator<<(QDataStream &out, const CLADSPAControlItem &item)
+{
+    out << item.aatType << item.aasToggle << item.aasValue << item.aasFreq << item.aasInt << item.portName;
+    return out;
+}
+
+QDataStream &operator>>(QDataStream &in, CLADSPAControlItem &item)
+{
+    in >> item.aatType >> item.aasToggle >> item.aasValue >> item.aasFreq >> item.aasInt >> item.portName;
+    item.aawControl = nullptr;
+    item.aawLayout = nullptr;
+    item.aawLabel = nullptr;
+    return in;
 }

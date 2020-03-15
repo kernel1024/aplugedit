@@ -155,7 +155,7 @@ CLADSPAPlugItem ZLADSPADialog::getPlugItem() const
 {
     if (m_selectedPluginID == 0L) return CLADSPAPlugItem();
 
-    QVector<ZLADSPAControlItem> controls;
+    QVector<CLADSPAControlItem> controls;
     controls.reserve(m_controlItems.count());
     for (const auto &item : qAsConst(m_controlItems)) {
         controls.append(item);
@@ -448,13 +448,16 @@ void ZLADSPADialog::analyzePlugin()
                                 auto acheckBox = new QCheckBox(QSL("%1").arg(name),m_controls);
                                 bool toggledState=false;
                                 if (LADSPA_IS_HINT_DEFAULT_1(iHintDescriptor)) toggledState=true;
-                                m_controlItems << ZLADSPAControlItem(
+                                m_controlItems << CLADSPAControlItem(
                                                       QSL("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])),
                                                       ZLADSPA::aacToggle,toggledState,0.0,acheckBox,nullptr,nullptr);
                                 acheckBox->setObjectName(tr("checkBox#%1").arg(m_controlItems.size()-1));
                                 m_controls->layout()->addWidget(acheckBox);
                                 connect(acheckBox,SIGNAL(stateChanged(int)),this,SLOT(stateChanged(int)));
-                                pinfo+=tr("    <b>\"%1\"</b> input, control, toggle, default: %2<br/>").arg(name).arg(toggledState);
+                                QString tstate = tr("off");
+                                if (toggledState)
+                                    tstate = tr("on");
+                                pinfo+=tr("    <b>\"%1\"</b> input, control, toggle, default: %2<br/>").arg(name,tstate);
                             }
                         } else {
                             auto ahboxLayout = new QHBoxLayout();
@@ -481,7 +484,7 @@ void ZLADSPADialog::analyzePlugin()
                             } else {
                                 ciType=ZLADSPA::aacLinear;
                             }
-                            m_controlItems << ZLADSPAControlItem(pname,ciType,false,0.0,aspinBox,ahboxLayout,alabel);
+                            m_controlItems << CLADSPAControlItem(pname,ciType,false,0.0,aspinBox,ahboxLayout,alabel);
                             ahboxLayout->setObjectName(tr("hboxlayout#%1").arg(m_controlItems.size()-1));
                             alabel->setObjectName(tr("alabel#%1").arg(m_controlItems.size()-1));
                             aspinBox->setObjectName(tr("aspinBox#%1").arg(m_controlItems.size()-1));

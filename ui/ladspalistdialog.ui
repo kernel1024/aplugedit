@@ -52,9 +52,6 @@
      </item>
      <item>
       <widget class="QListView" name="listPlugins">
-       <property name="editTriggers">
-        <set>QAbstractItemView::NoEditTriggers</set>
-       </property>
        <property name="dragEnabled">
         <bool>true</bool>
        </property>
