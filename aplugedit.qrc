@@ -26,5 +26,6 @@
         <file>images/plug.png</file>
         <file>images/upmix.png</file>
         <file>images/downmix.png</file>
+        <file>images/multi.png</file>
     </qresource>
 </RCC>

@@ -39,6 +39,11 @@ void ZCPConv::setConverterType(ZCPConv::ConverterType type)
     m_converter = type;
 }
 
+ZCPConv::ConverterType ZCPConv::getConverterType() const
+{
+    return m_converter;
+}
+
 ZCPConv::~ZCPConv() = default;
 
 QSize ZCPConv::minimumSizeHint() const

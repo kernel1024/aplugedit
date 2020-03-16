@@ -109,3 +109,98 @@ QSize ZDescListItemDelegate::sizeHint(const QStyleOptionViewItem &option, const 
     Q_UNUSED(index)
     return QSize(100,3*option.fontMetrics.height());
 }
+
+ZValidatedListEditDelegate::ZValidatedListEditDelegate(QObject *parent)
+    : QStyledItemDelegate(parent)
+{
+}
+
+QWidget *ZValidatedListEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                                               const QModelIndex &index) const
+{
+    Q_UNUSED(option)
+
+    if (!(index.model()->data(index, Qt::UserRole).canConvert<QStringList>())) return nullptr;
+
+    auto editor = new QComboBox(parent);
+    editor->setFrame(false);
+
+    return editor;
+}
+
+void ZValidatedListEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+    if (!(index.model()->data(index, Qt::UserRole).canConvert<QStringList>())) return;
+
+    QString value = index.model()->data(index, Qt::EditRole).toString();
+    QStringList items = index.model()->data(index, Qt::UserRole).toStringList();
+
+    auto edit = qobject_cast<QComboBox*>(editor);
+    edit->clear();
+    edit->addItems(items);
+    edit->setCurrentText(value);
+}
+
+void ZValidatedListEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
+                                           const QModelIndex &index) const
+{
+    if (!(index.model()->data(index, Qt::UserRole).canConvert<QStringList>())) return;
+
+    auto edit = qobject_cast<QComboBox*>(editor);
+    model->setData(index, edit->currentText(), Qt::EditRole);
+}
+
+void ZValidatedListEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
+                                                   const QModelIndex &index) const
+{
+    Q_UNUSED(index)
+    editor->setGeometry(option.rect);
+}
+
+ZValidatedSpinBoxEditDelegate::ZValidatedSpinBoxEditDelegate(QObject *parent)
+    : QStyledItemDelegate(parent)
+{
+}
+
+QWidget *ZValidatedSpinBoxEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                                                     const QModelIndex &index) const
+{
+    Q_UNUSED(option)
+
+    if (!(index.model()->data(index, Qt::UserRole).canConvert<int>())) return nullptr;
+
+    auto editor = new QSpinBox(parent);
+    editor->setFrame(false);
+
+    return editor;
+}
+
+void ZValidatedSpinBoxEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+    if (!(index.model()->data(index, Qt::UserRole).canConvert<int>())) return;
+
+    bool ok1;
+    bool ok2;
+    int value = index.model()->data(index, Qt::EditRole).toInt(&ok1);
+    int max = index.model()->data(index, Qt::UserRole).toInt(&ok2);
+
+    auto edit = qobject_cast<QSpinBox*>(editor);
+    edit->setMaximum(max);
+    edit->setValue(value);
+}
+
+void ZValidatedSpinBoxEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
+                                                 const QModelIndex &index) const
+{
+    if (!(index.model()->data(index, Qt::UserRole).canConvert<int>())) return;
+
+    auto edit = qobject_cast<QSpinBox*>(editor);
+    model->setData(index, edit->value(), Qt::EditRole);
+}
+
+void ZValidatedSpinBoxEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
+                                                         const QModelIndex &index) const
+{
+    Q_UNUSED(index)
+    editor->setGeometry(option.rect);
+}

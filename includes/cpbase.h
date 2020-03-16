@@ -28,11 +28,13 @@ const int zcpPinSize = 8;
 class ZCPInput;
 class ZCPOutput;
 class ZRenderArea;
+class ZCPMulti;
 
 class ZCPBase : public QWidget
 {
     Q_OBJECT
     friend class ZRenderArea;
+    friend class ZCPMulti;
 public:
     enum PinType {
         ptInput = 1,
@@ -68,6 +70,8 @@ private:
     QList<ZCPOutput*> fOutputs;
     QColor m_pinColor { Qt::blue };
     QPoint m_relCorner;
+
+    void deleteOutput(int idx);
 
     void mouseInPin(const QPoint& mx, int &aPinNum, ZCPBase::PinType &aPinType, ZCPBase *&aFilter);
     void checkRecycle();

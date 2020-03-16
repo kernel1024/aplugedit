@@ -115,27 +115,11 @@ public:
 
     QJsonValue storeToJson() const;
     QStringList getBindingsDesc() const;
+    bool isEmpty() const;
 };
 
 QDataStream &operator<<(QDataStream &out, const CLADSPAPlugItem &item);
 QDataStream &operator>>(QDataStream &in, CLADSPAPlugItem &item);
-
-class ZLADSPAPortEditDelegate : public QStyledItemDelegate
-{
-    Q_OBJECT
-public:
-    ZLADSPAPortEditDelegate(QObject *parent = nullptr);
-
-    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-                          const QModelIndex &index) const override;
-
-    void setEditorData(QWidget *editor, const QModelIndex &index) const override;
-    void setModelData(QWidget *editor, QAbstractItemModel *model,
-                      const QModelIndex &index) const override;
-
-    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
-                              const QModelIndex &index) const override;
-};
 
 class ZLADSPABindingsModel : public QAbstractTableModel
 {

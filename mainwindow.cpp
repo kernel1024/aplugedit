@@ -52,6 +52,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditRate->setData(QSL("ZCPRate"));
     actionEditUpmix->setData(QSL("ZCPUpmix"));
     actionEditVDownmix->setData(QSL("ZCPVDownmix"));
+    actionEditMulti->setData(QSL("ZCPMulti"));
     actionEditLADSPA->setData(QSL("ZCPLADSPA"));
     actionEditMeter->setData(QSL("ZCPMeter"));
     actionEditLinear->setData(QSL("ZCPConv#Linear"));
@@ -79,6 +80,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditRate,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditUpmix,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditVDownmix,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditMulti,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLADSPA,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditMeter,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLinear,&QAction::triggered,this,&ZMainWindow::editComponent);

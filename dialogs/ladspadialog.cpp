@@ -59,8 +59,8 @@ ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
     m_outputsModel = new ZLADSPABindingsModel(this);
     tableInputs->setModel(m_inputsModel);
     tableOutputs->setModel(m_outputsModel);
-    tableInputs->setItemDelegateForColumn(1, new ZLADSPAPortEditDelegate(this));
-    tableOutputs->setItemDelegateForColumn(1, new ZLADSPAPortEditDelegate(this));
+    tableInputs->setItemDelegateForColumn(1, new ZValidatedListEditDelegate(this));
+    tableOutputs->setItemDelegateForColumn(1, new ZValidatedListEditDelegate(this));
 
     checkPolicy->setCheckState(Qt::PartiallyChecked);
 
@@ -90,6 +90,9 @@ void ZLADSPADialog::setPlugItem(const CLADSPAPlugItem &item)
     m_preservedPlugID=item.plugID;
     m_preservedControlItems=item.plugControls;
 
+    m_inputsModel->setBindings(item.inputBindings);
+    m_outputsModel->setBindings(item.outputBindings);
+
     if (!item.usePolicy) {
         checkPolicy->setCheckState(Qt::PartiallyChecked);
     } else if (item.policy==ZLADSPA::Policy::plDuplicate) {
@@ -97,9 +100,7 @@ void ZLADSPADialog::setPlugItem(const CLADSPAPlugItem &item)
     } else {
         checkPolicy->setCheckState(Qt::Unchecked);
     }
-
-    m_inputsModel->setBindings(item.inputBindings);
-    m_outputsModel->setBindings(item.outputBindings);
+    policyChanged(true);
 }
 
 void ZLADSPADialog::showEvent(QShowEvent * event)
@@ -286,6 +287,7 @@ void ZLADSPADialog::scanPlugins()
     using CComboPair = QPair<QString,qint64>;
     QVector<CComboPair> comboItems;
 
+    // TODO: cache this, do not reload all libraries every time
     const QStringList ladspa_dirs=ZGenericFuncs::getLADSPAPath().split(':',QString::SkipEmptyParts);
     for (const auto &dir : ladspa_dirs) {
         QDir ladspa_dir(dir);

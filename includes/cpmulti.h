@@ -17,61 +17,39 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#include "includes/generic.h"
-#include "includes/cpplug.h"
+#ifndef ZCPMULTI_H
+#define ZCPMULTI_H
 
-ZCPPlug::ZCPPlug(QWidget *parent, ZRenderArea *aOwner)
-    : ZCPBase(parent,aOwner)
+#include "cpbase.h"
+
+using CMultiBinding = QPair<int, int>;
+
+class ZCPMulti : public ZCPBase
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
-    registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
-    registerOutput(fOut);
-}
+    Q_OBJECT
+public:
+    ZCPMulti(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPMulti() override;
 
-ZCPPlug::~ZCPPlug() = default;
+    void readFromJson(const QJsonValue& json) override;
+    QJsonValue storeToJson() const override;
 
-QSize ZCPPlug::minimumSizeHint() const
-{
-    return QSize(150,50);
-}
+    QSize minimumSizeHint() const override;
 
-void ZCPPlug::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event)
+protected:
+    void paintEvent(QPaintEvent * event) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream) const override;
+    void showSettingsDlg() override;
 
-    QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
+private:
+    ZCPInput* fInp { nullptr };
+    QVector<int> m_slaveChannels;
+    QVector<CMultiBinding> m_bindings;
 
-    paintBase(p);
+    void regenerateOutputs(int outputsCount);
+    void regenerateCapacity(int inputChannelsCount);
 
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
-    p.drawText(rect(),Qt::AlignCenter,QSL("Plug"));
+};
 
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);}
-
-void ZCPPlug::realignPins()
-{
-    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
-}
-
-void ZCPPlug::doInfoGenerate(QTextStream &stream) const
-{
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type plug") << endl;
-    if (fOut->toFilter)
-        stream << QSL("  slave.pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
-    ZCPBase::doInfoGenerate(stream);
-    stream << QSL("}") << endl;
-    stream << endl;
-}
+#endif // ZCPMULTI_H

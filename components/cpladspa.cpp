@@ -21,6 +21,8 @@
 #include "includes/cpladspa.h"
 #include "includes/cphw.h"
 #include "includes/cprate.h"
+#include "includes/cpplug.h"
+#include "includes/cpconv.h"
 
 ZCPLADSPA::ZCPLADSPA(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
@@ -50,6 +52,11 @@ void ZCPLADSPA::realignPins()
 
 void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
 {
+    if (!isConverterPresent()) {
+        QMessageBox::warning(topLevelWidget(),tr("LADSPA plugin configuration"),
+                             tr("FLOAT converter not connected to the output of LADSPA plugin.\n"
+                                "Consider to use PLUG or FLOAT CONVERTER plugin at the output of LADSPA."));
+    }
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type ladspa") << endl;
     if (fOut->toFilter) {
@@ -203,10 +210,8 @@ QJsonValue ZCPLADSPA::storeToJson() const
     return data;
 }
 
-int ZCPLADSPA::searchSampleRate()
+int ZCPLADSPA::searchSampleRate() const
 {
-    static bool sampleRateWarn=false;
-
     ZCPBase* w=fOut->toFilter;
     int sampleRate=-1;
     while (w)
@@ -227,19 +232,32 @@ int ZCPLADSPA::searchSampleRate()
     }
     if (sampleRate==-1)
     {
-        if (!sampleRateWarn) {
-            QMessageBox::warning(topLevelWidget(),tr("LADSPA settings"),
-                                 tr("Samplerate not defined!\n\n"
-                                    "Please connect this LADSPA filter to SRC or HW component\n"
-                                    "and specify Rate parameter in theirs settings.\n"
-                                    "Samplerate adjusted to default 48000 Hz.\n"
-                                    "This setting is used by LADSPA plugins in frequency calculations."));
-        }
-        sampleRateWarn=true;
+        qWarning() << "LADSPA samplerate not defined by destination module (hw or rate). "
+                      "Defaulting to 48kHz.";
         sampleRate=48000;
-        // TODO: Only FLOAT is supported by LADSPA. Suggest plug plugins - check for plug before hw/dmix?
     }
     return sampleRate;
+}
+
+bool ZCPLADSPA::isConverterPresent() const
+{
+    ZCPBase* w=fOut->toFilter;
+    while (w)
+    {
+        if (qobject_cast<ZCPPlug*>(w) != nullptr) return true;
+
+        if (auto hw=qobject_cast<ZCPConv*>(w))
+        {
+            if (hw->getConverterType() == ZCPConv::ConverterType::alcFloat)
+                return true;
+        }
+
+        ZCPOutput* out = w->getMainOutput();
+        if (out==nullptr) break;
+        w=out->toFilter;
+    }
+
+    return false;
 }
 
 QStringList ZCPLADSPA::getPlugNames() const

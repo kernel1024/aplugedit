@@ -234,6 +234,11 @@ QStringList CLADSPAPlugItem::getBindingsDesc() const
     return res;
 }
 
+bool CLADSPAPlugItem::isEmpty() const
+{
+    return (plugID == 0);
+}
+
 ZLADSPABindingsModel::ZLADSPABindingsModel(ZLADSPADialog *parent)
     : QAbstractTableModel(parent)
     , m_mainDialog(parent)
@@ -414,8 +419,7 @@ bool ZLADSPABindingsModel::removeRows(int row, int count, const QModelIndex &par
         return false;
 
     beginRemoveRows(parent, row, row+count-1);
-    for (int i=0;i<count;i++)
-        m_bindings.removeAt(row);
+    m_bindings.remove(row,count);
     endRemoveRows();
     return true;
 }
@@ -434,48 +438,6 @@ bool ZLADSPABindingsModel::removeColumns(int column, int count, const QModelInde
     Q_UNUSED(count)
     Q_UNUSED(parent)
     return false;
-}
-
-ZLADSPAPortEditDelegate::ZLADSPAPortEditDelegate(QObject *parent)
-    : QStyledItemDelegate(parent)
-{
-}
-
-QWidget *ZLADSPAPortEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-                                               const QModelIndex &index) const
-{
-    Q_UNUSED(index)
-    Q_UNUSED(option)
-
-    auto editor = new QComboBox(parent);
-    editor->setFrame(false);
-
-    return editor;
-}
-
-void ZLADSPAPortEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
-{
-    QString value = index.model()->data(index, Qt::EditRole).toString();
-    QStringList items = index.model()->data(index, Qt::UserRole).toStringList();
-
-    auto edit = qobject_cast<QComboBox*>(editor);
-    edit->clear();
-    edit->addItems(items);
-    edit->setCurrentText(value);
-}
-
-void ZLADSPAPortEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
-                                           const QModelIndex &index) const
-{
-    auto edit = qobject_cast<QComboBox*>(editor);
-    model->setData(index, edit->currentText(), Qt::EditRole);
-}
-
-void ZLADSPAPortEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
-                                                   const QModelIndex &index) const
-{
-    Q_UNUSED(index)
-    editor->setGeometry(option.rect);
 }
 
 ZLADSPAListModel::ZLADSPAListModel(QObject *parent)
@@ -607,8 +569,7 @@ bool ZLADSPAListModel::removeRows(int row, int count, const QModelIndex &parent)
         return false;
 
     beginRemoveRows(parent, row, row+count-1);
-    for (int i=0;i<count;i++)
-        m_items.removeAt(row);
+    m_items.remove(row,count);
     endRemoveRows();
     return true;
 }

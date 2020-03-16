@@ -46,6 +46,7 @@ public:
     QJsonValue storeToJson() const override;
 
     void setConverterType(ZCPConv::ConverterType type);
+    ZCPConv::ConverterType getConverterType() const;
 
     QSize minimumSizeHint() const override;
 

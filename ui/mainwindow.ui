@@ -80,6 +80,7 @@
     <addaction name="separator"/>
     <addaction name="actionEditPlug"/>
     <addaction name="actionEditRoute"/>
+    <addaction name="actionEditMulti"/>
     <addaction name="actionEditRate"/>
     <addaction name="actionEditDmix"/>
     <addaction name="actionEditUpmix"/>
@@ -149,6 +150,7 @@
    <addaction name="separator"/>
    <addaction name="actionEditPlug"/>
    <addaction name="actionEditRoute"/>
+   <addaction name="actionEditMulti"/>
    <addaction name="actionEditRate"/>
    <addaction name="actionEditDmix"/>
    <addaction name="actionEditUpmix"/>
@@ -494,6 +496,18 @@
    </property>
    <property name="statusTip">
     <string>GStreamer player</string>
+   </property>
+  </action>
+  <action name="actionEditMulti">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/multi.png</normaloff>:/images/multi.png</iconset>
+   </property>
+   <property name="text">
+    <string>Multi plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add route block for splitting channels to separate plugins</string>
    </property>
   </action>
  </widget>

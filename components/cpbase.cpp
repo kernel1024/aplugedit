@@ -40,6 +40,25 @@ bool ZCPBase::canConnectIn(ZCPBase *toFilter)
     return true;
 }
 
+void ZCPBase::deleteOutput(int idx)
+{
+    for (int i=0;i<fOutputs.count();i++) {
+        if ((fOutputs.at(i)->toPin!=-1) && (fOutputs.at(i)->toFilter)) {
+            if (i==idx) { // disconnect specified output from input
+                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromFilter=nullptr;
+                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromPin=-1;
+                fOutputs[i]->toFilter=nullptr;
+                fOutputs[i]->toPin=-1;
+            } else if (i>idx) { // shift pin number
+                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromPin--;
+            }
+        }
+    }
+    auto out = fOutputs.takeAt(idx);
+    m_owner->repaintConn();
+    out->deleteLater();
+}
+
 void ZCPBase::deleteComponent()
 {
     for (int i=0;i<fInputs.count();i++) {

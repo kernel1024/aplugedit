@@ -62,10 +62,13 @@ void ZLADSPAListDialog::addPlugin()
     if (dlg.exec()==QDialog::Rejected) return;
 
     int idx = model->getRowIndex(ui->listPlugins->currentIndex());
+    CLADSPAPlugItem item = dlg.getPlugItem();
+    if (item.isEmpty()) return;
+
     if (idx<0) {
-        model->addItem(dlg.getPlugItem());
+        model->addItem(item);
     } else {
-        model->insertItem(idx,dlg.getPlugItem());
+        model->insertItem(idx,item);
     }
 }
 

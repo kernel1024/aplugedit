@@ -3,6 +3,7 @@ QT += widgets
 HEADERS       = includes/cpbase.h \
                 includes/alsabackend.h \
                 includes/convdialog.h \
+                includes/cpmulti.h \
                 includes/cpplug.h \
                 includes/cpupmix.h \
                 includes/cpvdownmix.h \
@@ -13,6 +14,7 @@ HEADERS       = includes/cpbase.h \
                 includes/ladspadialog.h \
                 includes/ladspalistdialog.h \
                 includes/meterdialog.h \
+                includes/multidlg.h \
                 includes/ratedialog.h \
                 includes/renderarea.h \
                 includes/mainwindow.h \
@@ -33,6 +35,7 @@ HEADERS       = includes/cpbase.h \
                 jsedit/jsedit_p.h
 SOURCES       = main.cpp \
                 alsabackend.cpp \
+                components/cpmulti.cpp \
                 components/cpplug.cpp \
                 components/cpupmix.cpp \
                 components/cpvdownmix.cpp \
@@ -42,6 +45,7 @@ SOURCES       = main.cpp \
                 dialogs/ladspadialog.cpp \
                 dialogs/ladspalistdialog.cpp \
                 dialogs/meterdialog.cpp \
+                dialogs/multidlg.cpp \
                 dialogs/ratedialog.cpp \
                 dialogs/routedialog.cpp \
                 dialogs/sampleplayer.cpp \
@@ -72,6 +76,7 @@ FORMS         = \
                 ui/ladspalistdialog.ui \
                 ui/mainwindow.ui \
                 ui/meterdlg.ui \
+                ui/multidlg.ui \
                 ui/ratedlg.ui \
                 ui/routedlg.ui \
                 ui/sampleplayer.ui \

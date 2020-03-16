@@ -32,7 +32,8 @@ private:
     int m_channels { 2 };
     QVector<CLADSPAPlugItem> m_plugins;
 
-    int searchSampleRate();
+    int searchSampleRate() const;
+    bool isConverterPresent() const;
     QStringList getPlugNames() const;
 
 public:
