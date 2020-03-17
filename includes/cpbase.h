@@ -120,16 +120,28 @@ public:
     bool postLoadBind();
 };
 
+class CInpLink
+{
+public:
+    qint32 fromPin { -1 };
+    ZCPBase * fromFilter { nullptr };
+    QString ffLogic;
+    CInpLink() = default;
+    ~CInpLink() = default;
+    CInpLink(const CInpLink& other) = default;
+    CInpLink(qint32 aFromPin, ZCPBase *aFromFilter, const QString &affLogic = QString());
+    bool operator==(const CInpLink &s) const;
+    bool operator!=(const CInpLink &s) const;
+};
+
 class ZCPInput : public QObject
 {
     Q_OBJECT
 public:
-    qint32 fromPin { -1 };
-    ZCPBase * fromFilter { nullptr };
     ZCPBase * ownerFilter { nullptr };
     QPoint relCoord;
     QString pinName;
-    QString ffLogic;
+    QVector<CInpLink> links;
 
     ZCPInput(QObject * parent, ZCPBase * aOwner);
     

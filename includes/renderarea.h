@@ -36,14 +36,17 @@ private:
     int m_connCount { 0 };
     ZCPInput *m_startInput { nullptr };
     ZCPOutput *m_startOutput { nullptr };
+    ZCPBase *m_startFilter { nullptr };
     QScrollArea *m_scroller { nullptr };
     QLabel *m_recycle { nullptr };
     QPoint m_connCursor;
 
     void paintConnections(QPainter *p);
-    void initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
+    void initConnBuilder(int type, int pinNum, ZCPInput* input, ZCPOutput* output,
+                         ZCPBase* initialFilter);
     void refreshConnBuilder(const QPoint& atPos);
-    void doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput);
+    void doneConnBuilder(bool none, int type, int pinNum, ZCPInput* input, ZCPOutput* output,
+                         ZCPBase* finishFilter);
     bool postLoadBinding();
 
 public:

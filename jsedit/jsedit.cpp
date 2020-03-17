@@ -116,6 +116,7 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("null"),
                    QSL("rate"),
                    QSL("route"),
+                   QSL("multi"),
                    QSL("upmix"),
                    QSL("vdownmix")
                  };

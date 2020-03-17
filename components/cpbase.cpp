@@ -45,12 +45,15 @@ void ZCPBase::deleteOutput(int idx)
     for (int i=0;i<fOutputs.count();i++) {
         if ((fOutputs.at(i)->toPin!=-1) && (fOutputs.at(i)->toFilter)) {
             if (i==idx) { // disconnect specified output from input
-                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromFilter=nullptr;
-                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromPin=-1;
-                fOutputs[i]->toFilter=nullptr;
-                fOutputs[i]->toPin=-1;
+                fOutputs.at(i)->toFilter->fInputs.at(fOutputs.at(i)->toPin)
+                        ->links.removeAll(CInpLink(i,this));
+                fOutputs.at(i)->toFilter=nullptr;
+                fOutputs.at(i)->toPin=-1;
             } else if (i>idx) { // shift pin number
-                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromPin--;
+                int lnk = fOutputs.at(i)->toFilter->fInputs.at(fOutputs.at(i)->toPin)
+                          ->links.indexOf(CInpLink(i,this));
+                if (lnk>=0)
+                    fOutputs.at(i)->toFilter->fInputs.at(fOutputs.at(i)->toPin)->links[lnk].fromPin--;
             }
         }
     }
@@ -62,21 +65,19 @@ void ZCPBase::deleteOutput(int idx)
 void ZCPBase::deleteComponent()
 {
     for (int i=0;i<fInputs.count();i++) {
-        if (fInputs.at(i)->fromPin!=-1) {
-            if (fInputs.at(i)->fromFilter) {
-                fInputs[i]->fromFilter->fOutputs[fInputs.at(i)->fromPin]->toFilter=nullptr;
-                fInputs[i]->fromFilter->fOutputs[fInputs.at(i)->fromPin]->toPin=-1;
+        while (!fInputs.at(i)->links.isEmpty()) {
+            const auto link = fInputs.at(i)->links.constLast();
+            if ((link.fromPin!=-1) && (link.fromFilter!=nullptr)) {
+                link.fromFilter->fOutputs[link.fromPin]->toFilter=nullptr;
+                link.fromFilter->fOutputs[link.fromPin]->toPin=-1;
             }
+            fInputs.removeLast();
         }
-        fInputs[i]->fromFilter=nullptr;
-        fInputs[i]->fromPin=-1;
     }
     for (int i=0;i<fOutputs.count();i++) {
-        if (fOutputs.at(i)->toPin!=-1) {
-            if (fOutputs.at(i)->toFilter) {
-                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromFilter=nullptr;
-                fOutputs[i]->toFilter->fInputs[fOutputs.at(i)->toPin]->fromPin=-1;
-            }
+        if ((fOutputs.at(i)->toPin!=-1) && (fOutputs.at(i)->toFilter!=nullptr)) {
+            fOutputs.at(i)->toFilter->fInputs.at(fOutputs.at(i)->toPin)
+                    ->links.removeAll(CInpLink(i,this));
         }
         fOutputs[i]->toFilter=nullptr;
         fOutputs[i]->toPin=-1;
@@ -344,9 +345,9 @@ void ZCPBase::mousePressEvent(QMouseEvent * event)
     }
     m_isDragging=false;
     if (pType==PinType::ptInput) {
-        m_owner->initConnBuilder(PinType::ptInput,pNum,dFlt->fInputs.at(pNum),nullptr);
+        m_owner->initConnBuilder(PinType::ptInput,pNum,dFlt->fInputs.at(pNum),nullptr,dFlt);
     } else {
-        m_owner->initConnBuilder(PinType::ptOutput,pNum,nullptr,dFlt->fOutputs.at(pNum));
+        m_owner->initConnBuilder(PinType::ptOutput,pNum,nullptr,dFlt->fOutputs.at(pNum),dFlt);
     }
 }
 
@@ -361,7 +362,7 @@ void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
         bool f=m_isDragging;
         m_isDragging=false;
         if (!f) {
-            m_owner->doneConnBuilder(true,PinType::ptInput,-1,nullptr,nullptr);
+            m_owner->doneConnBuilder(true,PinType::ptInput,-1,nullptr,nullptr,nullptr);
         } else {
             checkRecycle();
         }
@@ -369,9 +370,9 @@ void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
         return;
     }
     if (pType==PinType::ptInput) {
-        m_owner->doneConnBuilder(false,PinType::ptInput,pNum,dFlt->fInputs.at(pNum),nullptr);
+        m_owner->doneConnBuilder(false,PinType::ptInput,pNum,dFlt->fInputs.at(pNum),nullptr,dFlt);
     } else {
-        m_owner->doneConnBuilder(false,PinType::ptOutput,pNum,nullptr,dFlt->fOutputs.at(pNum));
+        m_owner->doneConnBuilder(false,PinType::ptOutput,pNum,nullptr,dFlt->fOutputs.at(pNum),dFlt);
     }
     Q_EMIT componentChanged(this);
 }
@@ -503,46 +504,80 @@ ZCPInput::ZCPInput(QObject * parent, ZCPBase * aOwner)
 
 void ZCPInput::readFromStreamLegacy( QDataStream & stream )
 {
+    qint32 fromPin;
     stream >> fromPin;
-    fromFilter=nullptr;
-    QString q;
-    stream >> q;
-    if (q!=QSL("<NONE>")) {
-        ffLogic=q;
-    } else {
+
+    QString ffLogic;
+    stream >> ffLogic;
+    if (ffLogic==QSL("<NONE>"))
         ffLogic.clear();
-    }
+
+    links.append(CInpLink(fromPin,nullptr,ffLogic));
 }
 
 void ZCPInput::readFromJson(const QJsonValue &json)
 {
-    fromFilter = nullptr;
-    fromPin = json.toObject().value(QSL("fromPin")).toInt(-1);
-    ffLogic = json.toObject().value(QSL("fromFilter")).toString();
+    if (json.isArray()) {
+        const QJsonArray jarray = json.toArray();
+        for (const auto& item : jarray) {
+            qint32 fromPin = item.toObject().value(QSL("fromPin")).toInt(-1);
+            QString ffLogic = item.toObject().value(QSL("fromFilter")).toString();
+            links.append(CInpLink(fromPin,nullptr,ffLogic));
+        }
+    } else {
+        qint32 fromPin = json.toObject().value(QSL("fromPin")).toInt(-1);
+        QString ffLogic = json.toObject().value(QSL("fromFilter")).toString();
+        links.append(CInpLink(fromPin,nullptr,ffLogic));
+    }
 }
 
 QJsonValue ZCPInput::storeToJson() const
 {
-    QJsonObject data;
-    data.insert(QSL("fromPin"),fromPin);
+    QJsonArray data;
+    for (const auto& link : qAsConst(links)) {
+        QJsonObject item;
+        item.insert(QSL("fromPin"),link.fromPin);
 
-    QString filter;
-    if (fromFilter)
-        filter = fromFilter->objectName();
-    data.insert(QSL("fromFilter"),filter);
+        QString filter;
+        if (link.fromFilter)
+            filter = link.fromFilter->objectName();
+        item.insert(QSL("fromFilter"),filter);
 
+        data.append(item);
+    }
     return data;
 }
 
 bool ZCPInput::postLoadBind()
 {
-    if (ffLogic.isEmpty()) return true;
-
-    auto b = ownerFilter->ownerArea()->findChild<ZCPBase *>(ffLogic);
-    if (b) {
-        fromFilter=b;
-    } else {
-        return false;
+    bool failed = false;
+    for (auto & link : links) {
+        if (!(link.ffLogic.isEmpty())) {
+            auto b = ownerFilter->ownerArea()->findChild<ZCPBase *>(link.ffLogic);
+            if (b) {
+                link.fromFilter = b;
+            } else {
+                failed = true;
+            }
+        }
     }
-    return true;
+    return (!failed);
+}
+
+CInpLink::CInpLink(qint32 aFromPin, ZCPBase *aFromFilter, const QString &affLogic)
+{
+    fromPin = aFromPin;
+    fromFilter = aFromFilter;
+    ffLogic = affLogic;
+}
+
+bool CInpLink::operator==(const CInpLink &s) const
+{
+    return ((fromPin == s.fromPin) &&
+            (reinterpret_cast<qintptr>(fromFilter) == reinterpret_cast<qintptr>(s.fromFilter)));
+}
+
+bool CInpLink::operator!=(const CInpLink &s) const
+{
+    return !operator==(s);
 }

@@ -65,38 +65,35 @@ QSize ZRenderArea::sizeHint() const
     return minimumSizeHint();
 }
 
-void ZRenderArea::initConnBuilder(int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput)
+void ZRenderArea::initConnBuilder(int type, int pinNum, ZCPInput* input, ZCPOutput* output,
+                                  ZCPBase *initialFilter)
 {
     if (m_connBuilding) {
         m_connBuilding=false;
         return;
     }
 
-    m_startPinType=aType;
-    m_startPinNum=aPinNum;
+    m_startPinType=type;
+    m_startPinNum=pinNum;
     m_startInput=nullptr;
     m_startOutput=nullptr;
+    m_startFilter=initialFilter;
+
     // init connection form input
     if (m_startPinType==ZCPBase::PinType::ptInput) {
-        m_startInput=aInput;
+        m_startInput=input;
         if (m_startInput) {
-            // disconnect old connections from this input
-            if ((m_startInput->fromPin!=-1) && (m_startInput->fromFilter)) {
-                m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toFilter=nullptr;
-                m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toPin=-1;
-            }
-            m_startInput->fromFilter=nullptr;
-            m_startInput->fromPin=-1;
+            // do not disconnect anything, just start building mode
             m_connCursor=m_startInput->ownerFilter->pos()+m_startInput->relCoord;
         }
     } else {
         // init connection from output
-        m_startOutput=aOutput;
+        m_startOutput=output;
         if (m_startOutput) {
             // disconnect old connections from this output
             if ((m_startOutput->toPin!=-1) && (m_startOutput->toFilter)) {
-                m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromFilter=nullptr;
-                m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromPin=-1;
+                m_startOutput->toFilter->fInputs.at(m_startOutput->toPin)
+                        ->links.removeAll(CInpLink(pinNum,m_startFilter));
             }
             m_startOutput->toFilter=nullptr;
             m_startOutput->toPin=-1;
@@ -244,79 +241,60 @@ void ZRenderArea::refreshConnBuilder(const QPoint & atPos)
     repaintConn();
 }
 
-void ZRenderArea::doneConnBuilder(bool aNone, int aType, int aPinNum, ZCPInput* aInput, ZCPOutput* aOutput)
+void ZRenderArea::doneConnBuilder(bool none, int type, int pinNum, ZCPInput* input, ZCPOutput* output, ZCPBase *finishFilter)
 {
     // if we making trace from input to this output...
     if ((m_startPinType==ZCPBase::PinType::ptInput) && m_startInput) {
         // and we have new output now...
-        if (aOutput) {
+        if (output) {
             // then we remove old connection to this output to connect our new trace to it
-            if ((aOutput->toPin!=-1) && aOutput->toFilter) {
-                aOutput->toFilter->fInputs[aOutput->toPin]->fromFilter=nullptr;
-                aOutput->toFilter->fInputs[aOutput->toPin]->fromPin=-1;
+            if ((output->toPin!=-1) && output->toFilter) {
+                output->toFilter->fInputs.at(output->toPin)
+                        ->links.removeAll(CInpLink(pinNum,finishFilter));
             }
-            aOutput->toFilter=nullptr;
-            aOutput->toPin=-1;
+            output->toFilter=nullptr;
+            output->toPin=-1;
         }
-        // if our input (from that we making connection) is connected - then disconnect it now
-        if ((m_startInput->fromPin!=-1) && m_startInput->fromFilter) {
-            m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toFilter=nullptr;
-            m_startInput->fromFilter->fOutputs[m_startInput->fromPin]->toPin=-1;
-        }
-        m_startInput->fromFilter=nullptr;
-        m_startInput->fromPin=-1;
     }
     // if we making trace from output to this input...
     else if (m_startOutput) {
-        // and we have new input now...
-        if (aInput) {
-            // then we remove old connection to this input
-            if ((aInput->fromPin!=-1) && aInput->fromFilter) {
-                aInput->fromFilter->fOutputs[aInput->fromPin]->toFilter=nullptr;
-                aInput->fromFilter->fOutputs[aInput->fromPin]->toPin=-1;
-            }
-            aInput->fromFilter=nullptr;
-            aInput->fromPin=-1;
-        }
         // if our output (from that we making connection) is connected - then disconnect it now
         if ((m_startOutput->toPin!=-1) && m_startOutput->toFilter) {
-            m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromFilter=nullptr;
-            m_startOutput->toFilter->fInputs[m_startOutput->toPin]->fromPin=-1;
+            m_startOutput->toFilter->fInputs.at(m_startOutput->toPin)
+                    ->links.removeAll(CInpLink(m_startPinNum,m_startFilter));
         }
         m_startOutput->toFilter=nullptr;
         m_startOutput->toPin=-1;
     }
     // if this is simple deletion or incorrect route (in-in, out-out), then delete it
-    if ((aNone) || (aType==m_startPinType)) {
+    if ((none) || (type==m_startPinType)) {
         m_connBuilding=false;
         repaintConn();
         return;
     }
     // if this output can't possible connect to specified input (np: DMix connecting not to HW), then delete it
-    ZCPBase *aTo;
-    ZCPBase *aFrom;
+    ZCPBase *toFilter;
+    ZCPBase *fromFilter;
     if (m_startPinType==ZCPBase::PinType::ptInput) {
-        aTo=m_startInput->ownerFilter;
-        aFrom=aOutput->ownerFilter;
+        toFilter=m_startInput->ownerFilter;
+        fromFilter=output->ownerFilter;
     } else {
-        aTo=aInput->ownerFilter;
-        aFrom=m_startOutput->ownerFilter;
+        toFilter=input->ownerFilter;
+        fromFilter=m_startOutput->ownerFilter;
     }
-    if ((!aFrom->canConnectOut(aTo)) || (!aTo->canConnectIn(aFrom))) {
+    if ((!fromFilter->canConnectOut(toFilter)) || (!toFilter->canConnectIn(fromFilter))) {
         m_connBuilding=false;
         repaintConn();
         return;
     }
     if (m_startPinType==ZCPBase::PinType::ptInput) {
-        m_startInput->fromFilter=aOutput->ownerFilter;
-        m_startInput->fromPin=aPinNum;
-        aOutput->toFilter=m_startInput->ownerFilter;
-        aOutput->toPin=m_startPinNum;
+        m_startInput->links.append(CInpLink(pinNum,output->ownerFilter));
+        output->toFilter=m_startInput->ownerFilter;
+        output->toPin=m_startPinNum;
     } else {
-        m_startOutput->toFilter=aInput->ownerFilter;
-        m_startOutput->toPin=aPinNum;
-        aInput->fromFilter=m_startOutput->ownerFilter;
-        aInput->fromPin=m_startPinNum;
+        m_startOutput->toFilter=input->ownerFilter;
+        m_startOutput->toPin=pinNum;
+        input->links.append(CInpLink(m_startPinNum,m_startOutput->ownerFilter));
     }
     m_connBuilding=false;
     repaintConn();
