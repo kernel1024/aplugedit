@@ -274,6 +274,15 @@ void ZLADSPADialog::readInfoFromControls()
 
 void ZLADSPADialog::scanPlugins()
 {
+    using CComboPair = QPair<QString,qint64>;
+
+    static QFileInfoList savedPluginsList = { };
+    static QHash<qint64,QString> savedPluginFile = { };
+    static QHash<qint64,QString> savedPluginName = { };
+    static QHash<qint64,QString> savedPluginLabel = { };
+    static QVector<qint64> savedPluginID = { };
+    static QVector<CComboPair> savedComboItems = { };
+
     m_selectedPluginID = 0L;
     comboPlugin->clear();
     m_pluginFile.clear();
@@ -284,16 +293,23 @@ void ZLADSPADialog::scanPlugins()
     clearCItems();
     m_controls->resize(sizeHint());
 
-    using CComboPair = QPair<QString,qint64>;
-    QVector<CComboPair> comboItems;
-
-    // TODO: cache this, do not reload all libraries every time
+    QFileInfoList pluginsList;
     const QStringList ladspa_dirs=ZGenericFuncs::getLADSPAPath().split(':',QString::SkipEmptyParts);
     for (const auto &dir : ladspa_dirs) {
         QDir ladspa_dir(dir);
-        ladspa_dir.setFilter(QDir::Files);
-        for (int j=0;j<static_cast<int>(ladspa_dir.count());j++) {
-            QLibrary plugin(ladspa_dir.filePath(ladspa_dir[j]));
+        pluginsList.append(ladspa_dir.entryInfoList({QSL("*.so")},QDir::Files));
+    }
+
+    if (pluginsList != savedPluginsList) {
+        savedPluginsList = pluginsList;
+        savedPluginID.clear();
+        savedPluginFile.clear();
+        savedPluginName.clear();
+        savedPluginLabel.clear();
+        savedComboItems.clear();
+
+        for (const auto& fi : qAsConst(pluginsList)) {
+            QLibrary plugin(fi.absoluteFilePath());
             if (plugin.load()) {
                 auto fDescriptorFunction = reinterpret_cast<LADSPA_Descriptor_Function>(plugin.resolve("ladspa_descriptor"));
                 if (fDescriptorFunction) {
@@ -302,24 +318,31 @@ void ZLADSPADialog::scanPlugins()
                         QString pluginName = QString::fromUtf8(psDescriptor->Name);
                         QString pluginLabel = QString::fromUtf8(psDescriptor->Label);
                         auto plugID = static_cast<qint64>(psDescriptor->UniqueID);
-                        m_pluginFile[plugID] = ladspa_dir.filePath(ladspa_dir[j]);
-                        m_pluginName[plugID] = pluginName;
-                        m_pluginLabel[plugID] = pluginLabel;
-                        comboItems.append(qMakePair(QSL("%1 (%2/%3)")
-                                                    .arg(pluginName)
-                                                    .arg(plugID)
-                                                    .arg(pluginLabel),plugID));
+                        savedPluginID.append(plugID);
+                        savedPluginFile[plugID] = fi.absoluteFilePath();
+                        savedPluginName[plugID] = pluginName;
+                        savedPluginLabel[plugID] = pluginLabel;
+                        savedComboItems.append(qMakePair(QSL("%1 (%2/%3)")
+                                                         .arg(pluginName)
+                                                         .arg(plugID)
+                                                         .arg(pluginLabel),plugID));
                     }
                 }
                 plugin.unload();
             }
         }
+        std::sort(savedComboItems.begin(),savedComboItems.end(),[](const CComboPair &a, const CComboPair &b){
+            return (a.first < b.first);
+        });
+
     }
-    std::sort(comboItems.begin(),comboItems.end(),[](const CComboPair &a, const CComboPair &b){
-        return (a.first < b.first);
-    });
+
+    m_pluginFile = savedPluginFile;
+    m_pluginName = savedPluginName;
+    m_pluginLabel = savedPluginLabel;
+
     comboPlugin->blockSignals(true);
-    for (const auto &i : qAsConst(comboItems))
+    for (const auto &i : qAsConst(savedComboItems))
         comboPlugin->addItem(i.first,i.second);
     comboPlugin->blockSignals(false);
 }
