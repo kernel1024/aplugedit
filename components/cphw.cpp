@@ -52,7 +52,7 @@ void ZCPHW::realignPins()
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
 }
 
-void ZCPHW::doInfoGenerate(QTextStream & stream) const
+void ZCPHW::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type hw") << endl;
@@ -93,7 +93,7 @@ void ZCPHW::doInfoGenerate(QTextStream & stream) const
     if (m_rate!=-1)
         stream << QSL("  rate ") << m_rate << endl;
 
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

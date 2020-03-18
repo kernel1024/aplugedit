@@ -30,9 +30,9 @@ class ZCPLADSPA : public ZCPBase
     Q_OBJECT
 private:
     int m_channels { 2 };
+    int m_sampleRate { 44100 };
     QVector<CLADSPAPlugItem> m_plugins;
 
-    int searchSampleRate() const;
     bool isConverterPresent() const;
     QStringList getPlugNames() const;
 
@@ -51,7 +51,7 @@ public:
 protected:
     void paintEvent (QPaintEvent * event) override;
     void realignPins() override;
-    void doInfoGenerate(QTextStream & stream) const override;
+    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;
 };
 #endif

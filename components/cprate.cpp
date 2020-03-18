@@ -50,7 +50,7 @@ int ZCPRate::getRate() const
     return m_rate;
 }
 
-void ZCPRate::doInfoGenerate(QTextStream & stream) const
+void ZCPRate::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type rate") << endl;
@@ -62,7 +62,7 @@ void ZCPRate::doInfoGenerate(QTextStream & stream) const
     }
     if (!m_converter.isEmpty())
         stream << QSL("  converter \"") << m_converter << QSL("\"") << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

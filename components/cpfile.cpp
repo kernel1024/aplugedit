@@ -41,14 +41,14 @@ void ZCPFile::realignPins()
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
 }
 
-void ZCPFile::doInfoGenerate(QTextStream & stream) const
+void ZCPFile::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type file") << endl;
     stream << QSL("  slave.pcm null") << endl;
     stream << QSL("  file \"") << m_fileName << QSL("\"") << endl;
     stream << QSL("  format \"raw\"") << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

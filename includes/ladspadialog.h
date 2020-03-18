@@ -65,7 +65,7 @@ private:
 
     qint64 m_selectedPluginID { 0L };
     qint64 m_preservedPlugID { 0 };
-    int m_sampleRate { 48000 };
+    int m_sampleRate { 44100 };
     int m_channels { 2 };
     bool m_isShowed { false };
 

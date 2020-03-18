@@ -58,8 +58,9 @@ public:
 
 protected:
     void paintEvent ( QPaintEvent * event ) override;
-    void doInfoGenerate(QTextStream & stream) const override;
+    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
     void realignPins() override;
     void showSettingsDlg() override;
 };
+
 #endif

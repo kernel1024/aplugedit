@@ -46,7 +46,7 @@ void ZCPDMix::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPDMix::doInfoGenerate(QTextStream & stream) const
+void ZCPDMix::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     auto hw=qobject_cast<ZCPHW*>(fOut->toFilter);
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
@@ -71,7 +71,7 @@ void ZCPDMix::doInfoGenerate(QTextStream & stream) const
             }
         }
     }
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

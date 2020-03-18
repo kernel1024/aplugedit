@@ -45,7 +45,7 @@ void ZCPMeter::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPMeter::doInfoGenerate(QTextStream & stream) const
+void ZCPMeter::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     stream << QSL("pcm_scope_type.") << objectName() << QSL(" {") << endl;
     if (!m_meterLib.isEmpty())
@@ -69,7 +69,7 @@ void ZCPMeter::doInfoGenerate(QTextStream & stream) const
     }
     stream << QSL("  frequency ") << m_refreshRate << endl;
     stream << QSL("  scopes.0 ") << objectName() << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

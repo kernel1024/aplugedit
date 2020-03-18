@@ -57,7 +57,7 @@ void ZCPConv::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPConv::doInfoGenerate(QTextStream & stream) const
+void ZCPConv::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     QString conv = QSL("linear");
     switch (m_converter) {
@@ -78,7 +78,7 @@ void ZCPConv::doInfoGenerate(QTextStream & stream) const
             stream << QSL("    format ") << m_format << endl;
         stream << QSL("  }") << endl;
     }
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

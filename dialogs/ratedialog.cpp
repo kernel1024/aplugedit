@@ -39,7 +39,7 @@ ZRateDialog::ZRateDialog(QWidget *parent)
     alRate->addItem(tr("48 kHz"));
     alRate->addItem(tr("96 kHz"));
     alRate->addItem(tr("192 kHz"));
-    alRate->setCurrentIndex(4);
+    alRate->setCurrentIndex(3);
 }
 
 ZRateDialog::~ZRateDialog() = default;
@@ -56,7 +56,7 @@ int ZRateDialog::getRate()
         case 5: return 96000;
         case 6: return 192000;
     }
-    return 48000;
+    return 44100;
 }
 
 QString ZRateDialog::getConverter()
@@ -85,7 +85,7 @@ void ZRateDialog::setParams(int aRate, const QString &aConverter)
         case 48000: alRate->setCurrentIndex(4); break;
         case 96000: alRate->setCurrentIndex(5); break;
         case 192000: alRate->setCurrentIndex(6); break;
-        default: alRate->setCurrentIndex(4);
+        default: alRate->setCurrentIndex(3);
     }
     if (aConverter==QSL("samplerate_best")) {
         alConverter->setCurrentIndex(1);

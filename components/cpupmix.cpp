@@ -104,7 +104,7 @@ void ZCPUpmix::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPUpmix::doInfoGenerate(QTextStream &stream) const
+void ZCPUpmix::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type upmix") << endl;
@@ -117,7 +117,7 @@ void ZCPUpmix::doInfoGenerate(QTextStream &stream) const
         stream << QSL("  channels %1").arg(m_channels) << endl;
     if (m_delay>0)
         stream << QSL("  delay %1").arg(m_delay) << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

@@ -69,6 +69,7 @@ SOURCES       = main.cpp \
 RESOURCES     = aplugedit.qrc
 FORMS         = \
                 ui/convdlg.ui \
+                ui/errorshowdlg.ui \
                 ui/generatedlg.ui \
                 ui/hintdlg.ui \
                 ui/hwdlg.ui \

@@ -41,6 +41,8 @@ private:
     QLabel *m_recycle { nullptr };
     QPoint m_connCursor;
 
+    void drawArrowLine(QPainter *p, const QPoint& p1, const QPoint& p2,
+                       bool invertDirection = false, bool arrowAtEnd = false);
     void paintConnections(QPainter *p);
     void initConnBuilder(int type, int pinNum, ZCPInput* input, ZCPOutput* output,
                          ZCPBase* initialFilter);
@@ -60,7 +62,7 @@ public:
     QByteArray storeSchematic() const;
 
     void repaintConn();
-    void doGenerate(QTextStream& stream);
+    void doGenerate(QTextStream& stream, QStringList& warnings);
 
     QVector<CPCMItem> getAllPCMNames() const;
 

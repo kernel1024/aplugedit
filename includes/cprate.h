@@ -29,7 +29,7 @@ class ZCPRate : public ZCPBase
     Q_OBJECT
 private:
     QString m_converter;
-    int m_rate { 48000 };
+    int m_rate { 44100 };
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
 
@@ -47,7 +47,7 @@ public:
 protected:
     void paintEvent ( QPaintEvent * event ) override;
     void realignPins() override;
-    void doInfoGenerate(QTextStream & stream) const override;
+    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;
 };
 #endif

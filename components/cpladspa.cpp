@@ -50,12 +50,11 @@ void ZCPLADSPA::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
+void ZCPLADSPA::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     if (!isConverterPresent()) {
-        QMessageBox::warning(topLevelWidget(),tr("LADSPA plugin configuration"),
-                             tr("FLOAT converter not connected to the output of LADSPA plugin.\n"
-                                "Consider to use PLUG or FLOAT CONVERTER plugin at the output of LADSPA."));
+        warnings.append(tr("LADSPA plugin: FLOAT converter not connected to the output of LADSPA plugin. "
+                           "Consider to use PLUG or FLOAT CONVERTER plugin at the output of LADSPA."));
     }
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type ladspa") << endl;
@@ -113,7 +112,7 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream) const
         }
     }
     stream << QSL("  }") << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }
@@ -189,6 +188,7 @@ void ZCPLADSPA::readFromJson(const QJsonValue &json)
     ZCPBase::readFromJson(json.toObject().value(QSL("base")));
 
     m_channels = json.toObject().value(QSL("channels")).toInt(2);
+    m_sampleRate = json.toObject().value(QSL("sampleRate")).toInt(44100);
 
     m_plugins.clear();
     const QJsonArray plugins = json.toObject().value(QSL("plugins")).toArray();
@@ -201,6 +201,7 @@ QJsonValue ZCPLADSPA::storeToJson() const
     QJsonObject data;
     data.insert(QSL("base"),ZCPBase::storeToJson());
     data.insert(QSL("channels"),m_channels);
+    data.insert(QSL("sampleRate"),m_sampleRate);
 
     QJsonArray plugs;
     for (const auto& plug : qAsConst(m_plugins))
@@ -210,53 +211,17 @@ QJsonValue ZCPLADSPA::storeToJson() const
     return data;
 }
 
-int ZCPLADSPA::searchSampleRate() const
-{
-    ZCPBase* w=fOut->toFilter;
-    int sampleRate=-1;
-    while (w)
-    {
-        if (auto hw=qobject_cast<ZCPHW*>(w))
-        {
-            sampleRate=hw->getRate();
-            break;
-        }
-        if (auto hw=qobject_cast<ZCPRate*>(w))
-        {
-            sampleRate=hw->getRate();
-            break;
-        }
-        ZCPOutput* out = w->getMainOutput();
-        if (out==nullptr) break;
-        w=out->toFilter;
-    }
-    if (sampleRate==-1)
-    {
-        qWarning() << "LADSPA samplerate not defined by destination module (hw or rate). "
-                      "Defaulting to 48kHz.";
-        sampleRate=48000;
-    }
-    return sampleRate;
-}
-
 bool ZCPLADSPA::isConverterPresent() const
 {
-    ZCPBase* w=fOut->toFilter;
-    while (w)
-    {
-        if (qobject_cast<ZCPPlug*>(w) != nullptr) return true;
+    if (searchPluginForward(ZCPPlug::staticMetaObject.className()))
+        return true;
 
-        if (auto hw=qobject_cast<ZCPConv*>(w))
-        {
-            if (hw->getConverterType() == ZCPConv::ConverterType::alcFloat)
+    if (auto plug = searchPluginForward(ZCPConv::staticMetaObject.className())) {
+        if (auto conv = qobject_cast<ZCPConv*>(plug)) {
+            if (conv->getConverterType() == ZCPConv::ConverterType::alcFloat)
                 return true;
         }
-
-        ZCPOutput* out = w->getMainOutput();
-        if (out==nullptr) break;
-        w=out->toFilter;
     }
-
     return false;
 }
 
@@ -272,15 +237,15 @@ QStringList ZCPLADSPA::getPlugNames() const
 
 void ZCPLADSPA::showSettingsDlg()
 {
-    ZLADSPAListDialog d(topLevelWidget(),searchSampleRate());
+    ZLADSPAListDialog d(topLevelWidget());
 
-    d.setParams(m_channels,m_plugins);
+    d.setParams(m_channels,m_sampleRate,m_plugins);
 
     if (d.exec()==QDialog::Rejected) return;
 
     Q_EMIT componentChanged(this);
 
-    d.getParams(m_channels,m_plugins);
+    d.getParams(m_channels,m_sampleRate,m_plugins);
     update();
 }
 

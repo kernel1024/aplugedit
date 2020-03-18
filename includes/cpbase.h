@@ -25,81 +25,9 @@
 
 const int zcpPinSize = 8;
 
-class ZCPInput;
-class ZCPOutput;
+class ZCPBase;
 class ZRenderArea;
 class ZCPMulti;
-
-class ZCPBase : public QWidget
-{
-    Q_OBJECT
-    friend class ZRenderArea;
-    friend class ZCPMulti;
-public:
-    enum PinType {
-        ptInput = 1,
-        ptOutput = 2
-    };
-    Q_ENUM(PinType)
-
-    ZCPBase(QWidget *parent, ZRenderArea *aOwner);
-    
-    virtual void readFromStreamLegacy(QDataStream & stream);
-    virtual void readFromJson(const QJsonValue& json);
-    virtual QJsonValue storeToJson() const;
-
-    virtual bool canConnectOut(ZCPBase *toFilter);
-    virtual bool canConnectIn(ZCPBase *toFilter);
-
-    QSize sizeHint() const override;
-
-    ZRenderArea *ownerArea() const;
-
-    void registerInput(ZCPInput* inp);
-    void registerOutput(ZCPOutput* out);
-    virtual ZCPOutput* getMainOutput() const;
-
-    QString getHint() const;
-
-private:
-    bool m_isDragging { false };
-    bool m_hintShow { true };
-    ZRenderArea *m_owner;
-    QString m_hint;
-    QList<ZCPInput*> fInputs;
-    QList<ZCPOutput*> fOutputs;
-    QColor m_pinColor { Qt::blue };
-    QPoint m_relCorner;
-
-    void deleteOutput(int idx);
-
-    void mouseInPin(const QPoint& mx, int &aPinNum, ZCPBase::PinType &aPinType, ZCPBase *&aFilter);
-    void checkRecycle();
-    void showCtxMenu(const QPoint& pos);
-
-    void redrawPins(QPainter & painter);
-    bool postLoadBind();
-    void showHintDlg();
-
-    Q_DISABLE_COPY(ZCPBase)
-
-protected:
-    int paintBase(QPainter &p, bool isGrowable = false);
-    void mouseMoveEvent(QMouseEvent * event) override;
-    void mousePressEvent(QMouseEvent * event) override;
-    void mouseReleaseEvent(QMouseEvent * event) override;
-    virtual void realignPins()=0;
-    virtual void doInfoGenerate(QTextStream & stream) const;
-    virtual void showSettingsDlg();
-    virtual void addCtxMenuItems(QMenu* menu);
-
-Q_SIGNALS:
-    void componentChanged(ZCPBase * obj);
-
-public Q_SLOTS:
-    void deleteComponent();
-
-};
 
 class ZCPOutput : public QObject
 {
@@ -149,6 +77,79 @@ public:
     void readFromJson(const QJsonValue& json);
     QJsonValue storeToJson() const;
     bool postLoadBind();
+};
+
+class ZCPBase : public QWidget
+{
+    Q_OBJECT
+    friend class ZRenderArea;
+    friend class ZCPMulti;
+public:
+    enum PinType {
+        ptInput = 1,
+        ptOutput = 2
+    };
+    Q_ENUM(PinType)
+
+    ZCPBase(QWidget *parent, ZRenderArea *aOwner);
+
+    virtual void readFromStreamLegacy(QDataStream & stream);
+    virtual void readFromJson(const QJsonValue& json);
+    virtual QJsonValue storeToJson() const;
+
+    virtual bool canConnectOut(ZCPBase *toFilter);
+    virtual bool canConnectIn(ZCPBase *toFilter);
+
+    QSize sizeHint() const override;
+
+    ZRenderArea *ownerArea() const;
+
+    void registerInput(ZCPInput* inp);
+    void registerOutput(ZCPOutput* out);
+
+    QString getHint() const;
+
+protected:
+    int paintBase(QPainter &p, bool isGrowable = false);
+    void mouseMoveEvent(QMouseEvent * event) override;
+    void mousePressEvent(QMouseEvent * event) override;
+    void mouseReleaseEvent(QMouseEvent * event) override;
+    virtual void realignPins()=0;
+    virtual void doInfoGenerate(QTextStream & stream, QStringList & warnings) const;
+    virtual void showSettingsDlg();
+    virtual void addCtxMenuItems(QMenu* menu);
+
+    ZCPBase* searchPluginBackward(const char *targetClass, ZCPBase* node = nullptr) const;
+    ZCPBase* searchPluginForward(const char *targetClass, ZCPBase* node = nullptr) const;
+
+Q_SIGNALS:
+    void componentChanged(ZCPBase * obj);
+
+public Q_SLOTS:
+    void deleteComponent();
+
+private:
+    bool m_isDragging { false };
+    bool m_hintShow { true };
+    ZRenderArea *m_owner;
+    QString m_hint;
+    QList<ZCPInput*> fInputs;
+    QList<ZCPOutput*> fOutputs;
+    QColor m_pinColor { Qt::blue };
+    QPoint m_relCorner;
+
+    void deleteOutput(int idx);
+
+    void mouseInPin(const QPoint& mx, int &aPinNum, ZCPBase::PinType &aPinType, ZCPBase *&aFilter);
+    void checkRecycle();
+    void showCtxMenu(const QPoint& pos);
+
+    void redrawPins(QPainter & painter);
+    bool postLoadBind();
+    void showHintDlg();
+
+    Q_DISABLE_COPY(ZCPBase)
+
 };
 
 #endif

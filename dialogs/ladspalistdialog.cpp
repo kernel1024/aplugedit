@@ -21,16 +21,24 @@
 #include "includes/generic.h"
 #include "ui_ladspalistdialog.h"
 
-ZLADSPAListDialog::ZLADSPAListDialog(QWidget *parent, int sampleRate) :
+ZLADSPAListDialog::ZLADSPAListDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ZLADSPAListDialog),
-    m_sampleRate(sampleRate)
+    ui(new Ui::ZLADSPAListDialog)
 {
     ui->setupUi(this);
     model = new ZLADSPAListModel(this);
     ui->listPlugins->setModel(model);
     ui->listPlugins->setItemDelegate(new ZDescListItemDelegate());
     ui->listPlugins->viewport()->setAcceptDrops(true);
+
+    ui->comboSampleRate->addItem(tr("8000 Hz"));
+    ui->comboSampleRate->addItem(tr("11025 Hz"));
+    ui->comboSampleRate->addItem(tr("22050 Hz"));
+    ui->comboSampleRate->addItem(tr("44,1 kHz"));
+    ui->comboSampleRate->addItem(tr("48 kHz"));
+    ui->comboSampleRate->addItem(tr("96 kHz"));
+    ui->comboSampleRate->addItem(tr("192 kHz"));
+    ui->comboSampleRate->setCurrentIndex(3);
 
     connect(ui->buttonAdd,&QPushButton::clicked,this,&ZLADSPAListDialog::addPlugin);
     connect(ui->buttonDelete,&QPushButton::clicked,this,&ZLADSPAListDialog::deletePlugin);
@@ -43,21 +51,34 @@ ZLADSPAListDialog::~ZLADSPAListDialog()
     delete ui;
 }
 
-void ZLADSPAListDialog::setParams(int channels, const QVector<CLADSPAPlugItem> &plugins)
+void ZLADSPAListDialog::setParams(int channels, int sampleRate, const QVector<CLADSPAPlugItem> &plugins)
 {
     ui->spinChannels->setValue(channels);
     model->setItems(plugins);
+
+    switch (sampleRate)
+    {
+        case 8000: ui->comboSampleRate->setCurrentIndex(0); break;
+        case 11025: ui->comboSampleRate->setCurrentIndex(1); break;
+        case 22050: ui->comboSampleRate->setCurrentIndex(2); break;
+        case 44100: ui->comboSampleRate->setCurrentIndex(3); break;
+        case 48000: ui->comboSampleRate->setCurrentIndex(4); break;
+        case 96000: ui->comboSampleRate->setCurrentIndex(5); break;
+        case 192000: ui->comboSampleRate->setCurrentIndex(6); break;
+        default: ui->comboSampleRate->setCurrentIndex(3);
+    }
 }
 
-void ZLADSPAListDialog::getParams(int &channels, QVector<CLADSPAPlugItem> &plugins)
+void ZLADSPAListDialog::getParams(int &channels, int &sampleRate, QVector<CLADSPAPlugItem> &plugins)
 {
     channels = ui->spinChannels->value();
     plugins = model->items();
+    sampleRate = getSampleRate();
 }
 
 void ZLADSPAListDialog::addPlugin()
 {
-    ZLADSPADialog dlg(topLevelWidget(),ui->spinChannels->value(),m_sampleRate);
+    ZLADSPADialog dlg(topLevelWidget(),ui->spinChannels->value(),getSampleRate());
 
     if (dlg.exec()==QDialog::Rejected) return;
 
@@ -89,10 +110,25 @@ void ZLADSPAListDialog::showEditPluginDialog(const QModelIndex &index)
     int idx = model->getRowIndex(index);
     if (idx<0) return;
 
-    ZLADSPADialog dlg(topLevelWidget(),ui->spinChannels->value(),m_sampleRate);
+    ZLADSPADialog dlg(topLevelWidget(),ui->spinChannels->value(),getSampleRate());
     dlg.setPlugItem(model->items().at(idx));
 
     if (dlg.exec()==QDialog::Rejected) return;
 
     model->setItem(idx,dlg.getPlugItem());
+}
+
+int ZLADSPAListDialog::getSampleRate() const
+{
+    switch (ui->comboSampleRate->currentIndex())
+    {
+        case 0: return 8000;
+        case 1: return 11025;
+        case 2: return 22050;
+        case 3: return 44100;
+        case 4: return 48000;
+        case 5: return 96000;
+        case 6: return 192000;
+    }
+    return 44100;
 }

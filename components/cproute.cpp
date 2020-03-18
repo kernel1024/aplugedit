@@ -55,7 +55,7 @@ void ZCPRoute::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPRoute::doInfoGenerate(QTextStream & stream) const
+void ZCPRoute::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type route") << endl;
@@ -71,7 +71,7 @@ void ZCPRoute::doInfoGenerate(QTextStream & stream) const
         stream << QSL("  ttable.") << m_routeTable.at(i).from << QSL(".") << i << QSL(" ")
                << QSL("%1").arg(m_routeTable.at(i).coeff,1,'f',1) << endl;
     }
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

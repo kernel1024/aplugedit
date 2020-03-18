@@ -105,7 +105,7 @@ void ZCPInp::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPInp::doInfoGenerate(QTextStream & stream) const
+void ZCPInp::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << m_dspName << QSL(" {") << endl;
     if (fOut->toFilter)
@@ -116,7 +116,7 @@ void ZCPInp::doInfoGenerate(QTextStream & stream) const
         stream << QSL("  type hw") << endl;
         stream << QSL("  card 0") << endl;
     }
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

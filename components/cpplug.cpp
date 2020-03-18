@@ -65,13 +65,13 @@ void ZCPPlug::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPPlug::doInfoGenerate(QTextStream &stream) const
+void ZCPPlug::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type plug") << endl;
     if (fOut->toFilter)
         stream << QSL("  slave.pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

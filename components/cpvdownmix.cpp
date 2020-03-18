@@ -72,7 +72,7 @@ void ZCPVDownmix::realignPins()
     fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
 }
 
-void ZCPVDownmix::doInfoGenerate(QTextStream &stream) const
+void ZCPVDownmix::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type vdownmix") << endl;
@@ -81,7 +81,7 @@ void ZCPVDownmix::doInfoGenerate(QTextStream &stream) const
         stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
         stream << QSL("  }") << endl;
     }
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }

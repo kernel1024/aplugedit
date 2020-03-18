@@ -35,11 +35,11 @@ class ZLADSPAListDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ZLADSPAListDialog(QWidget *parent, int sampleRate);
+    explicit ZLADSPAListDialog(QWidget *parent = nullptr);
     ~ZLADSPAListDialog();
 
-    void setParams(int channels, const QVector<CLADSPAPlugItem> &plugins);
-    void getParams(int &channels, QVector<CLADSPAPlugItem> &plugins);
+    void setParams(int channels, int sampleRate, const QVector<CLADSPAPlugItem> &plugins);
+    void getParams(int &channels, int &sampleRate, QVector<CLADSPAPlugItem> &plugins);
 
 private Q_SLOTS:
     void addPlugin();
@@ -50,7 +50,9 @@ private Q_SLOTS:
 private:
     Ui::ZLADSPAListDialog *ui;
     ZLADSPAListModel *model;
-    int m_sampleRate { 48000 };
+
+    int getSampleRate() const;
+
 };
 
 #endif // LADSPALISTDIALOG_H

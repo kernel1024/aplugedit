@@ -36,7 +36,7 @@ public:
 protected:
     void paintEvent(QPaintEvent * event) override;
     void realignPins() override;
-    void doInfoGenerate(QTextStream & stream) const override;
+    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
 
 private:
     ZCPInput* fInp { nullptr };

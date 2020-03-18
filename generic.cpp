@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cfloat>
 #include "includes/generic.h"
+#include "ui_errorshowdlg.h"
 
 ZGenericFuncs::ZGenericFuncs(QObject *parent)
     : QObject(parent)
@@ -48,6 +49,23 @@ QString ZGenericFuncs::getLADSPAPath()
         }
     }
     return ladspa_path;
+}
+
+void ZGenericFuncs::showWarningsDialog(QWidget *parent, const QString &title, const QString &text,
+                                           const QStringList &warnings)
+{
+    QDialog dlg(parent);
+    Ui::ZErrorShowDialog ui;
+    ui.setupUi(&dlg);
+
+    dlg.setWindowTitle(title);
+    ui.label->setText(text);
+    QIcon warnIcon = QIcon::fromTheme(QSL("dialog-warning"));
+    ui.iconLabel->setPixmap(warnIcon.pixmap(64));
+    for (const auto& s : warnings)
+        ui.logViewer->append(s);
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.exec();
 }
 
 ZDescListItemDelegate::ZDescListItemDelegate(QObject *parent)

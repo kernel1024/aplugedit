@@ -17,6 +17,7 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <cstring>
 #include "includes/generic.h"
 #include "includes/renderarea.h"
 #include "includes/cpbase.h"
@@ -64,14 +65,14 @@ void ZCPBase::deleteOutput(int idx)
 
 void ZCPBase::deleteComponent()
 {
-    for (int i=0;i<fInputs.count();i++) {
-        while (!fInputs.at(i)->links.isEmpty()) {
-            const auto link = fInputs.at(i)->links.constLast();
+    for (const auto &inp : qAsConst(fInputs)) {
+        while (!(inp->links.isEmpty())) {
+            const auto link = inp->links.constLast();
             if ((link.fromPin!=-1) && (link.fromFilter!=nullptr)) {
                 link.fromFilter->fOutputs[link.fromPin]->toFilter=nullptr;
                 link.fromFilter->fOutputs[link.fromPin]->toPin=-1;
             }
-            fInputs.removeLast();
+            inp->links.removeLast();
         }
     }
     for (int i=0;i<fOutputs.count();i++) {
@@ -295,8 +296,10 @@ int ZCPBase::paintBase(QPainter &p, bool isGrowable)
     return hintHeight;
 }
 
-void ZCPBase::doInfoGenerate(QTextStream &stream) const
+void ZCPBase::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
+    Q_UNUSED(warnings)
+
     if (!m_hint.isEmpty()) {
         QString opt = QSL("off");
         if (m_hintShow)
@@ -307,14 +310,6 @@ void ZCPBase::doInfoGenerate(QTextStream &stream) const
         stream << QSL("    description \"%1\"").arg(m_hint) << endl;
         stream << QSL("  }") << endl;
     }
-}
-
-ZCPOutput *ZCPBase::getMainOutput() const
-{
-    if (!fOutputs.isEmpty())
-        return fOutputs.first();
-
-    return nullptr;
 }
 
 QString ZCPBase::getHint() const
@@ -441,6 +436,48 @@ void ZCPBase::showSettingsDlg()
 void ZCPBase::addCtxMenuItems(QMenu *menu)
 {
     Q_UNUSED(menu)
+}
+
+ZCPBase *ZCPBase::searchPluginBackward(const char *targetClass, ZCPBase *node) const
+{
+    // TODO: add recursion protector
+
+    const ZCPBase* base = node;
+    if (base == nullptr)
+        base = this;
+
+    for (const auto& inp: qAsConst(base->fInputs)) {
+        for (const auto& link : qAsConst(inp->links)) {
+            if (link.fromFilter) {
+                if (std::strcmp(targetClass,link.fromFilter->metaObject()->className()) == 0)
+                    return link.fromFilter; // found
+
+                if (auto component = searchPluginBackward(targetClass,link.fromFilter))
+                    return component;
+            }
+        }
+    }
+    return nullptr;
+}
+
+ZCPBase *ZCPBase::searchPluginForward(const char *targetClass, ZCPBase *node) const
+{
+    // TODO: add recursion protector
+
+    const ZCPBase* base = node;
+    if (base == nullptr)
+        base = this;
+
+    for (const auto& out: qAsConst(base->fOutputs)) {
+        if (out->toFilter) {
+            if (std::strcmp(targetClass,out->toFilter->metaObject()->className()) == 0)
+                return out->toFilter; // found
+
+            if (auto component = searchPluginForward(targetClass,out->toFilter))
+                return component;
+        }
+    }
+    return nullptr;
 }
 
 ZCPOutput::ZCPOutput(QObject * parent, ZCPBase * aOwner)

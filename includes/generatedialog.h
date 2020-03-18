@@ -26,11 +26,17 @@
 class ZGenerateDialog : public QDialog, public Ui::ZGenerateDialog
 {
     Q_OBJECT
+private:
+    QStringList m_warnings;
 
 public:
     ZGenerateDialog(QWidget *parent = nullptr);
     ~ZGenerateDialog() override;
     void setConfigText(const QString& text);
+    void setWarnings(const QStringList &warnings);
+
+protected:
+    void showEvent(QShowEvent *event) override;
 
 public Q_SLOTS:
     void saveAs();

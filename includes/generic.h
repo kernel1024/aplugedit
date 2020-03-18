@@ -37,6 +37,8 @@ public:
     static int numDigits(int n);
     static int truncDouble(double num);
     static QString getLADSPAPath();
+    static void showWarningsDialog(QWidget *parent, const QString& title,
+                                       const QString& text, const QStringList& warnings);
 };
 
 class ZDescListItemDelegate : public QStyledItemDelegate

@@ -47,8 +47,6 @@ public:
     explicit ZMainWindow(QWidget *parent = nullptr);
     ~ZMainWindow() override;
     
-    void generateConfigToFile(QTextStream & stream);
-
 public Q_SLOTS:
     void fileNew();
     void fileOpen();

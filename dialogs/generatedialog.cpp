@@ -41,6 +41,26 @@ void ZGenerateDialog::setConfigText(const QString &text)
     configEditor->setPlainText(text);
 }
 
+void ZGenerateDialog::setWarnings(const QStringList &warnings)
+{
+    m_warnings = warnings;
+}
+
+void ZGenerateDialog::showEvent(QShowEvent *event)
+{
+    Q_UNUSED(event)
+
+    if (!m_warnings.isEmpty()) {
+        QStringList warnings = m_warnings;
+        QTimer::singleShot(1000,this,[this,warnings](){
+            ZGenericFuncs::showWarningsDialog(this,tr("ALSA config problems"),
+                                                  tr("Config was generated with %1 warnings.").arg(warnings.count()),
+                                                  warnings);
+        });
+        m_warnings.clear();
+    }
+}
+
 ZGenerateDialog::~ZGenerateDialog()
 {
     QSettings stg;

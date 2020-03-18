@@ -20,6 +20,8 @@
 #include "includes/cpmulti.h"
 #include "includes/generic.h"
 #include "includes/multidlg.h"
+#include "includes/cproute.h"
+#include "includes/cpplug.h"
 
 ZCPMulti::ZCPMulti(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
@@ -133,9 +135,12 @@ QJsonValue ZCPMulti::storeToJson() const
     return data;
 }
 
-void ZCPMulti::doInfoGenerate(QTextStream &stream) const
+void ZCPMulti::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
-    // TODO: check for plug or table at input pin (for interleaved -> complex conversion)
+    if (!isConverterPresent()) {
+        warnings.append(tr("Multi plugin: PLUG or ROUTE plugin not connected to the input of MULTI plugin. "
+                           "Consider to use some interleaved <-> complex converter at the input of MULTI."));
+    }
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type multi") << endl;
     stream << QSL("  slaves {") << endl;
@@ -158,7 +163,7 @@ void ZCPMulti::doInfoGenerate(QTextStream &stream) const
         stream << QSL("    }") << endl;
     }
     stream << QSL("  }") << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }
@@ -223,4 +228,10 @@ void ZCPMulti::regenerateCapacity(int inputChannelsCount)
 
     Q_EMIT componentChanged(this);
     update();
+}
+
+bool ZCPMulti::isConverterPresent() const
+{
+    return ((searchPluginBackward(ZCPPlug::staticMetaObject.className()) != nullptr) ||
+            (searchPluginBackward(ZCPRoute::staticMetaObject.className()) != nullptr));
 }

@@ -290,11 +290,6 @@ void ZMainWindow::repaintWithConnections()
     update();
 }
 
-void ZMainWindow::generateConfigToFile(QTextStream & stream)
-{
-    renderArea->doGenerate(stream);
-}
-
 void ZMainWindow::fileGenerate()
 {
     if (QMessageBox::question(this,tr("Generate config file"),
@@ -309,10 +304,18 @@ void ZMainWindow::fileGenerate()
             return;
         }
         QTextStream out(&file);
-        generateConfigToFile(out);
+        QStringList warnings;
+        renderArea->doGenerate(out,warnings);
         file.close();
 
         Q_EMIT alsaConfigUpdated();
+
+        if (!warnings.isEmpty()) {
+            ZGenericFuncs::showWarningsDialog(this,tr("ALSA config problems"),
+                                                  tr("Config was generated with %1 warnings.").arg(warnings.count()),
+                                                  warnings);
+        }
+        statusBar()->showMessage(tr("~/.asoundrc file was saved successfully."));
     }
 }
 
@@ -321,8 +324,10 @@ void ZMainWindow::fileGeneratePart()
     ZGenerateDialog d(this);
     QString config;
     QTextStream out(&config);
-    generateConfigToFile(out);
+    QStringList warnings;
+    renderArea->doGenerate(out,warnings);
     d.setConfigText(config);
+    d.setWarnings(warnings);
     d.exec();
 }
 

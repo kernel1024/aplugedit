@@ -40,11 +40,11 @@ void ZCPNull::realignPins()
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
 }
 
-void ZCPNull::doInfoGenerate(QTextStream & stream) const
+void ZCPNull::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type null") << endl;
-    ZCPBase::doInfoGenerate(stream);
+    ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
 }
