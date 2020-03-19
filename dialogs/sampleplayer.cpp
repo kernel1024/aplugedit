@@ -53,7 +53,7 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     ui->spinFrequency->setValue(stg.value(QSL("generatorFreq"),440.0).toDouble());
     ui->sliderVolume->setValue(stg.value(QSL("volume"),90).toInt());
 
-    ui->radioFuncGenerator->setChecked(true); // force widged disabling logic
+    ui->radioFuncGenerator->setChecked(true); // force widget disabling logic
     ui->radioMediaFile->setChecked(!(stg.value(QSL("funcGenerator"),false).toBool()));
     stg.endGroup();
 
@@ -292,8 +292,6 @@ void ZSamplePlayer::initGstreamer()
     }
 
     gstInitialized = true;
-
-    // TODO: do not use alsasink. output directly to alsa, avoiding alsa config caching by gstreamer
 }
 
 bool ZSamplePlayer::startGstreamer()
@@ -301,6 +299,8 @@ bool ZSamplePlayer::startGstreamer()
     if (m_data.pipeline) {
         stop();
     }
+
+    gAlsa->reloadGlobalConfig();
 
     gst_debug_add_log_function(debug_logger,this,nullptr);
     gst_debug_remove_log_function(gst_debug_log_default);

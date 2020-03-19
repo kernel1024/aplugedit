@@ -59,6 +59,12 @@ void ZAlsaBackend::initialize()
     enumerateCards();
 }
 
+void ZAlsaBackend::reloadGlobalConfig()
+{
+    snd_config_update_free_global();
+    snd_config_update();
+}
+
 void ZAlsaBackend::enumerateCards()
 {
     m_cards.clear();

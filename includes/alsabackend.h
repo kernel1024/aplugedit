@@ -71,6 +71,7 @@ public:
     ~ZAlsaBackend() override;
     static ZAlsaBackend *instance();
     void initialize();
+    void reloadGlobalConfig();
 
     QVector<CCardItem> cards() const;
     QVector<CPCMItem> pcmList() const;
