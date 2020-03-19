@@ -384,6 +384,11 @@ void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
     Q_EMIT componentChanged(this);
 }
 
+void ZCPBase::realignPins()
+{
+    // TODO: move empty methods to header
+}
+
 void ZCPBase::readFromStreamLegacy( QDataStream & stream )
 {
     m_hint.clear();

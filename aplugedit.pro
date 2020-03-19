@@ -3,6 +3,7 @@ QT += widgets
 HEADERS       = includes/cpbase.h \
                 includes/alsabackend.h \
                 includes/convdialog.h \
+                includes/cpblacklist.h \
                 includes/cpmulti.h \
                 includes/cpplug.h \
                 includes/cpupmix.h \
@@ -35,6 +36,7 @@ HEADERS       = includes/cpbase.h \
                 jsedit/jsedit_p.h
 SOURCES       = main.cpp \
                 alsabackend.cpp \
+                components/cpblacklist.cpp \
                 components/cpmulti.cpp \
                 components/cpplug.cpp \
                 components/cpupmix.cpp \

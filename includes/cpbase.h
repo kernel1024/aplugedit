@@ -122,9 +122,11 @@ protected:
     void mouseMoveEvent(QMouseEvent * event) override;
     void mousePressEvent(QMouseEvent * event) override;
     void mouseReleaseEvent(QMouseEvent * event) override;
-    virtual void realignPins()=0;
+    virtual void realignPins();
     virtual void doInfoGenerate(QTextStream & stream, QStringList & warnings) const;
     virtual void showSettingsDlg();
+    virtual bool needSettingsDlg() { return false; } // TODO: introduce this to components
+    virtual bool isHintSupported() { return true; }
     virtual void addCtxMenuItems(QMenu* menu);
 
     ZCPBase* searchPluginBackward(const char *targetClass, const ZCPBase *node = nullptr,

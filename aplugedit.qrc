@@ -27,5 +27,6 @@
         <file>images/upmix.png</file>
         <file>images/downmix.png</file>
         <file>images/multi.png</file>
+        <file>images/blacklist.png</file>
     </qresource>
 </RCC>

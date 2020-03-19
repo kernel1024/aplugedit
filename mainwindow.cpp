@@ -55,6 +55,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditMulti->setData(QSL("ZCPMulti"));
     actionEditLADSPA->setData(QSL("ZCPLADSPA"));
     actionEditMeter->setData(QSL("ZCPMeter"));
+    actionEditBlacklist->setData(QSL("ZCPBlacklist"));
     actionEditLinear->setData(QSL("ZCPConv#Linear"));
     actionEditFloat->setData(QSL("ZCPConv#Float"));
     actionEditIEC958->setData(QSL("ZCPConv#IEC"));
@@ -83,6 +84,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditMulti,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLADSPA,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditMeter,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditBlacklist,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLinear,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditFloat,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditIEC958,&QAction::triggered,this,&ZMainWindow::editComponent);

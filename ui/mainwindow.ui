@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>900</width>
     <height>600</height>
    </rect>
   </property>
@@ -37,7 +37,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>794</width>
+         <width>894</width>
          <height>513</height>
         </rect>
        </property>
@@ -51,7 +51,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>900</width>
      <height>22</height>
     </rect>
    </property>
@@ -88,6 +88,8 @@
     <addaction name="separator"/>
     <addaction name="actionEditLADSPA"/>
     <addaction name="actionEditMeter"/>
+    <addaction name="separator"/>
+    <addaction name="actionEditBlacklist"/>
     <addaction name="separator"/>
     <addaction name="actionEditLinear"/>
     <addaction name="actionEditFloat"/>
@@ -158,6 +160,8 @@
    <addaction name="separator"/>
    <addaction name="actionEditLADSPA"/>
    <addaction name="actionEditMeter"/>
+   <addaction name="separator"/>
+   <addaction name="actionEditBlacklist"/>
    <addaction name="separator"/>
    <addaction name="actionEditLinear"/>
    <addaction name="actionEditFloat"/>
@@ -508,6 +512,18 @@
    </property>
    <property name="statusTip">
     <string>Add route block for splitting channels to separate plugins</string>
+   </property>
+  </action>
+  <action name="actionEditBlacklist">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/blacklist.png</normaloff>:/images/blacklist.png</iconset>
+   </property>
+   <property name="text">
+    <string>Blacklist section</string>
+   </property>
+   <property name="statusTip">
+    <string>Adds section for blacklisting existing system ALSA PCMs, to hide them from enumeration</string>
    </property>
   </action>
  </widget>

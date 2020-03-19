@@ -34,6 +34,7 @@
 #include "includes/cpupmix.h"
 #include "includes/cpvdownmix.h"
 #include "includes/cpmulti.h"
+#include "includes/cpblacklist.h"
 
 ZRenderArea::ZRenderArea(QScrollArea *aScroller)
     : QFrame(aScroller)
@@ -525,6 +526,7 @@ ZCPBase* ZRenderArea::createCpInstance(const QString& className, const QPoint& p
     else if (name==QSL("ZCPUpmix")) res = new ZCPUpmix(this,this);
     else if (name==QSL("ZCPVDownmix")) res = new ZCPVDownmix(this,this);
     else if (name==QSL("ZCPMulti")) res = new ZCPMulti(this,this);
+    else if (name==QSL("ZCPBlacklist")) res = new ZCPBlacklist(this,this);
 
     if (res==nullptr) {
         qCritical() << "Unable to create component " << className;
