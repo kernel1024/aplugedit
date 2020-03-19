@@ -87,24 +87,12 @@ void ZCPDMix::paintEvent (QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
+    p.save();
 
     paintBase(p);
 
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
+    setBaseFont(p,ftTitle);
     p.drawText(rect(),Qt::AlignCenter,QSL("DMix"));
 
-    n.setBold(false);
-    n.setPointSize(n.pointSize()-3);
-    p.setPen(QPen(Qt::gray));
-    p.setFont(n);
-
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);
+    p.restore();
 }

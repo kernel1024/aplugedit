@@ -142,22 +142,13 @@ void ZCPHW::paintEvent(QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
+    p.save();
 
     paintBase(p);
 
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
+    setBaseFont(p,ftTitle);
     p.drawText(rect(),Qt::AlignCenter,QSL("HW output"));
 
-    n.setBold(false);
-    n.setPointSize(n.pointSize()-3);
-    p.setPen(QPen(Qt::gray));
-    p.setFont(n);
     QString str = QSL("hw:default");
     if (m_card>=0) {
         str = QSL("hw:%1").arg(m_card);
@@ -173,11 +164,10 @@ void ZCPHW::paintEvent(QPaintEvent * event)
             str.append(QSL(" %1 kHz").arg(static_cast<double>(m_rate)/1000,1,'f',1));
         }
     }
+    setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,str);
 
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);
+    p.restore();
 }
 
 void ZCPHW::showSettingsDlg()

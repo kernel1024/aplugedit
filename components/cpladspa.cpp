@@ -122,23 +122,15 @@ void ZCPLADSPA::paintEvent(QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
+    p.save();
 
     int hintHeight = paintBase(p,true);
 
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
+    setBaseFont(p,ftTitle);
     QRect trect(0,hintHeight,width(),p.fontMetrics().height()+5);
     p.drawText(trect,Qt::AlignCenter,QSL("LADSPA"));
 
-    n.setBold(false);
-    n.setPointSize(n.pointSize()-3);
-    p.setPen(QPen(Qt::gray));
-    p.setFont(n);
+    setBaseFont(p,ftDesc);
     QRect drect(0,hintHeight+trect.height(),
                 width(),height()-hintHeight-trect.height());
     QString filters = tr("<please select filter!!!>");
@@ -153,9 +145,7 @@ void ZCPLADSPA::paintEvent(QPaintEvent * event)
     
     p.drawText(drect,Qt::AlignCenter | Qt::TextWordWrap,filters);
 
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);
+    p.restore();
 }
 
 void ZCPLADSPA::readFromStreamLegacy( QDataStream & stream )
@@ -213,7 +203,7 @@ QJsonValue ZCPLADSPA::storeToJson() const
 
 bool ZCPLADSPA::isConverterPresent() const
 {
-    if (searchPluginForward(ZCPPlug::staticMetaObject.className()))
+    if (searchPluginForward(ZCPPlug::staticMetaObject.className()) != nullptr)
         return true;
 
     if (auto plug = searchPluginForward(ZCPConv::staticMetaObject.className())) {

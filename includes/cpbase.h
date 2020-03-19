@@ -91,6 +91,13 @@ public:
     };
     Q_ENUM(PinType)
 
+    enum FontType {
+        ftTitle = 1,
+        ftDesc = 2,
+        ftHint = 3
+    };
+    Q_ENUM(FontType)
+
     ZCPBase(QWidget *parent, ZRenderArea *aOwner);
 
     virtual void readFromStreamLegacy(QDataStream & stream);
@@ -111,6 +118,7 @@ public:
 
 protected:
     int paintBase(QPainter &p, bool isGrowable = false);
+    void setBaseFont(QPainter& p, FontType type) const;
     void mouseMoveEvent(QMouseEvent * event) override;
     void mousePressEvent(QMouseEvent * event) override;
     void mouseReleaseEvent(QMouseEvent * event) override;
@@ -119,8 +127,10 @@ protected:
     virtual void showSettingsDlg();
     virtual void addCtxMenuItems(QMenu* menu);
 
-    ZCPBase* searchPluginBackward(const char *targetClass, ZCPBase* node = nullptr) const;
-    ZCPBase* searchPluginForward(const char *targetClass, ZCPBase* node = nullptr) const;
+    ZCPBase* searchPluginBackward(const char *targetClass, const ZCPBase *node = nullptr,
+                                  QSharedPointer<QStringList> searchStack = { }) const;
+    ZCPBase* searchPluginForward(const char *targetClass, const ZCPBase *node = nullptr,
+                                 QSharedPointer<QStringList> searchStack = { }) const;
 
 Q_SIGNALS:
     void componentChanged(ZCPBase * obj);

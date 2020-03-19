@@ -126,25 +126,15 @@ void ZCPInp::paintEvent(QPaintEvent *event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
+    p.save();
 
     paintBase(p);
 
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
+    setBaseFont(p,ftTitle);
     p.drawText(rect(),Qt::AlignCenter,QSL("Input DSP"));
 
-    n.setBold(false);
-    n.setPointSize(n.pointSize()-3);
-    p.setPen(QPen(Qt::gray));
-    p.setFont(n);
+    setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,m_dspName);
 
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);
+    p.restore();
 }

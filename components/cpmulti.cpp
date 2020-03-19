@@ -63,16 +63,8 @@ void ZCPMulti::paintEvent(QPaintEvent *event)
 
     paintBase(p);
 
-    QFont n = p.font();
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
+    setBaseFont(p,ftTitle);
     p.drawText(rect(),Qt::AlignCenter,QSL("Multi"));
-
-    n.setBold(false);
-    n.setPointSize(n.pointSize()-3);
-    p.setPen(QPen(Qt::gray));
-    p.setFont(n);
 
     QChar separator(' ');
     if (fOutputs.count()>2)
@@ -81,6 +73,7 @@ void ZCPMulti::paintEvent(QPaintEvent *event)
                    .arg(m_bindings.count())
                    .arg(separator)
                    .arg(fOutputs.count());
+    setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,desc);
 
     p.restore();

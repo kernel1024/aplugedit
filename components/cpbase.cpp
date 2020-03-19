@@ -137,14 +137,12 @@ void ZCPBase::redrawPins(QPainter & painter)
 {
     realignPins();
 
-    QPen op=painter.pen();
-    QBrush ob=painter.brush();
-    QFont of=painter.font();
+    painter.save();
     QPen penPin=QPen(m_pinColor);
     QBrush brshPin=QBrush(m_pinColor,Qt::SolidPattern);
     painter.setPen(penPin);
     painter.setBrush(brshPin);
-    QFont n=of;
+    QFont n = painter.font();
     n.setBold(false);
     painter.setFont(n);
     for (const auto & a : qAsConst(fInputs))
@@ -167,9 +165,7 @@ void ZCPBase::redrawPins(QPainter & painter)
         painter.drawText(QPoint(  a->relCoord.x()-zcpPinSize/2-1 - painter.fontMetrics().boundingRect(a->pinName).width(),
                                   a->relCoord.y()+painter.fontMetrics().height()/4), a->pinName);
     }
-    painter.setFont(of);
-    painter.setBrush(ob);
-    painter.setPen(op);
+    painter.restore();
 }
 
 ZRenderArea *ZCPBase::ownerArea() const
@@ -224,6 +220,31 @@ void ZCPBase::showHintDlg()
     update();
 }
 
+void ZCPBase::setBaseFont(QPainter &p, ZCPBase::FontType type) const
+{
+    QFont res = p.font();
+    switch (type) {
+        case ftTitle:
+            res.setBold(true);
+            res.setPointSize(res.pointSize()+1);
+            p.setFont(res);
+            p.setPen(Qt::black);
+            break;
+        case ftDesc:
+            res.setBold(false);
+            res.setPointSize(res.pointSize()-2);
+            p.setFont(res);
+            p.setPen(Qt::gray);
+            break;
+        case ftHint:
+            res.setBold(false);
+            res.setPointSize(res.pointSize()-3);
+            p.setFont(res);
+            p.setPen(Qt::blue);
+            break;
+    }
+}
+
 void ZCPBase::showCtxMenu(const QPoint &pos)
 {
     QMenu menu;
@@ -259,13 +280,10 @@ void ZCPBase::mouseMoveEvent(QMouseEvent * event)
 
 int ZCPBase::paintBase(QPainter &p, bool isGrowable)
 {
+    p.save();
+
     QPen pn=QPen(Qt::black);
     pn.setWidth(2);
-
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
-
     p.setPen(pn);
     p.setBrush(QBrush(Qt::white,Qt::SolidPattern));
 
@@ -276,11 +294,7 @@ int ZCPBase::paintBase(QPainter &p, bool isGrowable)
     int hintHeight = 0;
 
     if (!m_hint.isEmpty()) {
-        QFont n=of;
-        n.setBold(false);
-        n.setPointSize(n.pointSize()-3);
-        p.setPen(QPen(Qt::blue));
-        p.setFont(n);
+        setBaseFont(p,ftHint);
         hintHeight = height()/3;
         if (isGrowable)
             hintHeight = p.fontMetrics().height()+5;
@@ -289,9 +303,7 @@ int ZCPBase::paintBase(QPainter &p, bool isGrowable)
         p.drawText(hrect,Qt::AlignCenter,m_hint);
     }
 
-    p.setPen(op);
-    p.setBrush(ob);
-    p.setFont(of);
+    p.restore();
 
     return hintHeight;
 }
@@ -438,45 +450,61 @@ void ZCPBase::addCtxMenuItems(QMenu *menu)
     Q_UNUSED(menu)
 }
 
-ZCPBase *ZCPBase::searchPluginBackward(const char *targetClass, ZCPBase *node) const
+ZCPBase *ZCPBase::searchPluginBackward(const char *targetClass, const ZCPBase *node,
+                                       QSharedPointer<QStringList> searchStack) const
 {
-    // TODO: add recursion protector
+    if (searchStack.isNull())
+        searchStack.reset(new QStringList());
 
-    const ZCPBase* base = node;
-    if (base == nullptr)
-        base = this;
+    if (node == nullptr) node = this;
 
-    for (const auto& inp: qAsConst(base->fInputs)) {
+    if (searchStack->contains(node->objectName())) return nullptr;
+    searchStack->append(node->objectName());
+
+    for (const auto& inp: qAsConst(node->fInputs)) {
         for (const auto& link : qAsConst(inp->links)) {
             if (link.fromFilter) {
-                if (std::strcmp(targetClass,link.fromFilter->metaObject()->className()) == 0)
+                if (std::strcmp(targetClass,link.fromFilter->metaObject()->className()) == 0) {
+                    searchStack->removeLast();
                     return link.fromFilter; // found
+                }
 
-                if (auto component = searchPluginBackward(targetClass,link.fromFilter))
+                if (auto component = searchPluginBackward(targetClass,link.fromFilter,searchStack)) {
+                    searchStack->removeLast();
                     return component;
+                }
             }
         }
     }
+    searchStack->removeLast();
     return nullptr;
 }
 
-ZCPBase *ZCPBase::searchPluginForward(const char *targetClass, ZCPBase *node) const
+ZCPBase *ZCPBase::searchPluginForward(const char *targetClass, const ZCPBase *node,
+                                      QSharedPointer<QStringList> searchStack) const
 {
-    // TODO: add recursion protector
+    if (searchStack.isNull())
+        searchStack.reset(new QStringList());
 
-    const ZCPBase* base = node;
-    if (base == nullptr)
-        base = this;
+    if (node == nullptr) node = this;
 
-    for (const auto& out: qAsConst(base->fOutputs)) {
+    if (searchStack->contains(node->objectName())) return nullptr;
+    searchStack->append(node->objectName());
+
+    for (const auto& out: qAsConst(node->fOutputs)) {
         if (out->toFilter) {
-            if (std::strcmp(targetClass,out->toFilter->metaObject()->className()) == 0)
+            if (std::strcmp(targetClass,out->toFilter->metaObject()->className()) == 0) {
+                searchStack->removeLast();
                 return out->toFilter; // found
+            }
 
-            if (auto component = searchPluginForward(targetClass,out->toFilter))
+            if (auto component = searchPluginForward(targetClass,out->toFilter)) {
+                searchStack->removeLast();
                 return component;
+            }
         }
     }
+    searchStack->removeLast();
     return nullptr;
 }
 

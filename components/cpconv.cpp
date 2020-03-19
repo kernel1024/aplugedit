@@ -88,23 +88,13 @@ void ZCPConv::paintEvent(QPaintEvent * event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
+    p.save();
 
     paintBase(p);
 
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
+    setBaseFont(p,ftTitle);
     p.drawText(rect(),Qt::AlignCenter,QSL("Converter"));
 
-    n.setBold(false);
-    n.setPointSize(n.pointSize()-3);
-    p.setPen(QPen(Qt::gray));
-    p.setFont(n);
-    
     QString conv = QSL("linear");
     switch (m_converter) {
         case alcLinear: conv=QSL("linear"); break;
@@ -114,11 +104,10 @@ void ZCPConv::paintEvent(QPaintEvent * event)
         case alcALaw: conv=QSL("linear<->ALaw"); break;
         case alcImaADPCM: conv=QSL("linear<->ImaADPCM"); break;
     }
+    setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,conv);
 
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);
+    p.restore();
 }
 
 void ZCPConv::readFromStreamLegacy( QDataStream & stream )

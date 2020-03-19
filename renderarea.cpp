@@ -112,8 +112,7 @@ void ZRenderArea::paintEvent(QPaintEvent * event)
 {
     Q_UNUSED(event)
     QPainter p(this);
-
-    QPen op=p.pen();
+    p.save();
 
     paintConnections(&p);
 
@@ -128,7 +127,8 @@ void ZRenderArea::paintEvent(QPaintEvent * event)
         QPoint c2=m_connCursor;
         p.drawLine(c1,c2);
     }
-    p.setPen(op);
+
+    p.restore();
 }
 
 void ZRenderArea::drawArrowLine(QPainter *p, const QPoint &p1, const QPoint &p2,
@@ -136,9 +136,8 @@ void ZRenderArea::drawArrowLine(QPainter *p, const QPoint &p1, const QPoint &p2,
 {
     const int arrowSize = 10;
 
-    QPoint pEnd = p2 - p1;
-    QPoint np;
-    double length = std::sqrt(std::pow(pEnd.x(), 2) + std::pow(pEnd.y(), 2));
+    QPointF pEnd = p2 - p1;
+    QPointF np;
 
     p->save();
     QBrush b(p->pen().color(),Qt::BrushStyle::SolidPattern);
@@ -148,22 +147,24 @@ void ZRenderArea::drawArrowLine(QPainter *p, const QPoint &p1, const QPoint &p2,
 
     p->drawLine(np,pEnd);
 
-    if (length > (arrowSize*2)) {
+    if (pEnd.manhattanLength() > (arrowSize*2)) {
         if (arrowAtEnd) {
             p->translate(pEnd);
         } else {
-            p->translate(pEnd.x()/2,pEnd.y()/2); // TODO: floating point warning here
+            p->translate(pEnd.x()/2.0,pEnd.y()/2.0);
         }
 
-        auto angle = qRadiansToDegrees(qAtan2(pEnd.y(),pEnd.x()));
+        auto angle = qRadiansToDegrees(qAtan2(pEnd.y(),pEnd.x())) + 180.0;
         if (invertDirection)
             angle += 180.0;
         p->rotate(angle);
+        if (!arrowAtEnd)
+            p->translate(QPoint(-1*arrowSize/2,0));
 
         QPolygon head({ QPoint(0,0) });
-        head << QPoint(-1*arrowSize,-1*arrowSize/2);
-        head << QPoint(-2*arrowSize/3,0);
-        head << QPoint(-1*arrowSize,arrowSize/2);
+        head << QPoint(arrowSize,arrowSize/2);
+        head << QPoint(2*arrowSize/3,0);
+        head << QPoint(arrowSize,-1*arrowSize/2);
         p->drawPolygon(head);
     }
 

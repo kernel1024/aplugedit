@@ -69,33 +69,22 @@ void ZCPUpmix::paintEvent(QPaintEvent *event)
     Q_UNUSED(event)
 
     QPainter p(this);
-    QPen op=p.pen();
-    QBrush ob=p.brush();
-    QFont of=p.font();
+    p.save();
 
     paintBase(p);
 
-    QFont n=of;
-    n.setBold(true);
-    n.setPointSize(n.pointSize()+1);
-    p.setFont(n);
+    setBaseFont(p,ftTitle);
     p.drawText(rect(),Qt::AlignCenter,QSL("Upmix"));
-
-    n.setBold(false);
-    n.setPointSize(n.pointSize()-3);
-    p.setPen(QPen(Qt::gray));
-    p.setFont(n);
 
     QString conf = QSL("-> auto");
     if (m_channels>0)
         conf = QSL("-> %1").arg(m_channels);
     if (m_delay>0)
         conf.append(QSL(" (%1 ms)").arg(m_delay));
+    setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,conf);
 
-    p.setFont(of);
-    p.setBrush(ob);
-    p.setPen(op);
+    p.restore();
 }
 
 void ZCPUpmix::realignPins()
