@@ -113,7 +113,7 @@ void ZCPUpmix::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 
 void ZCPUpmix::showSettingsDlg()
 {
-    QDialog dlg(topLevelWidget());
+    QDialog dlg(window());
     Ui::ZUpmixDialog ui;
     ui.setupUi(&dlg);
 

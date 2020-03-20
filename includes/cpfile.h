@@ -40,10 +40,13 @@ public:
     QJsonValue storeToJson() const override;
 
     QSize minimumSizeHint() const override;
+
 protected:
     void paintEvent (QPaintEvent * event) override;
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;
+    bool needSettingsDlg() override { return true; }
+
 };
 #endif

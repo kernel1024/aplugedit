@@ -17,39 +17,34 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef CPRATE_H
-#define CPRATE_H 1
+#ifndef BLACKLISTDIALOG_H
+#define BLACKLISTDIALOG_H
 
-#include <QtCore>
-#include <QtGui>
-#include "cpbase.h"
+#include <QDialog>
+#include "alsabackend.h"
 
-class ZCPRate : public ZCPBase
+namespace Ui {
+class ZBlacklistDialog;
+}
+
+class ZBlacklistDialog : public QDialog
 {
     Q_OBJECT
-private:
-    QString m_converter;
-    int m_rate { 44100 };
-    ZCPInput* fInp { nullptr };
-    ZCPOutput* fOut { nullptr };
 
 public:
-    ZCPRate(QWidget *parent, ZRenderArea *aOwner);
-    ~ZCPRate() override;
+    explicit ZBlacklistDialog(QWidget *parent = nullptr);
+    ~ZBlacklistDialog();
 
-    void readFromStreamLegacy( QDataStream & stream ) override;
-    void readFromJson(const QJsonValue& json) override;
-    QJsonValue storeToJson() const override;
+    void setBlacklist(const QVector<CPCMItem> &blacklistPCMs);
+    QVector<CPCMItem> getBlacklist();
 
-    QSize minimumSizeHint() const override;
-    int getRate() const;
+private Q_SLOTS:
+    void addPCM();
+    void deletePCM();
+    void updatePCMList();
 
-protected:
-    void paintEvent ( QPaintEvent * event ) override;
-    void realignPins() override;
-    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
-    void showSettingsDlg() override;
-    bool needSettingsDlg() override { return true; }
-
+private:
+    Ui::ZBlacklistDialog *ui;
 };
-#endif
+
+#endif // BLACKLISTDIALOG_H

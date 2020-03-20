@@ -41,6 +41,7 @@ protected:
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;
+    bool needSettingsDlg() override { return true; }
 
 private:
     ZCPInput* fInp { nullptr };

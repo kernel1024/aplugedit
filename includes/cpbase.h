@@ -122,12 +122,12 @@ protected:
     void mouseMoveEvent(QMouseEvent * event) override;
     void mousePressEvent(QMouseEvent * event) override;
     void mouseReleaseEvent(QMouseEvent * event) override;
-    virtual void realignPins();
     virtual void doInfoGenerate(QTextStream & stream, QStringList & warnings) const;
-    virtual void showSettingsDlg();
-    virtual bool needSettingsDlg() { return false; } // TODO: introduce this to components
+    virtual void realignPins() { }
+    virtual void showSettingsDlg() { }
+    virtual bool needSettingsDlg() { return false; }
     virtual bool isHintSupported() { return true; }
-    virtual void addCtxMenuItems(QMenu* menu);
+    virtual void addCtxMenuItems(QMenu* menu) { Q_UNUSED(menu) }
 
     ZCPBase* searchPluginBackward(const char *targetClass, const ZCPBase *node = nullptr,
                                   QSharedPointer<QStringList> searchStack = { }) const;

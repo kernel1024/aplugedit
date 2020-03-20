@@ -227,7 +227,7 @@ QStringList ZCPLADSPA::getPlugNames() const
 
 void ZCPLADSPA::showSettingsDlg()
 {
-    ZLADSPAListDialog d(topLevelWidget());
+    ZLADSPAListDialog d(window());
 
     d.setParams(m_channels,m_sampleRate,m_plugins);
 

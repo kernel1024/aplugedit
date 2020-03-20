@@ -2,6 +2,7 @@ TEMPLATE += app
 QT += widgets
 HEADERS       = includes/cpbase.h \
                 includes/alsabackend.h \
+                includes/blacklistdialog.h \
                 includes/convdialog.h \
                 includes/cpblacklist.h \
                 includes/cpmulti.h \
@@ -41,6 +42,7 @@ SOURCES       = main.cpp \
                 components/cpplug.cpp \
                 components/cpupmix.cpp \
                 components/cpvdownmix.cpp \
+                dialogs/blacklistdialog.cpp \
                 dialogs/convdialog.cpp \
                 dialogs/generatedialog.cpp \
                 dialogs/hwdialog.cpp \
@@ -70,6 +72,7 @@ SOURCES       = main.cpp \
                 components/cpladspa.cpp
 RESOURCES     = aplugedit.qrc
 FORMS         = \
+                ui/blacklistdialog.ui \
                 ui/convdlg.ui \
                 ui/errorshowdlg.ui \
                 ui/generatedlg.ui \

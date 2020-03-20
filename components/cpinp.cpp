@@ -53,7 +53,7 @@ void ZCPInp::showSettingsDlg()
     }
 
     bool ok;
-    QString item = QInputDialog::getItem(this, tr("DSP input device"),
+    QString item = QInputDialog::getItem(window(), tr("DSP input device"),
                                          tr("User-land device number"), items, c, true, &ok);
     if (ok && !item.isEmpty())
     {
@@ -62,7 +62,7 @@ void ZCPInp::showSettingsDlg()
             if (auto base=qobject_cast<ZCPInp*>(ownerArea()->children().at(i))) {
                 if ((base->objectName()!=objectName()) && (base->m_dspName==m_dspName))
                 {
-                    QMessageBox::warning(topLevelWidget(),tr("Duplicated DSP"),
+                    QMessageBox::warning(window(),tr("Duplicated DSP"),
                                          tr("You have entered duplicated identifier for this DSP input,\n"
                                             "that is already used in another component.\n"
                                             "Please, recheck your DSP inputs!"));

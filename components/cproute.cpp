@@ -149,7 +149,7 @@ QJsonValue ZCPRoute::storeToJson() const
 
 void ZCPRoute::showSettingsDlg()
 {
-    ZRouteDialog d(topLevelWidget());
+    ZRouteDialog d(window());
     d.setParams(m_channelsIn,m_routeTable);
 
     if (d.exec()==QDialog::Rejected) return;

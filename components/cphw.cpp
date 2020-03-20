@@ -172,7 +172,7 @@ void ZCPHW::paintEvent(QPaintEvent * event)
 
 void ZCPHW::showSettingsDlg()
 {
-    ZHWDialog d(topLevelWidget());
+    ZHWDialog d(window());
     d.setParams(m_card,m_device,m_subdevice,m_mmap_emulation,m_sync_ptr_ioctl,m_nonblock,
                 m_channels,m_rate,m_format);
 

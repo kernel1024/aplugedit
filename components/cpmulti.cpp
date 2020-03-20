@@ -163,7 +163,7 @@ void ZCPMulti::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 
 void ZCPMulti::showSettingsDlg()
 {
-    ZMultiDialog dlg(topLevelWidget());
+    ZMultiDialog dlg(window());
     dlg.setParams(m_bindings,m_slaveChannels);
 
     if (dlg.exec() == QDialog::Rejected) return;

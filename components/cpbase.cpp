@@ -204,7 +204,7 @@ void ZCPBase::checkRecycle()
 
 void ZCPBase::showHintDlg()
 {
-    QDialog dlg(topLevelWidget());
+    QDialog dlg(window());
     Ui::ZHintDialog ui;
     ui.setupUi(&dlg);
 
@@ -254,11 +254,13 @@ void ZCPBase::showCtxMenu(const QPoint &pos)
 
     QAction* ac = menu.addAction(tr("Hint..."));
     connect(ac,&QAction::triggered,this,&ZCPBase::showHintDlg);
+    ac->setEnabled(isHintSupported());
 
     ac = menu.addAction(tr("Properties..."));
     connect(ac,&QAction::triggered,this,[this](){
         showSettingsDlg();
     });
+    ac->setEnabled(needSettingsDlg());
 
     menu.exec(pos);
 }
@@ -384,11 +386,6 @@ void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
     Q_EMIT componentChanged(this);
 }
 
-void ZCPBase::realignPins()
-{
-    // TODO: move empty methods to header
-}
-
 void ZCPBase::readFromStreamLegacy( QDataStream & stream )
 {
     m_hint.clear();
@@ -444,15 +441,6 @@ QJsonValue ZCPBase::storeToJson() const
 QSize ZCPBase::sizeHint() const
 {
     return minimumSizeHint();
-}
-
-void ZCPBase::showSettingsDlg()
-{
-}
-
-void ZCPBase::addCtxMenuItems(QMenu *menu)
-{
-    Q_UNUSED(menu)
 }
 
 ZCPBase *ZCPBase::searchPluginBackward(const char *targetClass, const ZCPBase *node,

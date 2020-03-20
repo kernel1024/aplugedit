@@ -95,7 +95,7 @@ QJsonValue ZCPFile::storeToJson() const
 
 void ZCPFile::showSettingsDlg()
 {
-    QFileDialog d(topLevelWidget(),tr("Choose a filename to save stream under"),QString(),
+    QFileDialog d(window(),tr("Choose a filename to save stream under"),QString(),
                   tr("RAW file [*.raw] (*.raw)"));
     d.setDefaultSuffix(QSL("raw"));
     d.setAcceptMode(QFileDialog::AcceptSave);

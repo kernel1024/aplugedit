@@ -121,7 +121,7 @@ QJsonValue ZCPMeter::storeToJson() const
 
 void ZCPMeter::showSettingsDlg()
 {
-    ZMeterDialog d(topLevelWidget());
+    ZMeterDialog d(window());
     d.setParams(m_meterLib,m_meterFunc,m_refreshRate);
 
     if (d.exec()==QDialog::Rejected) return;

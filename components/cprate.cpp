@@ -111,7 +111,7 @@ QJsonValue ZCPRate::storeToJson() const
 
 void ZCPRate::showSettingsDlg()
 {
-    ZRateDialog d(topLevelWidget());
+    ZRateDialog d(window());
     d.setParams(m_rate,m_converter);
 
     if (d.exec()==QDialog::Rejected) return;
