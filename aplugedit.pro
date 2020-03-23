@@ -7,6 +7,7 @@ HEADERS       = includes/cpbase.h \
                 includes/cpblacklist.h \
                 includes/cpmulti.h \
                 includes/cpplug.h \
+                includes/cpshare.h \
                 includes/cpupmix.h \
                 includes/cpvdownmix.h \
                 includes/generatedialog.h \
@@ -26,13 +27,13 @@ HEADERS       = includes/cpbase.h \
                 includes/cpfile.h \
                 includes/cprate.h \
                 includes/cproute.h \
-                includes/cpdmix.h \
                 includes/cpmeter.h \
                 includes/cpconv.h \
                 includes/cpladspa.h \
                 includes/routedialog.h \
                 includes/sampleplayer.h \
                 includes/sampleplayer_p.h \
+                includes/sharedialog.h \
                 jsedit/jsedit.h \
                 jsedit/jsedit_p.h
 SOURCES       = main.cpp \
@@ -40,6 +41,7 @@ SOURCES       = main.cpp \
                 components/cpblacklist.cpp \
                 components/cpmulti.cpp \
                 components/cpplug.cpp \
+                components/cpshare.cpp \
                 components/cpupmix.cpp \
                 components/cpvdownmix.cpp \
                 dialogs/blacklistdialog.cpp \
@@ -54,6 +56,7 @@ SOURCES       = main.cpp \
                 dialogs/routedialog.cpp \
                 dialogs/sampleplayer.cpp \
                 dialogs/sampleplayer_p.cpp \
+                dialogs/sharedialog.cpp \
                 generic.cpp \
                 jsedit/jsedit.cpp \
                 ladspa_p.cpp \
@@ -66,7 +69,6 @@ SOURCES       = main.cpp \
                 components/cpfile.cpp \
                 components/cprate.cpp \
                 components/cproute.cpp \
-                components/cpdmix.cpp \
                 components/cpmeter.cpp \
                 components/cpconv.cpp \
                 components/cpladspa.cpp
@@ -86,6 +88,7 @@ FORMS         = \
                 ui/ratedlg.ui \
                 ui/routedlg.ui \
                 ui/sampleplayer.ui \
+                ui/sharedialog.ui \
                 ui/upmixdlg.ui
 
 CONFIG += warn_on \

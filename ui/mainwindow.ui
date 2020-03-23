@@ -82,9 +82,12 @@
     <addaction name="actionEditRoute"/>
     <addaction name="actionEditMulti"/>
     <addaction name="actionEditRate"/>
-    <addaction name="actionEditDmix"/>
     <addaction name="actionEditUpmix"/>
     <addaction name="actionEditVDownmix"/>
+    <addaction name="separator"/>
+    <addaction name="actionEditDmix"/>
+    <addaction name="actionEditDshare"/>
+    <addaction name="actionEditDsnoop"/>
     <addaction name="separator"/>
     <addaction name="actionEditLADSPA"/>
     <addaction name="actionEditMeter"/>
@@ -154,9 +157,12 @@
    <addaction name="actionEditRoute"/>
    <addaction name="actionEditMulti"/>
    <addaction name="actionEditRate"/>
-   <addaction name="actionEditDmix"/>
    <addaction name="actionEditUpmix"/>
    <addaction name="actionEditVDownmix"/>
+   <addaction name="separator"/>
+   <addaction name="actionEditDmix"/>
+   <addaction name="actionEditDshare"/>
+   <addaction name="actionEditDsnoop"/>
    <addaction name="separator"/>
    <addaction name="actionEditLADSPA"/>
    <addaction name="actionEditMeter"/>
@@ -524,6 +530,30 @@
    </property>
    <property name="statusTip">
     <string>Adds section for blacklisting existing system ALSA PCMs, to hide them from enumeration</string>
+   </property>
+  </action>
+  <action name="actionEditDshare">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/dshare.png</normaloff>:/images/dshare.png</iconset>
+   </property>
+   <property name="text">
+    <string>Dshare plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add dshare mixing and sharing block</string>
+   </property>
+  </action>
+  <action name="actionEditDsnoop">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/dsnoop.png</normaloff>:/images/dsnoop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Dsnoop plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add dsnoop capture mixing block</string>
    </property>
   </action>
  </widget>

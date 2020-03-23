@@ -28,5 +28,7 @@
         <file>images/downmix.png</file>
         <file>images/multi.png</file>
         <file>images/blacklist.png</file>
+        <file>images/dshare.png</file>
+        <file>images/dsnoop.png</file>
     </qresource>
 </RCC>

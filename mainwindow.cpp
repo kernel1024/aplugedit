@@ -22,6 +22,7 @@
 #include "includes/generatedialog.h"
 #include "includes/cpbase.h"
 #include "includes/cpconv.h"
+#include "includes/cpshare.h"
 #include "includes/sampleplayer.h"
 
 ZMainWindow::ZMainWindow(QWidget *parent)
@@ -47,7 +48,6 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditNull->setData(QSL("ZCPNull"));
     actionEditFile->setData(QSL("ZCPFile"));
     actionEditPlug->setData(QSL("ZCPPlug"));
-    actionEditDmix->setData(QSL("ZCPDMix"));
     actionEditRoute->setData(QSL("ZCPRoute"));
     actionEditRate->setData(QSL("ZCPRate"));
     actionEditUpmix->setData(QSL("ZCPUpmix"));
@@ -56,6 +56,11 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditLADSPA->setData(QSL("ZCPLADSPA"));
     actionEditMeter->setData(QSL("ZCPMeter"));
     actionEditBlacklist->setData(QSL("ZCPBlacklist"));
+
+    actionEditDmix->setData(QSL("ZCPShare#Dmix"));
+    actionEditDshare->setData(QSL("ZCPShare#Dshare"));
+    actionEditDsnoop->setData(QSL("ZCPShare#Dsnoop"));
+
     actionEditLinear->setData(QSL("ZCPConv#Linear"));
     actionEditFloat->setData(QSL("ZCPConv#Float"));
     actionEditIEC958->setData(QSL("ZCPConv#IEC"));
@@ -77,6 +82,8 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditFile,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditPlug,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditDmix,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditDshare,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditDsnoop,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditRoute,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditRate,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditUpmix,&QAction::triggered,this,&ZMainWindow::editComponent);
@@ -374,10 +381,15 @@ void ZMainWindow::editComponent()
     if (name.isEmpty()) return;
 
     QString convMode;
+    QString dmixMode;
     if (name.startsWith(QSL("ZCPConv"))) {
         QStringList sl = name.split(QSL("#"));
         name = sl.first();
         convMode = sl.last();
+    } else if (name.startsWith(QSL("ZCPShare"))) {
+        QStringList sl = name.split(QSL("#"));
+        name = sl.first();
+        dmixMode = sl.last();
     }
 
     QPoint pos(100,100);
@@ -395,6 +407,12 @@ void ZMainWindow::editComponent()
         else if (convMode==QSL("ALaw")) cnv->setConverterType(ZCPConv::alcALaw);
         else if (convMode==QSL("MuLaw")) cnv->setConverterType(ZCPConv::alcMuLaw);
         else if (convMode==QSL("IMA")) cnv->setConverterType(ZCPConv::alcImaADPCM);
+    }
+    if (!dmixMode.isEmpty()) {
+        auto dmix = qobject_cast<ZCPShare *>(cp);
+        if (dmixMode==QSL("Dmix")) dmix->setPluginMode(ZCPShare::spDMix);
+        else if (dmixMode==QSL("Dshare")) dmix->setPluginMode(ZCPShare::spDShare);
+        else if (dmixMode==QSL("Dsnoop")) dmix->setPluginMode(ZCPShare::spDSnoop);
     }
     cp->show();
     connect(cp,&ZCPBase::componentChanged,this,&ZMainWindow::changingComponents);

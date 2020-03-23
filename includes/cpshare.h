@@ -24,16 +24,34 @@
 #include <QtGui>
 #include "cpbase.h"
 
-class ZCPDMix : public ZCPBase
+class ZCPShare : public ZCPBase
 {
     Q_OBJECT
-private:
-    ZCPInput* fInp { nullptr };
-    ZCPOutput* fOut { nullptr };
-
 public:
-    ZCPDMix(QWidget *parent, ZRenderArea *aOwner);
-    ~ZCPDMix() override;
+    enum SharePlugin {
+        spDMix = 0,
+        spDSnoop = 1,
+        spDShare = 2
+    };
+    Q_ENUM(SharePlugin)
+
+    enum HWPtrAlignment {
+        haEmpty = 0,
+        haAuto = 1,
+        haNo = 2,
+        haRoundUp = 3,
+        haRoundDown = 4,
+        ha_Max = 5
+    };
+    Q_ENUM(HWPtrAlignment)
+
+    ZCPShare(QWidget *parent, ZRenderArea *aOwner, ZCPShare::SharePlugin mode = ZCPShare::SharePlugin::spDMix);
+    ~ZCPShare() override;
+
+    void setPluginMode(ZCPShare::SharePlugin mode);
+
+    void readFromJson(const QJsonValue& json) override;
+    QJsonValue storeToJson() const override;
 
     QSize minimumSizeHint() const override;
     bool canConnectOut(ZCPBase * toFilter) override;
@@ -42,5 +60,19 @@ protected:
     void paintEvent (QPaintEvent * event) override;
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
+    void showSettingsDlg() override;
+    bool needSettingsDlg() override { return true; }
+
+private:
+    ZCPInput* fInp { nullptr };
+    ZCPOutput* fOut { nullptr };
+
+    Qt::CheckState m_slowPtr { Qt::CheckState::PartiallyChecked }; // default - no change
+    SharePlugin m_mode { spDMix };
+    HWPtrAlignment m_hwPtrAlignment { haEmpty };
+    QVector<int> m_bindings;
+    QString m_IPCkey;
+    QString m_IPCpermissions;
+
 };
 #endif

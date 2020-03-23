@@ -26,7 +26,7 @@
 #include "includes/cpfile.h"
 #include "includes/cprate.h"
 #include "includes/cproute.h"
-#include "includes/cpdmix.h"
+#include "includes/cpshare.h"
 #include "includes/cpmeter.h"
 #include "includes/cpconv.h"
 #include "includes/cpladspa.h"
@@ -512,13 +512,14 @@ ZCPBase* ZRenderArea::createCpInstance(const QString& className, const QPoint& p
     QString name = className;
     if (name.startsWith(QSL("QCP")))
         name.replace(0,1,QChar('Z'));
+    if (name==QSL("ZCPDMix")) name = QSL("ZCPShare");
     if (name==QSL("ZCPInp")) res = new ZCPInp(this,this);
     else if (name==QSL("ZCPHW")) res = new ZCPHW(this,this);
     else if (name==QSL("ZCPNull")) res = new ZCPNull(this,this);
     else if (name==QSL("ZCPFile")) res = new ZCPFile(this,this);
     else if (name==QSL("ZCPRate")) res = new ZCPRate(this,this);
     else if (name==QSL("ZCPRoute")) res = new ZCPRoute(this,this);
-    else if (name==QSL("ZCPDMix")) res = new ZCPDMix(this,this);
+    else if (name==QSL("ZCPShare")) res = new ZCPShare(this,this);
     else if (name==QSL("ZCPMeter")) res = new ZCPMeter(this,this);
     else if (name==QSL("ZCPConv")) res = new ZCPConv(this,this);
     else if (name==QSL("ZCPLADSPA")) res = new ZCPLADSPA(this,this);
