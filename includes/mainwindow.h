@@ -20,6 +20,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H 1
 
+#include <functional>
 #include <QtCore>
 #include <QtGui>
 #include "ui_mainwindow.h"
@@ -41,7 +42,7 @@ private:
     QScopedPointer<ZSamplePlayer,QScopedPointerDeleteLater> samplePlayer;
 #endif
 
-    void clearSchematic();
+    void clearSchematic(const std::function<void()> &callback);
 
 public:
     explicit ZMainWindow(QWidget *parent = nullptr);

@@ -53,21 +53,20 @@ void ZCPInp::showSettingsDlg()
     }
 
     bool ok;
-    QString item = QInputDialog::getItem(window(), tr("DSP input device"),
-                                         tr("User-land device number"), items, c, true, &ok);
+    QString item = QInputDialog::getItem(window(), tr("Plug I/O device"),
+                                         tr("Unique ALSA PCM ID number"), items, c, true, &ok);
     if (ok && !item.isEmpty())
     {
         m_dspName=item;
-        for (int i=0;i<ownerArea()->children().count();i++) {
-            if (auto base=qobject_cast<ZCPInp*>(ownerArea()->children().at(i))) {
-                if ((base->objectName()!=objectName()) && (base->m_dspName==m_dspName))
-                {
-                    QMessageBox::warning(window(),tr("Duplicated DSP"),
-                                         tr("You have entered duplicated identifier for this DSP input,\n"
-                                            "that is already used in another component.\n"
-                                            "Please, recheck your DSP inputs!"));
-                    break;
-                }
+        const auto cplist = ownerArea()->findComponents<ZCPInp*>();
+        for (const auto &cp : cplist) {
+            if ((cp->objectName()!=objectName()) && (cp->m_dspName==m_dspName))
+            {
+                QMessageBox::warning(window(),tr("Duplicated ID"),
+                                     tr("You have entered duplicated identifier for this Plug device,\n"
+                                        "that is already used in another component.\n"
+                                        "Please, recheck your Plug PCM IDs!"));
+                break;
             }
         }
         update();
@@ -131,7 +130,7 @@ void ZCPInp::paintEvent(QPaintEvent *event)
     paintBase(p);
 
     setBaseFont(p,ftTitle);
-    p.drawText(rect(),Qt::AlignCenter,QSL("Input DSP"));
+    p.drawText(rect(),Qt::AlignCenter,QSL("Plug I/O"));
 
     setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,m_dspName);

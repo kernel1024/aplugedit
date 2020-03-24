@@ -95,10 +95,9 @@ void ZCPBase::mouseInPin(const QPoint & mx, int &aPinNum, PinType &aPinType, ZCP
     aPinNum=-1;
     aPinType=PinType::ptInput;
     aFilter=nullptr;
-    for (const auto &oc : m_owner->children())
+    const auto cplist = ownerArea()->findComponents<ZCPBase*>();
+    for (const auto &c : cplist)
     {
-        auto *c=qobject_cast<ZCPBase*>(oc);
-        if (c==nullptr) continue;
         int j = 0;
         for (const auto &a : qAsConst(c->fInputs))
         {

@@ -177,14 +177,13 @@ void ZMainWindow::loadFile(const QString &fname)
     }
 
     if (!res) {
-        renderArea->deleteComponents();
+        renderArea->deleteComponents({});
         QMessageBox::critical(this,tr("Error"),tr("Unable to open file - reading error."));
         return;
     }
-    for (int i=0;i<renderArea->children().count();i++) {
-        auto base = qobject_cast<ZCPBase*>(renderArea->children().at(i));
-        if (base)
-            connect(base,&ZCPBase::componentChanged,this,&ZMainWindow::changingComponents);
+    const auto cplist = renderArea->findComponents<ZCPBase*>();
+    for (const auto &cp : cplist) {
+        connect(cp,&ZCPBase::componentChanged,this,&ZMainWindow::changingComponents);
     }
 
     repaintTimer.start();
@@ -218,17 +217,18 @@ void ZMainWindow::fileNew()
         }
     }
 
-    clearSchematic();
     modified=false;
     workFile.clear();
-    updateStatus();
-    repaintTimer.start();
+    clearSchematic([this](){
+        updateStatus();
+        repaintTimer.start();
+    });
 }
 
-void ZMainWindow::clearSchematic()
+void ZMainWindow::clearSchematic(const std::function<void()>& callback)
 {
     scrollArea->ensureVisible(0,0);
-    renderArea->deleteComponents();
+    renderArea->deleteComponents(callback);
 }
 
 void ZMainWindow::fileOpen()
@@ -250,11 +250,12 @@ void ZMainWindow::fileOpen()
                     tr("ALSA Plugin editor files v2 [*.ape2] (*.ape2);;ALSA Plugin editor files [*.ape] (*.ape)"));
     if (s.isEmpty()) return;
 
-    clearSchematic();
     workFile=s;
     modified=false;
-    loadFile(s);
-    updateStatus();
+    clearSchematic([this,s](){
+        loadFile(s);
+        updateStatus();
+    });
 }
 
 void ZMainWindow::fileSave()
@@ -422,14 +423,12 @@ void ZMainWindow::editComponent()
 
 void ZMainWindow::toolAllocate()
 {
-    for (int i=0;i<renderArea->children().count();i++) {
-        if (auto w=qobject_cast<QWidget*>(renderArea->children().at(i)))
-        {
-            if ((w->x()<0) || (w->geometry().right()>renderArea->width()))
-                w->move(100,w->y());
-            if ((w->y()<0) || (w->geometry().bottom()>renderArea->height()))
-                w->move(w->x(),100);
-        }
+    const auto wlist = renderArea->findComponents<QWidget*>();
+    for (const auto &w : wlist) {
+        if ((w->x()<0) || (w->geometry().right()>renderArea->width()))
+            w->move(100,w->y());
+        if ((w->y()<0) || (w->geometry().bottom()>renderArea->height()))
+            w->move(w->x(),100);
     }
     renderArea->update();
     renderArea->repaintConn();

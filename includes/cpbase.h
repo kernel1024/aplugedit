@@ -22,6 +22,7 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include "renderarea.h"
 
 const int zcpPinSize = 8;
 

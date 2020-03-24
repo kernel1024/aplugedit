@@ -287,7 +287,7 @@
     <string>DSP input</string>
    </property>
    <property name="statusTip">
-    <string>Add DSP input block</string>
+    <string>Add interface plug block</string>
    </property>
   </action>
   <action name="actionEditNull">

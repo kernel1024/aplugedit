@@ -192,7 +192,12 @@ void ZCPShare::showSettingsDlg()
 {
     ZShareDialog dlg(window());
 
-    QStringList ipcList; // TODO: scan for this
+    QStringList ipcList;
+    const auto cplist = ownerArea()->findComponents<ZCPShare *>();
+    for (const auto& cp : cplist) {
+        if (cp->m_mode == spDShare)
+            ipcList.append(cp->m_IPCkey);
+    }
 
     dlg.setBindings(m_bindings);
     dlg.setIPC((m_mode == spDShare),m_IPCkey,m_IPCpermissions,ipcList);

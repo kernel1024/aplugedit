@@ -360,6 +360,8 @@ void ZLADSPADialog::analyzePlugin()
 
     if (m_selectedPluginID == 0L) return;
 
+    auto fSampleRate = static_cast<float>(m_sampleRate);
+
     QLibrary plugin(m_pluginFile.value(m_selectedPluginID));
     if (plugin.load()) {
         auto pfDescriptorFunction = reinterpret_cast<LADSPA_Descriptor_Function>(plugin.resolve("ladspa_descriptor"));
@@ -549,7 +551,7 @@ void ZLADSPADialog::analyzePlugin()
                                 if (LADSPA_IS_HINT_BOUNDED_BELOW(iHintDescriptor)) {
                                     fBound = psDescriptor->PortRangeHints[lPortIndex].LowerBound;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fBound)>nearZero) {
-                                        aspinBox->setMinimum(static_cast<double>(fBound*m_sampleRate));
+                                        aspinBox->setMinimum(static_cast<double>(fBound*fSampleRate));
                                     } else {
                                         aspinBox->setMinimum(static_cast<double>(fBound));
                                     }
@@ -557,7 +559,7 @@ void ZLADSPADialog::analyzePlugin()
                                 if (LADSPA_IS_HINT_BOUNDED_ABOVE(iHintDescriptor)) {
                                     fBound = psDescriptor->PortRangeHints[lPortIndex].UpperBound;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fBound)>nearZero) {
-                                        aspinBox->setMaximum(static_cast<double>(fBound*m_sampleRate));
+                                        aspinBox->setMaximum(static_cast<double>(fBound*fSampleRate));
                                     } else {
                                         aspinBox->setMaximum(static_cast<double>(fBound));
                                     }
@@ -569,7 +571,7 @@ void ZLADSPADialog::analyzePlugin()
                                 case LADSPA_HINT_DEFAULT_MINIMUM:
                                     fDefault = psDescriptor->PortRangeHints[lPortIndex].LowerBound;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -585,7 +587,7 @@ void ZLADSPADialog::analyzePlugin()
                                                     + psDescriptor->PortRangeHints[lPortIndex].UpperBound * 0.25F);
                                     }
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -601,7 +603,7 @@ void ZLADSPADialog::analyzePlugin()
                                                            + psDescriptor->PortRangeHints[lPortIndex].UpperBound);
                                     }
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -617,7 +619,7 @@ void ZLADSPADialog::analyzePlugin()
                                                     + psDescriptor->PortRangeHints[lPortIndex].UpperBound * 0.75F);
                                     }
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -627,7 +629,7 @@ void ZLADSPADialog::analyzePlugin()
                                 case LADSPA_HINT_DEFAULT_MAXIMUM:
                                     fDefault = psDescriptor->PortRangeHints[lPortIndex].UpperBound;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -637,7 +639,7 @@ void ZLADSPADialog::analyzePlugin()
                                 case LADSPA_HINT_DEFAULT_0:
                                     fDefault=0.0F;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -647,7 +649,7 @@ void ZLADSPADialog::analyzePlugin()
                                 case LADSPA_HINT_DEFAULT_1:
                                     fDefault=1.0F;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -657,7 +659,7 @@ void ZLADSPADialog::analyzePlugin()
                                 case LADSPA_HINT_DEFAULT_100:
                                     fDefault=100.0F;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {
@@ -667,7 +669,7 @@ void ZLADSPADialog::analyzePlugin()
                                 case LADSPA_HINT_DEFAULT_440:
                                     fDefault=440.0F;
                                     if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor) && abs(fDefault)>nearZero) {
-                                        aspinBox->setValue(static_cast<double>(fDefault*m_sampleRate));
+                                        aspinBox->setValue(static_cast<double>(fDefault*fSampleRate));
                                     } else if (LADSPA_IS_HINT_INTEGER(iHintDescriptor) && abs(fDefault)>nearZero) {
                                         aspinBox->setValue(static_cast<double>(truncf(fDefault)));
                                     } else {

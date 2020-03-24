@@ -22,8 +22,12 @@
 
 #include <QtCore>
 #include <QtGui>
-#include "cpbase.h"
-#include "alsabackend.h"
+#include <QtWidgets>
+
+class ZCPBase;
+class ZCPInput;
+class ZCPOutput;
+class CPCMItem;
 
 class ZRenderArea : public QFrame
 {
@@ -40,6 +44,7 @@ private:
     QScrollArea *m_scroller { nullptr };
     QLabel *m_recycle { nullptr };
     QPoint m_connCursor;
+    QAtomicInteger<int> m_deletingComponents;
 
     void drawArrowLine(QPainter *p, const QPoint& p1, const QPoint& p2,
                        bool invertDirection = false, bool arrowAtEnd = false);
@@ -66,11 +71,16 @@ public:
 
     QVector<CPCMItem> getAllPCMNames() const;
 
-    void deleteComponents();
+    void deleteComponents(const std::function<void()> &callback);
     int componentCount() const;
 
     ZCPBase* createCpInstance(const QString &className, const QPoint &pos = QPoint(),
                               const QString &objectName = QString());
+
+    template<typename T>
+    inline QList<T> findComponents() const {
+        return findChildren<T>(QString(),Qt::FindDirectChildrenOnly);
+    }
 
 protected:
     void paintEvent(QPaintEvent* event) override;
