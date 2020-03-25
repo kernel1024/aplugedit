@@ -30,6 +30,17 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 {
     setupUi(this);
 
+    QIcon appIcon;
+    appIcon.addFile(QSL(":/appicon/16"),QSize(16,16));
+    appIcon.addFile(QSL(":/appicon/24"),QSize(24,24));
+    appIcon.addFile(QSL(":/appicon/32"),QSize(32,32));
+    appIcon.addFile(QSL(":/appicon/48"),QSize(48,48));
+    appIcon.addFile(QSL(":/appicon/64"),QSize(64,64));
+    appIcon.addFile(QSL(":/appicon/128"),QSize(128,128));
+    appIcon.addFile(QSL(":/appicon/256"),QSize(256,256));
+    appIcon.addFile(QSL(":/appicon/512"),QSize(512,512));
+    setWindowIcon(appIcon);
+
     mouseLabel = new QLabel(this);
     statusBar()->addPermanentWidget(mouseLabel);
     statusLabel = new QLabel(this);

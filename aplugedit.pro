@@ -114,7 +114,40 @@ packagesExist(gstreamer-1.0) {
 # warn on *any* usage of deprecated APIs
 DEFINES += QT_DEPRECATED_WARNINGS
 
+OTHER_FILES += \
+    README.md \
+    aplugedit.desktop
+
 # install
-sources.files = $$SOURCES $$HEADERS $$RESOURCES $$FORMS aplugedit.pro images
-target.path = /usr/local/bin
-INSTALLS += target
+isEmpty(INSTALL_PREFIX):INSTALL_PREFIX = /usr
+TARGET       = aplugedit
+TARGET.files = aplugedit
+TARGET.path  = $$INSTALL_PREFIX/bin
+INSTALLS    += TARGET desktop icon16 icon24 icon32 icon48 icon64 icon128 icon256 icon512
+
+desktop.files   = aplugedit.desktop
+desktop.path    = $$INSTALL_PREFIX/share/applications
+
+icon16.files    = images/appicon/16/aplugedit.png
+icon16.path     = $$INSTALL_PREFIX/share/icons/hicolor/16x16/apps
+
+icon24.files    = images/appicon/24/aplugedit.png
+icon24.path     = $$INSTALL_PREFIX/share/icons/hicolor/24x24/apps
+
+icon32.files    = images/appicon/32/aplugedit.png
+icon32.path     = $$INSTALL_PREFIX/share/icons/hicolor/32x32/apps
+
+icon48.files    = images/appicon/48/aplugedit.png
+icon48.path     = $$INSTALL_PREFIX/share/icons/hicolor/48x48/apps
+
+icon64.files    = images/appicon/64/aplugedit.png
+icon64.path     = $$INSTALL_PREFIX/share/icons/hicolor/64x64/apps
+
+icon128.files   = images/appicon/128/aplugedit.png
+icon128.path    = $$INSTALL_PREFIX/share/icons/hicolor/128x128/apps
+
+icon256.files   = images/appicon/256/aplugedit.png
+icon256.path    = $$INSTALL_PREFIX/share/icons/hicolor/256x256/apps
+
+icon512.files   = images/appicon/512/aplugedit.png
+icon512.path    = $$INSTALL_PREFIX/share/icons/hicolor/512x512/apps

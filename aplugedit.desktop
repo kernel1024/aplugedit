@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=APlugEdit
+Exec=aplugedit %f
+Icon=aplugedit
+GenericName=Editor for ALSA .asoundrc file
+Terminal=false
+Categories=Application;Audio;Settings

@@ -32,4 +32,14 @@
         <file>images/dsnoop.png</file>
         <file>images/asym.png</file>
     </qresource>
+    <qresource prefix="/appicon">
+        <file alias="16">images/appicon/16/aplugedit.png</file>
+        <file alias="24">images/appicon/24/aplugedit.png</file>
+        <file alias="32">images/appicon/32/aplugedit.png</file>
+        <file alias="48">images/appicon/48/aplugedit.png</file>
+        <file alias="64">images/appicon/64/aplugedit.png</file>
+        <file alias="128">images/appicon/128/aplugedit.png</file>
+        <file alias="256">images/appicon/256/aplugedit.png</file>
+        <file alias="512">images/appicon/512/aplugedit.png</file>
+    </qresource>
 </RCC>
