@@ -17,28 +17,40 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include "includes/cpasym.h"
 #include "includes/generic.h"
-#include "includes/cpplug.h"
 
-ZCPPlug::ZCPPlug(QWidget *parent, ZRenderArea *aOwner)
+ZCPAsym::ZCPAsym(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
+    fInp = new ZCPInput(this,this);
     fInp->pinName=QSL("in");
     registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
-    registerOutput(fOut);
+
+    fOutPlayback = new ZCPOutput(this,this);
+    fOutPlayback->pinName=QSL("play");
+    registerOutput(fOutPlayback);
+
+    fOutCapture = new ZCPOutput(this,this);
+    fOutCapture->pinName=QSL("rec");
+    registerOutput(fOutCapture);
 }
 
-ZCPPlug::~ZCPPlug() = default;
+ZCPAsym::~ZCPAsym() = default;
 
-QSize ZCPPlug::minimumSizeHint() const
+QSize ZCPAsym::minimumSizeHint() const
 {
     return QSize(180,50);
 }
 
-void ZCPPlug::paintEvent(QPaintEvent *event)
+void ZCPAsym::realignPins()
+{
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
+    fOutPlayback->relCoord=QPoint(width()-zcpPinSize/2,height()/3);
+    fOutCapture->relCoord=QPoint(width()-zcpPinSize/2,2*height()/3);
+}
+
+void ZCPAsym::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event)
 
@@ -48,23 +60,24 @@ void ZCPPlug::paintEvent(QPaintEvent *event)
     paintBase(p);
 
     setBaseFont(p,ftTitle);
-    p.drawText(rect(),Qt::AlignCenter,QSL("Plug"));
+    p.drawText(rect(),Qt::AlignCenter,QSL("Asym"));
 
     p.restore();
 }
 
-void ZCPPlug::realignPins()
-{
-    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
-}
-
-void ZCPPlug::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
+void ZCPAsym::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type plug") << endl;
-    if (fOut->toFilter)
-        stream << QSL("  slave.pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
+    stream << QSL("  type asym") << endl;
+    if (fOutPlayback->toFilter)
+        stream << QSL("  playback.pcm \"%1\"").arg(fOutPlayback->toFilter->objectName()) << endl;
+    if (fOutCapture->toFilter)
+        stream << QSL("  capture.pcm \"%1\"").arg(fOutCapture->toFilter->objectName()) << endl;
+
+    if ((fOutPlayback->toFilter==nullptr) ||
+            (fOutCapture->toFilter==nullptr))
+        warnings.append(tr("Asym plugin: both slave PCMs (playback and capture) must be connected."));
+
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;

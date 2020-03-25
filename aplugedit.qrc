@@ -30,5 +30,6 @@
         <file>images/blacklist.png</file>
         <file>images/dshare.png</file>
         <file>images/dsnoop.png</file>
+        <file>images/asym.png</file>
     </qresource>
 </RCC>

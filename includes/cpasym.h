@@ -17,55 +17,31 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#include "includes/generic.h"
-#include "includes/cpplug.h"
+#ifndef ZCPASYM_H
+#define ZCPASYM_H
 
-ZCPPlug::ZCPPlug(QWidget *parent, ZRenderArea *aOwner)
-    : ZCPBase(parent,aOwner)
+#include <QtCore>
+#include "cpbase.h"
+
+class ZCPAsym : public ZCPBase
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
-    registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
-    registerOutput(fOut);
-}
+    Q_OBJECT
+public:
+    ZCPAsym(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPAsym() override;
 
-ZCPPlug::~ZCPPlug() = default;
+    QSize minimumSizeHint() const override;
 
-QSize ZCPPlug::minimumSizeHint() const
-{
-    return QSize(180,50);
-}
+protected:
+    void paintEvent(QPaintEvent * event) override;
+    void realignPins() override;
+    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
 
-void ZCPPlug::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event)
+private:
+    ZCPInput* fInp { nullptr };
+    ZCPOutput* fOutPlayback { nullptr };
+    ZCPOutput* fOutCapture { nullptr };
 
-    QPainter p(this);
-    p.save();
+};
 
-    paintBase(p);
-
-    setBaseFont(p,ftTitle);
-    p.drawText(rect(),Qt::AlignCenter,QSL("Plug"));
-
-    p.restore();
-}
-
-void ZCPPlug::realignPins()
-{
-    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
-}
-
-void ZCPPlug::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
-{
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type plug") << endl;
-    if (fOut->toFilter)
-        stream << QSL("  slave.pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
-    ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
-}
+#endif // ZCPASYM_H

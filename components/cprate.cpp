@@ -36,7 +36,7 @@ ZCPRate::~ZCPRate() = default;
 
 QSize ZCPRate::minimumSizeHint() const
 {
-    return QSize(140,50);
+    return QSize(180,50);
 }
 
 void ZCPRate::realignPins()

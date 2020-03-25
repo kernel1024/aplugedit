@@ -41,7 +41,7 @@ ZCPRoute::~ZCPRoute() = default;
 
 QSize ZCPRoute::minimumSizeHint() const
 {
-    return QSize(140,50);
+    return QSize(180,50);
 }
 
 int ZCPRoute::getChannelsOut() const

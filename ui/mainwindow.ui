@@ -88,6 +88,7 @@
     <addaction name="actionEditDmix"/>
     <addaction name="actionEditDshare"/>
     <addaction name="actionEditDsnoop"/>
+    <addaction name="actionEditAsym"/>
     <addaction name="separator"/>
     <addaction name="actionEditLADSPA"/>
     <addaction name="actionEditMeter"/>
@@ -163,6 +164,7 @@
    <addaction name="actionEditDmix"/>
    <addaction name="actionEditDshare"/>
    <addaction name="actionEditDsnoop"/>
+   <addaction name="actionEditAsym"/>
    <addaction name="separator"/>
    <addaction name="actionEditLADSPA"/>
    <addaction name="actionEditMeter"/>
@@ -554,6 +556,18 @@
    </property>
    <property name="statusTip">
     <string>Add dsnoop capture mixing block</string>
+   </property>
+  </action>
+  <action name="actionEditAsym">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/asym.png</normaloff>:/images/asym.png</iconset>
+   </property>
+   <property name="text">
+    <string>Asym plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add asym block - a combination of playback and capture PCM streams</string>
    </property>
   </action>
  </widget>
