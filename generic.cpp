@@ -68,6 +68,27 @@ void ZGenericFuncs::showWarningsDialog(QWidget *parent, const QString &title, co
     dlg.exec();
 }
 
+Qt::CheckState ZGenericFuncs::readTristateFromJson(const QJsonValue &value)
+{
+    QString denoise = value.toString().toLower();
+    if (denoise == QSL("yes") || denoise == QSL("on")) {
+        return Qt::CheckState::Checked;
+    } else if (denoise == QSL("no") || denoise == QSL("off")) {
+        return Qt::CheckState::Unchecked;
+    }
+    return Qt::CheckState::PartiallyChecked;
+}
+
+QJsonValue ZGenericFuncs::writeTristateToJson(Qt::CheckState state)
+{
+    switch (state) {
+        case Qt::CheckState::Checked: return QJsonValue(QSL("yes"));
+        case Qt::CheckState::Unchecked: return QJsonValue(QSL("no"));
+        case Qt::CheckState::PartiallyChecked: return QJsonValue(QSL("default"));
+    }
+    return QJsonValue(QSL("undefined"));
+}
+
 ZDescListItemDelegate::ZDescListItemDelegate(QObject *parent)
     : QStyledItemDelegate(parent)
 {

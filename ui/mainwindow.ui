@@ -91,6 +91,7 @@
     <addaction name="actionEditAsym"/>
     <addaction name="separator"/>
     <addaction name="actionEditLADSPA"/>
+    <addaction name="actionEditSpeex"/>
     <addaction name="actionEditMeter"/>
     <addaction name="separator"/>
     <addaction name="actionEditBlacklist"/>
@@ -167,6 +168,7 @@
    <addaction name="actionEditAsym"/>
    <addaction name="separator"/>
    <addaction name="actionEditLADSPA"/>
+   <addaction name="actionEditSpeex"/>
    <addaction name="actionEditMeter"/>
    <addaction name="separator"/>
    <addaction name="actionEditBlacklist"/>
@@ -568,6 +570,18 @@
    </property>
    <property name="statusTip">
     <string>Add asym block - a combination of playback and capture PCM streams</string>
+   </property>
+  </action>
+  <action name="actionEditSpeex">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/speex.png</normaloff>:/images/speex.png</iconset>
+   </property>
+   <property name="text">
+    <string>Speex plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add Speex DSP block</string>
    </property>
   </action>
  </widget>

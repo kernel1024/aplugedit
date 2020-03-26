@@ -24,6 +24,7 @@
 #include <QString>
 #include <QStyledItemDelegate>
 #include <QPainter>
+#include <QJsonValue>
 
 #define QSL QStringLiteral
 
@@ -39,6 +40,8 @@ public:
     static QString getLADSPAPath();
     static void showWarningsDialog(QWidget *parent, const QString& title,
                                        const QString& text, const QStringList& warnings);
+    static Qt::CheckState readTristateFromJson(const QJsonValue& value);
+    static QJsonValue writeTristateToJson(Qt::CheckState state);
 };
 
 class ZDescListItemDelegate : public QStyledItemDelegate

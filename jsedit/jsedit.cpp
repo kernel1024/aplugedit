@@ -93,7 +93,16 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("controls"),
                    QSL("filename"),
                    QSL("id"),
-                   QSL("policy")
+                   QSL("policy"),
+                   QSL("playback"),
+                   QSL("capture"),
+                   QSL("frames"),
+                   QSL("agc_level"),
+                   QSL("filter_length"),
+                   QSL("denoise"),
+                   QSL("agc"),
+                   QSL("dereverb"),
+                   QSL("echo")
                  };
 
     // ALSA built-in plugins and parameter values
@@ -108,6 +117,9 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("alaw"),
                    QSL("adpcm"),
                    QSL("dmix"),
+                   QSL("dsnoop"),
+                   QSL("dshare"),
+                   QSL("asym"),
                    QSL("file"),
                    QSL("hw"),
                    QSL("plug"),
@@ -118,7 +130,8 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("route"),
                    QSL("multi"),
                    QSL("upmix"),
-                   QSL("vdownmix")
+                   QSL("vdownmix"),
+                   QSL("speex")
                  };
 }
 

@@ -9,6 +9,7 @@ HEADERS       = includes/cpbase.h \
                 includes/cpmulti.h \
                 includes/cpplug.h \
                 includes/cpshare.h \
+                includes/cpspeex.h \
                 includes/cpupmix.h \
                 includes/cpvdownmix.h \
                 includes/generatedialog.h \
@@ -35,6 +36,7 @@ HEADERS       = includes/cpbase.h \
                 includes/sampleplayer.h \
                 includes/sampleplayer_p.h \
                 includes/sharedialog.h \
+                includes/speexdialog.h \
                 jsedit/jsedit.h \
                 jsedit/jsedit_p.h
 SOURCES       = main.cpp \
@@ -44,6 +46,7 @@ SOURCES       = main.cpp \
                 components/cpmulti.cpp \
                 components/cpplug.cpp \
                 components/cpshare.cpp \
+                components/cpspeex.cpp \
                 components/cpupmix.cpp \
                 components/cpvdownmix.cpp \
                 dialogs/blacklistdialog.cpp \
@@ -59,6 +62,7 @@ SOURCES       = main.cpp \
                 dialogs/sampleplayer.cpp \
                 dialogs/sampleplayer_p.cpp \
                 dialogs/sharedialog.cpp \
+                dialogs/speexdialog.cpp \
                 generic.cpp \
                 jsedit/jsedit.cpp \
                 ladspa_p.cpp \
@@ -91,6 +95,7 @@ FORMS         = \
                 ui/routedlg.ui \
                 ui/sampleplayer.ui \
                 ui/sharedialog.ui \
+                ui/speexdialog.ui \
                 ui/upmixdlg.ui
 
 CONFIG += warn_on \

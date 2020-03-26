@@ -59,15 +59,6 @@ void ZCPShare::readFromJson(const QJsonValue &json)
         m_mode = spDMix;
     }
 
-    QString slowPtr = json.toObject().value(QSL("slowPtr")).toString().toLower();
-    if (slowPtr == QSL("yes")) {
-        m_slowPtr = Qt::CheckState::Checked;
-    } else if (slowPtr == QSL("no")) {
-        m_slowPtr = Qt::CheckState::Unchecked;
-    } else {
-        m_slowPtr = Qt::CheckState::PartiallyChecked;
-    }
-
     QString ptrAlignment = json.toObject().value(QSL("ptrAlignment")).toString().toLower();
     if (ptrAlignment == QSL("auto")) {
         m_hwPtrAlignment = haAuto;
@@ -81,6 +72,7 @@ void ZCPShare::readFromJson(const QJsonValue &json)
         m_hwPtrAlignment = haEmpty;
     }
 
+    m_slowPtr = ZGenericFuncs::readTristateFromJson(json.toObject().value(QSL("slowPtr")));
     m_IPCkey = json.toObject().value(QSL("IPCkey")).toString();
     m_IPCpermissions = json.toObject().value(QSL("IPCperm")).toString();
 
@@ -100,11 +92,6 @@ QJsonValue ZCPShare::storeToJson() const
         case spDSnoop: data.insert(QSL("mode"), QSL("dsnoop")); break;
         case spDShare: data.insert(QSL("mode"), QSL("dshare")); break;
     }
-    switch (m_slowPtr) {
-        case Qt::CheckState::Checked: data.insert(QSL("slowPtr"), QSL("yes")); break;
-        case Qt::CheckState::Unchecked: data.insert(QSL("slowPtr"), QSL("no")); break;
-        case Qt::CheckState::PartiallyChecked: data.insert(QSL("slowPtr"), QSL("default")); break;
-    }
     switch (m_hwPtrAlignment) {
         case haAuto: data.insert(QSL("ptrAlignment"), QSL("auto")); break;
         case haNo: data.insert(QSL("ptrAlignment"), QSL("no")); break;
@@ -113,6 +100,7 @@ QJsonValue ZCPShare::storeToJson() const
         default: break;
     }
 
+    data.insert(QSL("slowPtr"), ZGenericFuncs::writeTristateToJson(m_slowPtr));
     data.insert(QSL("IPCkey"), m_IPCkey);
     data.insert(QSL("IPCperm"), m_IPCpermissions);
 

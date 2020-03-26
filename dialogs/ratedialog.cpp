@@ -31,6 +31,9 @@ ZRateDialog::ZRateDialog(QWidget *parent)
     alConverter->addItem(tr("samplerate fastest"));
     alConverter->addItem(tr("samplerate order hold"));
     alConverter->addItem(tr("samplerate linear"));
+    alConverter->addItem(tr("speexrate best"));
+    alConverter->addItem(tr("speexrate medium"));
+    alConverter->addItem(tr("speexrate"));
 
     alRate->addItem(tr("8000 Hz"));
     alRate->addItem(tr("11025 Hz"));
@@ -69,6 +72,9 @@ QString ZRateDialog::getConverter()
         case 3: conv=QSL("samplerate"); break;
         case 4: conv=QSL("samplerate_order"); break;
         case 5: conv=QSL("samplerate_linear"); break;
+        case 6: conv=QSL("speexrate_best"); break;
+        case 7: conv=QSL("speexrate_medium"); break;
+        case 8: conv=QSL("speexrate"); break;
         default: conv=QString();
     }
     return conv;
@@ -97,6 +103,12 @@ void ZRateDialog::setParams(int aRate, const QString &aConverter)
         alConverter->setCurrentIndex(4);
     } else if (aConverter==QSL("samplerate_linear")) {
         alConverter->setCurrentIndex(5);
+    } else if (aConverter==QSL("speexrate_best")) {
+        alConverter->setCurrentIndex(6);
+    } else if (aConverter==QSL("speexrate_medium")) {
+        alConverter->setCurrentIndex(7);
+    } else if (aConverter==QSL("speexrate")) {
+        alConverter->setCurrentIndex(8);
     } else {
         alConverter->setCurrentIndex(0);
     }
