@@ -24,21 +24,14 @@
 ZCPUpmix::ZCPUpmix(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp = new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp = new ZCPInput(this, QSL("in"));
     registerInput(fInp);
-    fOut = new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
+
+    fOut = new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 }
 
 ZCPUpmix::~ZCPUpmix() = default;
-
-void ZCPUpmix::readFromStreamLegacy(QDataStream &stream)
-{
-    Q_UNUSED(stream)
-    // No legacy support for this class
-}
 
 void ZCPUpmix::readFromJson(const QJsonValue &json)
 {

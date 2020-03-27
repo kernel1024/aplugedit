@@ -29,6 +29,8 @@ class ZCPHW : public ZCPBase
     Q_OBJECT
 private:
     ZCPInput* fInp { nullptr };
+    ZCPInput* fCtlInp { nullptr };
+
     int m_card { 0 };      // link to card
     int m_device { -1 };    // device number (default 0)
     int m_subdevice { -1 }; // subdevice number (default -1: first available)
@@ -43,7 +45,6 @@ public:
     ZCPHW(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPHW() override;
 
-    void readFromStreamLegacy(QDataStream & stream) override;
     void readFromJson(const QJsonValue& json) override;
     QJsonValue storeToJson() const override;
 
@@ -56,6 +57,7 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
+    void doCtlGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;
     bool needSettingsDlg() override { return true; }
 

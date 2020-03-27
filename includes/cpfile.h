@@ -35,14 +35,13 @@ public:
     ZCPFile(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPFile() override;
 
-    void readFromStreamLegacy(QDataStream & stream) override;
     void readFromJson(const QJsonValue& json) override;
     QJsonValue storeToJson() const override;
 
     QSize minimumSizeHint() const override;
 
 protected:
-    void paintEvent (QPaintEvent * event) override;
+    void paintEvent(QPaintEvent * event) override;
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;

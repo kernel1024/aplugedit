@@ -137,15 +137,16 @@ void ZCPBase::redrawPins(QPainter & painter)
     realignPins();
 
     painter.save();
-    QPen penPin=QPen(m_pinColor);
-    QBrush brshPin=QBrush(m_pinColor,Qt::SolidPattern);
-    painter.setPen(penPin);
-    painter.setBrush(brshPin);
     QFont n = painter.font();
     n.setBold(false);
     painter.setFont(n);
     for (const auto & a : qAsConst(fInputs))
     {
+        QPen penPin=QPen(a->getPinColor());
+        QBrush brshPin=QBrush(a->getPinColor(),Qt::SolidPattern);
+        painter.setPen(penPin);
+        painter.setBrush(brshPin);
+
         painter.fillRect(QRect(   a->relCoord.x()-zcpPinSize/2,
                                   a->relCoord.y()-zcpPinSize/2,
                                   zcpPinSize,
@@ -157,6 +158,11 @@ void ZCPBase::redrawPins(QPainter & painter)
     }
     for (const auto & a : qAsConst(fOutputs))
     {
+        QPen penPin=QPen(a->getPinColor());
+        QBrush brshPin=QBrush(a->getPinColor(),Qt::SolidPattern);
+        painter.setPen(penPin);
+        painter.setBrush(brshPin);
+
         painter.fillRect(QRect(   a->relCoord.x()-zcpPinSize/2,
                                   a->relCoord.y()-zcpPinSize/2,
                                   zcpPinSize,
@@ -325,6 +331,12 @@ void ZCPBase::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
     }
 }
 
+void ZCPBase::doCtlGenerate(QTextStream &stream, QStringList &warnings) const
+{
+    Q_UNUSED(stream)
+    Q_UNUSED(warnings)
+}
+
 QString ZCPBase::getHint() const
 {
     return m_hint;
@@ -385,26 +397,8 @@ void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
     Q_EMIT componentChanged(this);
 }
 
-void ZCPBase::readFromStreamLegacy( QDataStream & stream )
-{
-    m_hint.clear();
-    m_hintShow = true;
-    stream >> m_pinColor;
-    for (int i=0;i<fInputs.count();i++)
-        fInputs.at(i)->readFromStreamLegacy(stream);
-    for (int i=0;i<fOutputs.count();i++)
-        fOutputs.at(i)->readFromStreamLegacy(stream);
-}
-
 void ZCPBase::readFromJson(const QJsonValue &json)
 {
-    QColor color(json.toObject().value(QSL("pinColor")).toString());
-    if (color.isValid()) {
-        m_pinColor = color;
-    } else {
-        qWarning() << "Incorrect color in JSON";
-    }
-
     m_hint = json.toObject().value(QSL("hint")).toString();
     m_hintShow = json.toObject().value(QSL("hintShow")).toBool(true);
 
@@ -420,7 +414,6 @@ void ZCPBase::readFromJson(const QJsonValue &json)
 QJsonValue ZCPBase::storeToJson() const
 {
     QJsonObject data;
-    data.insert(QSL("pinColor"),m_pinColor.name());
     data.insert(QSL("hint"),m_hint);
     data.insert(QSL("hintShow"),m_hintShow);
 
@@ -500,24 +493,12 @@ ZCPBase *ZCPBase::searchPluginForward(const char *targetClass, const ZCPBase *no
     return nullptr;
 }
 
-ZCPOutput::ZCPOutput(QObject * parent, ZCPBase * aOwner)
+ZCPOutput::ZCPOutput(ZCPBase *parent, const QString &aPinName, CStructures::PinClass aPinClass)
     : QObject(parent)
+    , pinClass(aPinClass)
+    , ownerFilter(parent)
 {
-    pinName=QSL("<NA>");
-    ownerFilter=aOwner;
-}
-
-void ZCPOutput::readFromStreamLegacy( QDataStream & stream )
-{
-    stream >> toPin;
-    toFilter=nullptr;
-    QString q;
-    stream >> q;
-    if (q!=QSL("<NONE>")) {
-        ffLogic=q;
-    } else {
-        ffLogic.clear();
-    }
+    pinName = aPinName;
 }
 
 void ZCPOutput::readFromJson(const QJsonValue &json)
@@ -525,12 +506,14 @@ void ZCPOutput::readFromJson(const QJsonValue &json)
     toFilter = nullptr;
     toPin = json.toObject().value(QSL("toPin")).toInt(-1);
     ffLogic = json.toObject().value(QSL("toFilter")).toString();
+    pinClass = static_cast<CStructures::PinClass>(json.toObject().value(QSL("pinClass")).toInt(0));
 }
 
 QJsonValue ZCPOutput::storeToJson() const
 {
     QJsonObject data;
     data.insert(QSL("toPin"),toPin);
+    data.insert(QSL("pinClass"),static_cast<int>(pinClass));
 
     QString filter;
     if (toFilter)
@@ -552,45 +535,41 @@ bool ZCPOutput::postLoadBind()
     return true;
 }
 
-ZCPInput::ZCPInput(QObject * parent, ZCPBase * aOwner)
-    : QObject(parent)
+QColor ZCPOutput::getPinColor()
 {
-    pinName=QSL("<NA>");
-    ownerFilter=aOwner;
+    switch (pinClass) {
+        case CStructures::PinClass::pcPCM: return Qt::blue;
+        case CStructures::PinClass::pcCTL: return Qt::red;
+    }
+    return Qt::GlobalColor::gray;
 }
 
-void ZCPInput::readFromStreamLegacy( QDataStream & stream )
+ZCPInput::ZCPInput(ZCPBase *parent, const QString &aPinName, CStructures::PinClass aPinClass)
+    : QObject(parent)
+    , pinClass(aPinClass)
+    , ownerFilter(parent)
 {
-    qint32 fromPin;
-    stream >> fromPin;
-
-    QString ffLogic;
-    stream >> ffLogic;
-    if (ffLogic==QSL("<NONE>"))
-        ffLogic.clear();
-
-    links.append(CInpLink(fromPin,nullptr,ffLogic));
+    pinName = aPinName;
 }
 
 void ZCPInput::readFromJson(const QJsonValue &json)
 {
-    if (json.isArray()) {
-        const QJsonArray jarray = json.toArray();
-        for (const auto& item : jarray) {
-            qint32 fromPin = item.toObject().value(QSL("fromPin")).toInt(-1);
-            QString ffLogic = item.toObject().value(QSL("fromFilter")).toString();
-            links.append(CInpLink(fromPin,nullptr,ffLogic));
-        }
-    } else {
-        qint32 fromPin = json.toObject().value(QSL("fromPin")).toInt(-1);
-        QString ffLogic = json.toObject().value(QSL("fromFilter")).toString();
+    pinClass = static_cast<CStructures::PinClass>(json.toObject().value(QSL("pinClass")).toInt(0));
+
+    const QJsonArray jarray = json.toObject().value(QSL("links")).toArray();
+    for (const auto& item : jarray) {
+        qint32 fromPin = item.toObject().value(QSL("fromPin")).toInt(-1);
+        QString ffLogic = item.toObject().value(QSL("fromFilter")).toString();
         links.append(CInpLink(fromPin,nullptr,ffLogic));
     }
 }
 
 QJsonValue ZCPInput::storeToJson() const
 {
-    QJsonArray data;
+    QJsonObject data;
+    data.insert(QSL("pinClass"),static_cast<int>(pinClass));
+
+    QJsonArray jlinks;
     for (const auto& link : qAsConst(links)) {
         QJsonObject item;
         item.insert(QSL("fromPin"),link.fromPin);
@@ -600,8 +579,9 @@ QJsonValue ZCPInput::storeToJson() const
             filter = link.fromFilter->objectName();
         item.insert(QSL("fromFilter"),filter);
 
-        data.append(item);
+        jlinks.append(item);
     }
+    data.insert(QSL("links"),jlinks);
     return data;
 }
 
@@ -619,6 +599,15 @@ bool ZCPInput::postLoadBind()
         }
     }
     return (!failed);
+}
+
+QColor ZCPInput::getPinColor()
+{
+    switch (pinClass) {
+        case CStructures::PinClass::pcPCM: return Qt::blue;
+        case CStructures::PinClass::pcCTL: return Qt::red;
+    }
+    return Qt::GlobalColor::gray;
 }
 
 CInpLink::CInpLink(qint32 aFromPin, ZCPBase *aFromFilter, const QString &affLogic)

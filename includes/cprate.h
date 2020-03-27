@@ -37,7 +37,6 @@ public:
     ZCPRate(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPRate() override;
 
-    void readFromStreamLegacy( QDataStream & stream ) override;
     void readFromJson(const QJsonValue& json) override;
     QJsonValue storeToJson() const override;
 

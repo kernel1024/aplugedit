@@ -41,7 +41,6 @@ public:
     ZCPConv(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPConv() override;
 
-    void readFromStreamLegacy(QDataStream & stream) override;
     void readFromJson(const QJsonValue& json) override;
     QJsonValue storeToJson() const override;
 

@@ -24,11 +24,10 @@
 ZCPRate::ZCPRate(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
+
+    fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 }
 
@@ -84,13 +83,6 @@ void ZCPRate::paintEvent(QPaintEvent * event)
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,s);
 
     p.restore();
-}
-
-void ZCPRate::readFromStreamLegacy( QDataStream & stream )
-{
-    ZCPBase::readFromStreamLegacy(stream);
-    stream >> m_rate;
-    stream >> m_converter;
 }
 
 void ZCPRate::readFromJson(const QJsonValue &json)

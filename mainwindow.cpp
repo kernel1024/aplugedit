@@ -182,16 +182,7 @@ void ZMainWindow::loadFile(const QString &fname)
     QByteArray data = file.readAll();
     file.close();
 
-    QFileInfo fi(file);
-    bool res = false;
-    if (fi.suffix().toLower()==QSL("ape")) {
-        QDataStream ins(data);
-        res = renderArea->readSchematicLegacy(ins);
-    } else if (fi.suffix().toLower()==QSL("ape2")) {
-        res = renderArea->readSchematic(data);
-    }
-
-    if (!res) {
+    if (!(renderArea->readSchematic(data))) {
         renderArea->deleteComponents({});
         QMessageBox::critical(this,tr("Error"),tr("Unable to open file - reading error."));
         return;
@@ -262,7 +253,7 @@ void ZMainWindow::fileOpen()
         }
     }
     QString s = QFileDialog::getOpenFileName(this,tr("Choose a file"),QString(),
-                    tr("ALSA Plugin editor files v2 [*.ape2] (*.ape2);;ALSA Plugin editor files [*.ape] (*.ape)"));
+                    tr("ALSA Plugin editor files v2 [*.ape2] (*.ape2)"));
     if (s.isEmpty()) return;
 
     workFile=s;

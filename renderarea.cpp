@@ -183,7 +183,6 @@ void ZRenderArea::paintConnections(QPainter* p)
     QVector<ZCPBase *> cmps;
     QVector<QRect> cmpsRect;
 
-    QPen wirePen = QPen(Qt::red);
     QRect framingRect;
 
     m_connCount=0;
@@ -206,6 +205,7 @@ void ZRenderArea::paintConnections(QPainter* p)
             if (outPin->toPin==-1) continue;
             if (outPin->toFilter==nullptr) continue;
             ZCPInput* inpPin=outPin->toFilter->fInputs.at(outPin->toPin);
+            QPen wirePen = QPen(outPin->getPinColor());
 
             QPoint c1 = base->pos()+outPin->relCoord;
             QPoint c2 = outPin->toFilter->pos()+inpPin->relCoord;
@@ -324,14 +324,21 @@ void ZRenderArea::doneConnBuilder(bool none, int type, int pinNum, ZCPInput* inp
     // if this output can't possible connect to specified input (np: DMix connecting not to HW), then delete it
     ZCPBase *toFilter;
     ZCPBase *fromFilter;
+    CStructures::PinClass inputClass;
+    CStructures::PinClass outputClass;
     if (m_startPinType==ZCPBase::PinType::ptInput) {
-        toFilter=m_startInput->ownerFilter;
-        fromFilter=output->ownerFilter;
+        toFilter = m_startInput->ownerFilter;
+        fromFilter = output->ownerFilter;
+        inputClass = m_startInput->pinClass;
+        outputClass = output->pinClass;
     } else {
-        toFilter=input->ownerFilter;
-        fromFilter=m_startOutput->ownerFilter;
+        toFilter = input->ownerFilter;
+        fromFilter = m_startOutput->ownerFilter;
+        inputClass = input->pinClass;
+        outputClass = m_startOutput->pinClass;
     }
-    if ((!fromFilter->canConnectOut(toFilter)) || (!toFilter->canConnectIn(fromFilter))) {
+    if ((!fromFilter->canConnectOut(toFilter)) || (!toFilter->canConnectIn(fromFilter)) ||
+            (inputClass != outputClass)) {
         m_connBuilding=false;
         repaintConn();
         return;
@@ -369,7 +376,7 @@ void ZRenderArea::doGenerate(QTextStream & stream, QStringList & warnings)
         cp->doInfoGenerate(stream,warnings);
     }
     
-    stream << "# Generation successfully completted." << endl;
+    stream << "# end of file." << endl;
 }
 
 QVector<CPCMItem> ZRenderArea::getAllPCMNames() const
@@ -387,31 +394,6 @@ int ZRenderArea::componentCount() const
 {
     const auto cplist = findComponents<ZCPBase*>();
     return cplist.count();
-}
-
-bool ZRenderArea::readSchematicLegacy(QDataStream & stream)
-{
-    int c;
-    stream >> c;
-    for (int i=0;i<c;i++)
-    {
-        QString clName;
-        QPoint pos;
-        QString instName;
-        stream >> clName;
-        stream >> pos;
-        stream >> instName;
-        ZCPBase* cp = createCpInstance(clName,pos,instName);
-        if (cp==nullptr) {
-            QMessageBox::warning(this,tr("File load error"),tr("Unable to find class \"%1\".").arg(clName));
-            return false;
-        }
-        cp->readFromStreamLegacy(stream);
-        cp->show();
-    }
-    postLoadBinding();
-    repaintConn();
-    return true;
 }
 
 bool ZRenderArea::readSchematic(const QByteArray &json)

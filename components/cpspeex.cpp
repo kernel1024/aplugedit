@@ -5,11 +5,10 @@
 ZCPSpeex::ZCPSpeex(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
+
+    fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 }
 

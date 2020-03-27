@@ -27,11 +27,10 @@
 ZCPLADSPA::ZCPLADSPA(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
+
+    fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 
     setMinimumHeight(60);
@@ -146,31 +145,6 @@ void ZCPLADSPA::paintEvent(QPaintEvent * event)
     p.drawText(drect,Qt::AlignCenter | Qt::TextWordWrap,filters);
 
     p.restore();
-}
-
-void ZCPLADSPA::readFromStreamLegacy( QDataStream & stream )
-{
-    ZCPBase::readFromStreamLegacy(stream);
-    QString plugName;
-    QString plugID;
-    QString plugLabel;
-    QString plugLibrary;
-
-    // read legacy info
-    stream >> plugName >> plugID >> plugLabel >> plugLibrary;
-    int cn;
-    stream >> cn;
-    QVector<CLADSPAControlItem> controls;
-    controls.reserve(cn);
-    for (int i=0;i<cn;i++)
-        controls << CLADSPAControlItem(stream);
-
-    // create simple instance plugin
-    m_plugins.clear();
-    bool ok;
-    qint64 pID = plugID.toLong(&ok);
-    if (ok)
-        m_plugins.append(CLADSPAPlugItem(plugLabel,pID,plugName,plugLibrary,controls));
 }
 
 void ZCPLADSPA::readFromJson(const QJsonValue &json)

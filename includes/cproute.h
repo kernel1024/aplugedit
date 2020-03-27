@@ -49,7 +49,6 @@ public:
     ZCPRoute(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPRoute() override;
 
-    void readFromStreamLegacy( QDataStream & stream ) override;
     void readFromJson(const QJsonValue& json) override;
     QJsonValue storeToJson() const override;
 

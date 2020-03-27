@@ -23,16 +23,13 @@
 ZCPAsym::ZCPAsym(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp = new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp = new ZCPInput(this, QSL("in"));
     registerInput(fInp);
 
-    fOutPlayback = new ZCPOutput(this,this);
-    fOutPlayback->pinName=QSL("play");
+    fOutPlayback = new ZCPOutput(this, QSL("play"));
     registerOutput(fOutPlayback);
 
-    fOutCapture = new ZCPOutput(this,this);
-    fOutCapture->pinName=QSL("rec");
+    fOutCapture = new ZCPOutput(this, QSL("rec"));
     registerOutput(fOutCapture);
 }
 

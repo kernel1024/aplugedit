@@ -30,10 +30,21 @@ class ZCPBase;
 class ZRenderArea;
 class ZCPMulti;
 
+namespace CStructures {
+    Q_NAMESPACE
+
+    enum PinClass {
+        pcPCM = 0,
+        pcCTL = 1
+    };
+    Q_ENUM_NS(PinClass)
+}
+
 class ZCPOutput : public QObject
 {
     Q_OBJECT
 public:
+    CStructures::PinClass pinClass { CStructures::PinClass::pcPCM };
     qint32 toPin { -1 };
     ZCPBase *toFilter { nullptr };
     ZCPBase *ownerFilter { nullptr };
@@ -41,12 +52,12 @@ public:
     QString pinName;
     QString ffLogic;
 
-    ZCPOutput(QObject * parent, ZCPBase * aOwner);
+    ZCPOutput(ZCPBase *parent, const QString &aPinName, CStructures::PinClass aPinClass = CStructures::PinClass::pcPCM);
 
-    void readFromStreamLegacy( QDataStream & stream );
     void readFromJson(const QJsonValue& json);
     QJsonValue storeToJson() const;
     bool postLoadBind();
+    QColor getPinColor();
 };
 
 class CInpLink
@@ -67,17 +78,18 @@ class ZCPInput : public QObject
 {
     Q_OBJECT
 public:
+    CStructures::PinClass pinClass { CStructures::PinClass::pcPCM };
     ZCPBase * ownerFilter { nullptr };
     QPoint relCoord;
     QString pinName;
     QVector<CInpLink> links;
 
-    ZCPInput(QObject * parent, ZCPBase * aOwner);
+    ZCPInput(ZCPBase *parent, const QString &aPinName, CStructures::PinClass aPinClass = CStructures::PinClass::pcPCM);
     
-    void readFromStreamLegacy( QDataStream & stream );
     void readFromJson(const QJsonValue& json);
     QJsonValue storeToJson() const;
     bool postLoadBind();
+    QColor getPinColor();
 };
 
 class ZCPBase : public QWidget
@@ -101,12 +113,12 @@ public:
 
     ZCPBase(QWidget *parent, ZRenderArea *aOwner);
 
-    virtual void readFromStreamLegacy(QDataStream & stream);
     virtual void readFromJson(const QJsonValue& json);
     virtual QJsonValue storeToJson() const;
 
     virtual bool canConnectOut(ZCPBase *toFilter);
     virtual bool canConnectIn(ZCPBase *toFilter);
+    virtual void doCtlGenerate(QTextStream & stream, QStringList & warnings) const;
 
     QSize sizeHint() const override;
 
@@ -148,7 +160,6 @@ private:
     QString m_hint;
     QList<ZCPInput*> fInputs;
     QList<ZCPOutput*> fOutputs;
-    QColor m_pinColor { Qt::blue };
     QPoint m_relCorner;
 
     void deleteOutput(int idx);

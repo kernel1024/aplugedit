@@ -24,11 +24,10 @@
 ZCPMeter::ZCPMeter(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
+
+    fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 }
 
@@ -91,14 +90,6 @@ void ZCPMeter::paintEvent (QPaintEvent * event)
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,fi.fileName());
 
     p.restore();
-}
-
-void ZCPMeter::readFromStreamLegacy( QDataStream & stream )
-{
-    ZCPBase::readFromStreamLegacy(stream);
-    stream >> m_meterLib;
-    stream >> m_meterFunc;
-    stream >> m_refreshRate;
 }
 
 void ZCPMeter::readFromJson(const QJsonValue &json)

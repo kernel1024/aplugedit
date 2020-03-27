@@ -24,11 +24,10 @@
 ZCPRoute::ZCPRoute(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
+
+    fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 
     m_routeTable.reserve(2);
@@ -93,26 +92,6 @@ void ZCPRoute::paintEvent(QPaintEvent * event)
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,s);
 
     p.restore();
-}
-
-void ZCPRoute::readFromStreamLegacy( QDataStream & stream )
-{
-    struct LegacyRouteItem {
-      int from;
-      float coeff;
-    };
-
-    ZCPBase::readFromStreamLegacy(stream);
-    stream >> m_channelsIn;
-
-    int tChannelsOut;
-    stream >> tChannelsOut;
-    m_routeTable.clear();
-    m_routeTable.reserve(tChannelsOut);
-    LegacyRouteItem legacyTable[8];
-    stream.readRawData(reinterpret_cast<char*>(&legacyTable),sizeof(legacyTable));
-    for (int i=0;i<tChannelsOut;i++)
-        m_routeTable.append(CRouteItem(legacyTable[i].from,static_cast<double>(legacyTable[i].coeff)));
 }
 
 void ZCPRoute::readFromJson(const QJsonValue &json)

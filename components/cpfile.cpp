@@ -23,9 +23,9 @@
 ZCPFile::ZCPFile(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
+
     m_fileName=QSL("unnamed");
 }
 
@@ -70,12 +70,6 @@ void ZCPFile::paintEvent (QPaintEvent * event)
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,fi.fileName());
 
     p.restore();
-}
-
-void ZCPFile::readFromStreamLegacy( QDataStream & stream )
-{
-    ZCPBase::readFromStreamLegacy(stream);
-    stream >> m_fileName;
 }
 
 void ZCPFile::readFromJson(const QJsonValue &json)

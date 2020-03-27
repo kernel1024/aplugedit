@@ -24,9 +24,12 @@
 ZCPHW::ZCPHW(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
+
+    fCtlInp=new ZCPInput(this, QSL("ctl"), CStructures::PinClass::pcCTL);
+    registerInput(fCtlInp);
+
     m_format=QSL("<NONE>");
 }
 
@@ -34,7 +37,7 @@ ZCPHW::~ZCPHW() = default;
 
 QSize ZCPHW::minimumSizeHint() const
 {
-    return QSize(180,50);
+    return QSize(180,65);
 }
 
 int ZCPHW::getRate() const
@@ -49,7 +52,8 @@ int ZCPHW::getChannels() const
 
 void ZCPHW::realignPins()
 {
-    fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
+    fInp->relCoord=QPoint(zcpPinSize/2,height()/3);
+    fCtlInp->relCoord=QPoint(zcpPinSize/2,2*height()/3);
 }
 
 void ZCPHW::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
@@ -98,13 +102,15 @@ void ZCPHW::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
     stream << endl;
 }
 
-void ZCPHW::readFromStreamLegacy( QDataStream & stream )
+void ZCPHW::doCtlGenerate(QTextStream &stream, QStringList &warnings) const
 {
-    ZCPBase::readFromStreamLegacy(stream);
-    stream >> m_card >> m_device >> m_subdevice;
-    stream >> m_mmap_emulation >> m_sync_ptr_ioctl >> m_nonblock;
-    stream >> m_format;
-    stream >> m_channels >> m_rate;
+    int card = m_card;
+    if (card<0) {
+        warnings.append(tr("HW plugin: incorrect card number for ctl"));
+        card = 0;
+    }
+    stream << QSL("  type hw") << endl;
+    stream << QSL("  card %1").arg(card) << endl;
 }
 
 void ZCPHW::readFromJson(const QJsonValue &json)

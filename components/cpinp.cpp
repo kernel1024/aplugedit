@@ -29,9 +29,12 @@ QString ZCPInp::dspName() const
 ZCPInp::ZCPInp(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fOut=new ZCPOutput(this,this);
-    fOut->pinName=QSL("out");
+    fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
+
+    fCtlOut=new ZCPOutput(this, QSL("ctl"),CStructures::PinClass::pcCTL);
+    registerOutput(fCtlOut);
+
     m_dspName=QSL("!default");
 }
 
@@ -74,12 +77,6 @@ void ZCPInp::showSettingsDlg()
     }
 }
 
-void ZCPInp::readFromStreamLegacy( QDataStream & stream )
-{
-    ZCPBase::readFromStreamLegacy(stream);
-    stream >> m_dspName;
-}
-
 void ZCPInp::readFromJson(const QJsonValue &json)
 {
     ZCPBase::readFromJson(json.toObject().value(QSL("base")));
@@ -96,12 +93,13 @@ QJsonValue ZCPInp::storeToJson() const
 
 QSize ZCPInp::minimumSizeHint() const
 {
-    return QSize(180,50);
+    return QSize(180,65);
 }
 
 void ZCPInp::realignPins()
 {
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/3);
+    fCtlOut->relCoord=QPoint(width()-zcpPinSize/2,2*height()/3);
 }
 
 void ZCPInp::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
@@ -118,6 +116,12 @@ void ZCPInp::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
+    if (fCtlOut->toFilter) {
+        stream << QSL("ctl.") << m_dspName << QSL(" {") << endl;
+        fCtlOut->toFilter->doCtlGenerate(stream,warnings);
+        stream << QSL("}") << endl;
+        stream << endl;
+    }
 }
 
 void ZCPInp::paintEvent(QPaintEvent *event)

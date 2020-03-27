@@ -26,8 +26,7 @@
 ZCPMulti::ZCPMulti(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
-    fInp=new ZCPInput(this,this);
-    fInp->pinName=QSL("in");
+    fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
 
     regenerateOutputs(1);
@@ -189,7 +188,7 @@ void ZCPMulti::regenerateOutputs(int outputsCount)
     }
 
     while (fOutputs.count() < outputsCount) {
-        auto out=new ZCPOutput(this,this);
+        auto out=new ZCPOutput(this, QString());
         registerOutput(out);
         m_slaveChannels.append(2); // default stereo output
     }

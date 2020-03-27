@@ -62,7 +62,6 @@ public:
     QSize minimumSizeHint() const override;
     QSize sizeHint() const override;
 
-    bool readSchematicLegacy(QDataStream& stream);
     bool readSchematic(const QByteArray& json);
     QByteArray storeSchematic() const;
 

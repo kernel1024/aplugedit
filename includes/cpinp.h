@@ -29,6 +29,7 @@ class ZCPInp : public ZCPBase
     Q_OBJECT
 private:
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
     QString m_dspName;
 
 public:
@@ -36,7 +37,6 @@ public:
     ZCPInp(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPInp() override;
 
-    void readFromStreamLegacy(QDataStream & stream) override;
     void readFromJson(const QJsonValue& json) override;
     QJsonValue storeToJson() const override;
 
@@ -44,7 +44,7 @@ public:
     QString dspName() const;
 
 protected:
-    void paintEvent (QPaintEvent * event) override;
+    void paintEvent(QPaintEvent * event) override;
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;
