@@ -28,7 +28,7 @@ ZLADSPAListDialog::ZLADSPAListDialog(QWidget *parent) :
     ui->setupUi(this);
     model = new ZLADSPAListModel(this);
     ui->listPlugins->setModel(model);
-    ui->listPlugins->setItemDelegate(new ZDescListItemDelegate());
+    ui->listPlugins->setItemDelegate(new ZDescListItemDelegate(this));
     ui->listPlugins->viewport()->setAcceptDrops(true);
 
     ui->comboSampleRate->addItem(tr("8000 Hz"));

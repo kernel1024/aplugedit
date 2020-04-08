@@ -35,8 +35,6 @@ ZCPHW::ZCPHW(QWidget *parent, ZRenderArea *aOwner)
 
 ZCPHW::~ZCPHW() = default;
 
-// TODO: allow use symbolic name for audiointerface
-
 QSize ZCPHW::minimumSizeHint() const
 {
     return QSize(180,65);
@@ -60,14 +58,18 @@ void ZCPHW::realignPins()
 
 void ZCPHW::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
+    stream << QSL("pcm.%1 {").arg(objectName()) << endl;
     stream << QSL("  type hw") << endl;
     if (m_card>=0) {
-        stream << QSL("  card ") << m_card << endl;
+        if (m_preferSymbolicName && !m_cardSymbolic.isEmpty()) {
+            stream << QSL("  card \"%1\"").arg(m_cardSymbolic) << endl;
+        } else {
+            stream << QSL("  card %1").arg(m_card) << endl;
+        }
         if (m_device>=0) {
-            stream << QSL("  device ") << m_device << endl;
+            stream << QSL("  device %1").arg(m_device) << endl;
             if (m_subdevice>=-1)
-                stream << QSL("  subdevice ") << m_subdevice << endl;
+                stream << QSL("  subdevice %1").arg(m_subdevice) << endl;
         }
     } else {
         stream << QSL("  pcm \"hw:0,0\"") << endl;
@@ -91,13 +93,13 @@ void ZCPHW::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
     }
 
     if (!m_format.startsWith(QSL("<NONE>")))
-        stream << QSL("  format ") << m_format << endl;
+        stream << QSL("  format \"%1\"").arg(m_format) << endl;
 
     if (m_channels!=-1)
-        stream << QSL("  channels ") << m_channels << endl;
+        stream << QSL("  channels %1").arg(m_channels) << endl;
 
     if (m_rate!=-1)
-        stream << QSL("  rate ") << m_rate << endl;
+        stream << QSL("  rate %1").arg(m_rate) << endl;
 
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
@@ -112,13 +114,19 @@ void ZCPHW::doCtlGenerate(QTextStream &stream, QStringList &warnings) const
         card = 0;
     }
     stream << QSL("  type hw") << endl;
-    stream << QSL("  card %1").arg(card) << endl;
+    if (m_preferSymbolicName && !m_cardSymbolic.isEmpty()) {
+        stream << QSL("  card \"%1\"").arg(m_cardSymbolic) << endl;
+    } else {
+        stream << QSL("  card %1").arg(card) << endl;
+    }
 }
 
 void ZCPHW::readFromJson(const QJsonValue &json)
 {
     ZCPBase::readFromJson(json.toObject().value(QSL("base")));
     m_card = json.toObject().value(QSL("card")).toInt(0);
+    m_cardSymbolic = json.toObject().value(QSL("cardSymbolic")).toString(QString());
+    m_preferSymbolicName = json.toObject().value(QSL("preferSymbolicName")).toBool(false);
     m_device = json.toObject().value(QSL("device")).toInt(-1);
     m_subdevice = json.toObject().value(QSL("subdevice")).toInt(-1);
     m_format = json.toObject().value(QSL("format")).toString();
@@ -134,6 +142,8 @@ QJsonValue ZCPHW::storeToJson() const
     QJsonObject data;
     data.insert(QSL("base"),ZCPBase::storeToJson());
     data.insert(QSL("card"),m_card);
+    data.insert(QSL("cardSymbolic"),m_cardSymbolic);
+    data.insert(QSL("preferSymbolicName"),m_preferSymbolicName);
     data.insert(QSL("device"),m_device);
     data.insert(QSL("subdevice"),m_subdevice);
     data.insert(QSL("format"),m_format);
@@ -159,7 +169,11 @@ void ZCPHW::paintEvent(QPaintEvent * event)
 
     QString str = QSL("hw:default");
     if (m_card>=0) {
-        str = QSL("hw:%1").arg(m_card);
+        if (m_preferSymbolicName && !m_cardSymbolic.isEmpty()) {
+            str = QSL("hw:%1").arg(m_cardSymbolic);
+        } else {
+            str = QSL("hw:%1").arg(m_card);
+        }
         if (m_device>=0)
             str.append(QSL(",%1").arg(m_device));
     }
@@ -181,15 +195,15 @@ void ZCPHW::paintEvent(QPaintEvent * event)
 void ZCPHW::showSettingsDlg()
 {
     ZHWDialog d(window());
-    d.setParams(m_card,m_device,m_subdevice,m_mmap_emulation,m_sync_ptr_ioctl,m_nonblock,
-                m_channels,m_rate,m_format);
+    d.setParams(m_card,m_cardSymbolic,m_preferSymbolicName,m_device,m_subdevice,
+                m_mmap_emulation,m_sync_ptr_ioctl,m_nonblock,m_channels,m_rate,m_format);
 
     if (d.exec()==QDialog::Rejected)
         return;
 
     Q_EMIT componentChanged(this);
 
-    d.getParams(m_card,m_device,m_subdevice,m_mmap_emulation,m_sync_ptr_ioctl,m_nonblock,
-                m_channels,m_rate,m_format);
+    d.getParams(m_card,m_cardSymbolic,m_preferSymbolicName,m_device,m_subdevice,
+                m_mmap_emulation,m_sync_ptr_ioctl,m_nonblock,m_channels,m_rate,m_format);
     update();
 }

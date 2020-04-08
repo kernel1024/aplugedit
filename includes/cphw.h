@@ -39,6 +39,8 @@ private:
     int m_nonblock { -1 };   // force non-blocking open mode
     int m_channels { -1 }; // restrict only to the given channels
     int m_rate { -1 }; // restrict only to the given rate
+    bool m_preferSymbolicName { false }; // use symbolic card name for asound.conf and indexing
+    QString m_cardSymbolic;
     QString m_format; // restrict only to the given format
 
 public:

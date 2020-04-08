@@ -35,11 +35,13 @@ public:
     ZHWDialog(QWidget *parent = nullptr);
     ~ZHWDialog() override;
 
-    void setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emulation,
+    void setParams(int mCard, const QString& mCardName, bool mPreferSymbolicName,
+                   int mDevice, int mSubdevice, int mMmap_emulation,
                    int mSync_ptr_ioctl, int mNonblock, int mChannels, int mRate,
                    const QString& mFormat);
 
-    void getParams(int &mCard, int &mDevice, int &mSubdevice, int &mMmap_emulation,
+    void getParams(int &mCard, QString& mCardName, bool &mPreferSymbolicName,
+                   int &mDevice, int &mSubdevice, int &mMmap_emulation,
                    int &mSync_ptr_ioctl, int &mNonblock, int &mChannels, int &mRate,
                    QString& mFormat);
 

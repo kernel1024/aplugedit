@@ -32,7 +32,7 @@ ZHWDialog::ZHWDialog(QWidget *parent)
     m_cards = gAlsa->cards();
 
     for (const auto &hw : qAsConst(m_cards))
-        alCard->addItem(hw.cardName);
+        alCard->addItem(QSL("%1 [%2]").arg(hw.cardID,hw.cardName),hw.cardID);
 
     connect(alCard,qOverload<int>(&QComboBox::currentIndexChanged),this,&ZHWDialog::cardSelected);
     connect(alDevice,qOverload<int>(&QComboBox::currentIndexChanged),this,&ZHWDialog::devSelected);
@@ -102,7 +102,8 @@ ZHWDialog::ZHWDialog(QWidget *parent)
 
 ZHWDialog::~ZHWDialog() = default;
 
-void ZHWDialog::setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emulation,
+void ZHWDialog::setParams(int mCard, const QString &mCardName, bool mPreferSymbolicName,
+                          int mDevice, int mSubdevice, int mMmap_emulation,
                           int mSync_ptr_ioctl, int mNonblock, int mChannels, int mRate,
                           const QString &mFormat)
 {
@@ -111,7 +112,8 @@ void ZHWDialog::setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emul
     int subidx=-1;
 
     for (int i=0;i<m_cards.count();i++) {
-        if (m_cards.at(i).cardNum==mCard)
+        if ((mPreferSymbolicName && !mCardName.isEmpty() && mCardName==m_cards.at(i).cardID) ||
+                (m_cards.at(i).cardNum==mCard))
         {
             cardidx=i;
             break;
@@ -167,6 +169,7 @@ void ZHWDialog::setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emul
     alMMap->setTristate(true);
     alSyncPtr->setTristate(true);
     alNonblock->setTristate(true);
+    alPreferSymbolicName->setChecked(mPreferSymbolicName);
 
     switch (mMmap_emulation)
     {
@@ -191,20 +194,23 @@ void ZHWDialog::setParams(int mCard, int mDevice, int mSubdevice, int mMmap_emul
     }
 }
 
-void ZHWDialog::getParams(int &mCard, int &mDevice, int &mSubdevice, int &mMmap_emulation,
+void ZHWDialog::getParams(int &mCard, QString &mCardName, bool &mPreferSymbolicName,
+                          int &mDevice, int &mSubdevice, int &mMmap_emulation,
                           int &mSync_ptr_ioctl, int &mNonblock, int &mChannels, int &mRate,
                           QString &mFormat)
 {
-    if (alCard->currentIndex()!=0) {
-        mCard=m_cards.at(alCard->currentIndex()-1).cardNum;
+    int cardIdx = alCard->currentIndex() - 1;
+    if (cardIdx>=0) {
+        mCard = m_cards.at(cardIdx).cardNum;
+        mCardName = m_cards.at(cardIdx).cardID;
         if (alDevice->currentIndex()!=0) {
-            mDevice=m_cards.at(alCard->currentIndex()-1).devices.at(alDevice->currentIndex()-1).devNum;
-            mSubdevice=alSubdevice->currentIndex()-1;
+            mDevice = m_cards.at(cardIdx).devices.at(alDevice->currentIndex()-1).devNum;
+            mSubdevice = alSubdevice->currentIndex()-1;
         } else {
-            mDevice=-1;
+            mDevice = -1;
         }
     } else {
-        mCard=-1;
+        mCard = -1;
     }
 
     switch (alChannels->currentIndex())
@@ -253,6 +259,7 @@ void ZHWDialog::getParams(int &mCard, int &mDevice, int &mSubdevice, int &mMmap_
         case Qt::PartiallyChecked: mNonblock=-1; break;
         case Qt::Checked:          mNonblock=1; break;
     }
+    mPreferSymbolicName = alPreferSymbolicName->isChecked();
 }
 
 void ZHWDialog::cardSelected(int index)

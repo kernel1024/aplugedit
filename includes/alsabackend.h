@@ -30,7 +30,7 @@ public:
     QString devName;
     CDeviceItem() = default;
     ~CDeviceItem() = default;
-    CDeviceItem(const CDeviceItem& other);
+    CDeviceItem(const CDeviceItem& other) = default;
     CDeviceItem(int aDevNum, int aSubdevices, const QString &aName);
     CDeviceItem &operator=(const CDeviceItem& other) = default;
 };
@@ -40,11 +40,12 @@ class CCardItem
 public:
     int cardNum { -1 };
     QString cardName;
+    QString cardID;
     QList<CDeviceItem> devices;
     CCardItem() = default;
     ~CCardItem() = default;
-    CCardItem(const CCardItem& other);
-    CCardItem(const QString& aCardName, int aCardNum);
+    CCardItem(const CCardItem& other) = default;
+    CCardItem(const QString& aCardID, const QString& aCardName, int aCardNum);
     CCardItem &operator=(const CCardItem& other) = default;
 };
 
@@ -55,7 +56,7 @@ public:
     QStringList description;
     CPCMItem() = default;
     ~CPCMItem() = default;
-    CPCMItem(const CPCMItem& other);
+    CPCMItem(const CPCMItem& other) = default;
     explicit CPCMItem(const QString& aName);
     CPCMItem(const QString& aName, const QStringList& aDescription);
     CPCMItem &operator=(const CPCMItem& other) = default;

@@ -91,40 +91,39 @@ void ZAlsaBackend::enumerateCards()
 
         if ((err = snd_ctl_open(&handle, name.toLatin1().constData(), 0)) < 0) {
             qWarning() << QSL("control open (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
-            goto next_card;
-        }
-        if ((err = snd_ctl_card_info(handle, info)) < 0) {
-            qWarning() << QSL("control hardware info (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
-            snd_ctl_close(handle);
-            goto next_card;
-        }
+        } else {
+            if ((err = snd_ctl_card_info(handle, info)) < 0) {
+                qWarning() << QSL("control hardware info (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
+            } else {
 
-        m_cards << CCardItem(QString::fromUtf8(snd_ctl_card_info_get_name(info)), card);
-        dev = -1;
-        while (true) {
-            unsigned int count;
-            if (snd_ctl_pcm_next_device(handle, &dev)<0)
-                qWarning() << "snd_ctl_pcm_next_device";
-            if (dev < 0)
-                break;
-            snd_pcm_info_set_device(pcminfo, static_cast<unsigned int>(dev));
-            snd_pcm_info_set_subdevice(pcminfo, 0);
-            snd_pcm_info_set_stream(pcminfo, stream);
-            if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
-                if (err != -ENOENT)
-                    qWarning() << QSL("control digital audio info (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
-                continue;
+                m_cards << CCardItem(QString::fromUtf8(snd_ctl_card_info_get_id(info)),
+                                     QString::fromUtf8(snd_ctl_card_info_get_name(info)),
+                                     card);
+                dev = -1;
+                while (true) {
+                    unsigned int count;
+                    if (snd_ctl_pcm_next_device(handle, &dev)<0)
+                        qWarning() << "snd_ctl_pcm_next_device";
+                    if (dev < 0)
+                        break;
+                    snd_pcm_info_set_device(pcminfo, static_cast<unsigned int>(dev));
+                    snd_pcm_info_set_subdevice(pcminfo, 0);
+                    snd_pcm_info_set_stream(pcminfo, stream);
+                    if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
+                        if (err != -ENOENT)
+                            qWarning() << QSL("control digital audio info (%1): %2").arg(card).arg(QString::fromUtf8(snd_strerror(err)));
+                        continue;
+                    }
+                    count = snd_pcm_info_get_subdevices_count(pcminfo);
+                    m_cards.last().devices << CDeviceItem(dev,static_cast<int>(count),
+                                                          QString::fromUtf8(snd_pcm_info_get_name(pcminfo)));
+                }
             }
-            count = snd_pcm_info_get_subdevices_count(pcminfo);
-            m_cards.last().devices << CDeviceItem(dev,static_cast<int>(count),
-                                                  QString::fromUtf8(snd_pcm_info_get_name(pcminfo)));
+            if (handle)
+                snd_ctl_close(handle);
         }
-        if (handle)
-            snd_ctl_close(handle);
-next_card:
-        if (snd_card_next(&card) < 0) {
+        if (snd_card_next(&card) < 0)
             break;
-        }
     }
 }
 
@@ -145,21 +144,15 @@ QVector<CPCMItem> ZAlsaBackend::pcmList() const
 
     void **n = hints;
     while (*n != nullptr) {
-        char *name = snd_device_name_get_hint(*n, "NAME");
-        char *descr = snd_device_name_get_hint(*n, "DESC");
-        char *io = snd_device_name_get_hint(*n, "IOID");
-        if (!(io != nullptr && strcmp(io, filter) != 0)) {
+        QScopedPointer<char,QScopedPointerPodDeleter> name(snd_device_name_get_hint(*n, "NAME"));
+        QScopedPointer<char,QScopedPointerPodDeleter> descr(snd_device_name_get_hint(*n, "DESC"));
+        QScopedPointer<char,QScopedPointerPodDeleter> io(snd_device_name_get_hint(*n, "IOID"));
+        if (!(io != nullptr && strcmp(io.data(), filter) != 0)) {
             QStringList descList;
             if (descr != nullptr)
-                descList = QString::fromUtf8(descr).split('\n');
-            res.append(CPCMItem(QString::fromUtf8(name),descList));
+                descList = QString::fromUtf8(descr.data()).split('\n');
+            res.append(CPCMItem(QString::fromUtf8(name.data()),descList));
         }
-        if (name != nullptr)
-            free(name);
-        if (descr != nullptr)
-            free(descr);
-        if (io != nullptr)
-            free(io);
         n++;
     }
     snd_device_name_free_hint(hints);
@@ -207,24 +200,11 @@ bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned 
     return true;
 }
 
-CCardItem::CCardItem(const CCardItem &other)
-{
-    cardName = other.cardName;
-    cardNum = other.cardNum;
-    devices = other.devices;
-}
-
-CCardItem::CCardItem(const QString &aCardName, int aCardNum)
+CCardItem::CCardItem(const QString &aCardID, const QString &aCardName, int aCardNum)
 {
     cardName = aCardName;
     cardNum = aCardNum;
-}
-
-CDeviceItem::CDeviceItem(const CDeviceItem &other)
-{
-    devNum = other.devNum;
-    subdevices = other.subdevices;
-    devName = other.devName;
+    cardID = aCardID;
 }
 
 CDeviceItem::CDeviceItem(int aDevNum, int aSubdevices, const QString& aName)
@@ -232,12 +212,6 @@ CDeviceItem::CDeviceItem(int aDevNum, int aSubdevices, const QString& aName)
     devNum = aDevNum;
     subdevices = aSubdevices;
     devName = aName;
-}
-
-CPCMItem::CPCMItem(const CPCMItem &other)
-{
-    name = other.name;
-    description = other.description;
 }
 
 CPCMItem::CPCMItem(const QString &aName)

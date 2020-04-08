@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>716</width>
+    <width>724</width>
     <height>251</height>
    </rect>
   </property>
@@ -116,6 +116,13 @@
         <widget class="QCheckBox" name="alNonblock">
          <property name="text">
           <string>Nonblocking mode</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="alPreferSymbolicName">
+         <property name="text">
+          <string>Prefer symbolic card name</string>
          </property>
         </widget>
        </item>
@@ -448,6 +455,7 @@
   <tabstop>alMMap</tabstop>
   <tabstop>alSyncPtr</tabstop>
   <tabstop>alNonblock</tabstop>
+  <tabstop>alPreferSymbolicName</tabstop>
   <tabstop>okButton</tabstop>
   <tabstop>cancelButton</tabstop>
  </tabstops>
@@ -460,8 +468,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>388</x>
-     <y>213</y>
+     <x>627</x>
+     <y>236</y>
     </hint>
     <hint type="destinationlabel">
      <x>96</x>
@@ -476,8 +484,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>481</x>
-     <y>213</y>
+     <x>713</x>
+     <y>236</y>
     </hint>
     <hint type="destinationlabel">
      <x>179</x>

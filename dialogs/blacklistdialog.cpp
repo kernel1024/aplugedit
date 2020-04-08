@@ -27,8 +27,8 @@ ZBlacklistDialog::ZBlacklistDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->comboPCMs->setItemDelegate(new ZDescListItemDelegate());
-    ui->listBlacklist->setItemDelegate(new ZDescListItemDelegate());
+    ui->comboPCMs->setItemDelegate(new ZDescListItemDelegate(this));
+    ui->listBlacklist->setItemDelegate(new ZDescListItemDelegate(this));
 
     connect(ui->buttonAdd,&QPushButton::clicked,this,&ZBlacklistDialog::addPCM);
     connect(ui->buttonDelete,&QPushButton::clicked,this,&ZBlacklistDialog::deletePCM);
