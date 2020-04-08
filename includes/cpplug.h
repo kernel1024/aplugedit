@@ -30,6 +30,7 @@ class ZCPPlug : public ZCPBase
 private:
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
 
 public:
     ZCPPlug(QWidget *parent, ZRenderArea *aOwner);

@@ -30,6 +30,9 @@ ZCPRoute::ZCPRoute(QWidget *parent, ZRenderArea *aOwner)
     fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 
+    fCtlOut=new ZCPOutput(this, QSL("ctl"),CStructures::PinClass::pcCTL);
+    registerOutput(fCtlOut);
+
     m_routeTable.reserve(2);
     m_routeTable << CRouteItem(0, 1.0);
     m_routeTable << CRouteItem(1, 1.0);
@@ -40,7 +43,7 @@ ZCPRoute::~ZCPRoute() = default;
 
 QSize ZCPRoute::minimumSizeHint() const
 {
-    return QSize(180,50);
+    return QSize(180,65);
 }
 
 int ZCPRoute::getChannelsOut() const
@@ -51,7 +54,8 @@ int ZCPRoute::getChannelsOut() const
 void ZCPRoute::realignPins()
 {
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/3);
+    fCtlOut->relCoord=QPoint(width()-zcpPinSize/2,2*height()/3);
 }
 
 void ZCPRoute::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
@@ -73,6 +77,12 @@ void ZCPRoute::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
+    if (fCtlOut->toFilter) {
+        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        fCtlOut->toFilter->doCtlGenerate(stream,warnings);
+        stream << QSL("}") << endl;
+        stream << endl;
+    }
 }
 
 void ZCPRoute::paintEvent(QPaintEvent * event)

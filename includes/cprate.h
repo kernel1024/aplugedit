@@ -32,6 +32,7 @@ private:
     int m_rate { 44100 };
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
 
 public:
     ZCPRate(QWidget *parent, ZRenderArea *aOwner);

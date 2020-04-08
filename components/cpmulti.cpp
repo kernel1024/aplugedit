@@ -22,12 +22,16 @@
 #include "includes/multidlg.h"
 #include "includes/cproute.h"
 #include "includes/cpplug.h"
+#include "includes/cpinp.h"
 
 ZCPMulti::ZCPMulti(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
 {
     fInp=new ZCPInput(this, QSL("in"));
     registerInput(fInp);
+
+    fCtlOut=new ZCPOutput(this, QSL("ctl"),CStructures::PinClass::pcCTL);
+    registerOutput(fCtlOut);
 
     regenerateOutputs(1);
     regenerateCapacity(2);
@@ -47,10 +51,12 @@ QSize ZCPMulti::minimumSizeHint() const
 void ZCPMulti::realignPins()
 {
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    for (int i=0;i<fOutputs.count();i++) {
+    for (int i=1;i<fOutputs.count();i++) {
         fOutputs[i]->relCoord = QPoint(width()-zcpPinSize/2,
-                                       zcpMultiPinMargin + i*zcpMultiPinStep);
+                                       zcpMultiPinMargin + (i-1)*zcpMultiPinStep);
     }
+    fCtlOut->relCoord = QPoint(width()-zcpPinSize/2,
+                               zcpMultiPinMargin + (fOutputs.count()-1)*zcpMultiPinStep);
 }
 
 void ZCPMulti::paintEvent(QPaintEvent *event)
@@ -71,7 +77,7 @@ void ZCPMulti::paintEvent(QPaintEvent *event)
     QString desc = QSL("IN: %1 ch,%2OUT: %3 dev")
                    .arg(m_bindings.count())
                    .arg(separator)
-                   .arg(fOutputs.count());
+                   .arg(fOutputs.count() - 1);
     setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,desc);
 
@@ -136,11 +142,11 @@ void ZCPMulti::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
     stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
     stream << QSL("  type multi") << endl;
     stream << QSL("  slaves {") << endl;
-    for (int i=0;i<fOutputs.count();i++) {
+    for (int i=1;i<fOutputs.count();i++) {
         stream << QSL("    s%1 {").arg(i) << endl;
         if (fOutputs.at(i)->toFilter) {
             stream << QSL("      pcm \"%1\"").arg(fOutputs.at(i)->toFilter->objectName()) << endl;
-            stream << QSL("      channels ") << m_slaveChannels.at(i) << endl;
+            stream << QSL("      channels ") << m_slaveChannels.at(i-1) << endl;
         }
         stream << QSL("    }") << endl;
 
@@ -158,6 +164,12 @@ void ZCPMulti::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
+    if (fCtlOut->toFilter) {
+        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        fCtlOut->toFilter->doCtlGenerate(stream,warnings);
+        stream << QSL("}") << endl;
+        stream << endl;
+    }
 }
 
 void ZCPMulti::showSettingsDlg()
@@ -182,17 +194,17 @@ void ZCPMulti::showSettingsDlg()
 
 void ZCPMulti::regenerateOutputs(int outputsCount)
 {
-    while (fOutputs.count() > outputsCount) {
+    while ((fOutputs.count() - 1) > outputsCount) {
         deleteOutput(fOutputs.count()-1);
         m_slaveChannels.removeLast();
     }
 
-    while (fOutputs.count() < outputsCount) {
+    while ((fOutputs.count() - 1) < outputsCount) {
         auto out=new ZCPOutput(this, QString());
         registerOutput(out);
         m_slaveChannels.append(2); // default stereo output
     }
-    for (int i=0;i<fOutputs.count();i++) {
+    for (int i=1;i<fOutputs.count();i++) {
         fOutputs[i]->pinName = ZMultiDialog::formatOutputName(i);
     }
 
@@ -225,5 +237,6 @@ void ZCPMulti::regenerateCapacity(int inputChannelsCount)
 bool ZCPMulti::isConverterPresent() const
 {
     return ((searchPluginBackward(ZCPPlug::staticMetaObject.className()) != nullptr) ||
-            (searchPluginBackward(ZCPRoute::staticMetaObject.className()) != nullptr));
+            (searchPluginBackward(ZCPRoute::staticMetaObject.className()) != nullptr) ||
+            (searchPluginBackward(ZCPInp::staticMetaObject.className()) != nullptr));
 }

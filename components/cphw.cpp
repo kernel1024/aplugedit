@@ -35,6 +35,8 @@ ZCPHW::ZCPHW(QWidget *parent, ZRenderArea *aOwner)
 
 ZCPHW::~ZCPHW() = default;
 
+// TODO: allow use symbolic name for audiointerface
+
 QSize ZCPHW::minimumSizeHint() const
 {
     return QSize(180,65);

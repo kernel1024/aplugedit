@@ -48,6 +48,7 @@ private:
     int m_delay { 0 };
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
 
 };
 

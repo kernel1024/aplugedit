@@ -39,6 +39,7 @@ private:
 public:
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
 
     ZCPLADSPA(QWidget *parent, ZRenderArea *aOwner);
     ~ZCPLADSPA() override;

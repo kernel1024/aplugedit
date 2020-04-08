@@ -26,6 +26,7 @@ private:
 
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
 
 public:
     ZCPSpeex(QWidget *parent, ZRenderArea *aOwner);

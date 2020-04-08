@@ -28,13 +28,16 @@ ZCPPlug::ZCPPlug(QWidget *parent, ZRenderArea *aOwner)
 
     fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
+
+    fCtlOut=new ZCPOutput(this, QSL("ctl"),CStructures::PinClass::pcCTL);
+    registerOutput(fCtlOut);
 }
 
 ZCPPlug::~ZCPPlug() = default;
 
 QSize ZCPPlug::minimumSizeHint() const
 {
-    return QSize(180,50);
+    return QSize(180,65);
 }
 
 void ZCPPlug::paintEvent(QPaintEvent *event)
@@ -55,7 +58,8 @@ void ZCPPlug::paintEvent(QPaintEvent *event)
 void ZCPPlug::realignPins()
 {
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/3);
+    fCtlOut->relCoord=QPoint(width()-zcpPinSize/2,2*height()/3);
 }
 
 void ZCPPlug::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
@@ -67,4 +71,10 @@ void ZCPPlug::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
+    if (fCtlOut->toFilter) {
+        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        fCtlOut->toFilter->doCtlGenerate(stream,warnings);
+        stream << QSL("}") << endl;
+        stream << endl;
+    }
 }

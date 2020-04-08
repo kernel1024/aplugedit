@@ -71,11 +71,12 @@ void ZGenericFuncs::showWarningsDialog(QWidget *parent, const QString &title, co
 Qt::CheckState ZGenericFuncs::readTristateFromJson(const QJsonValue &value)
 {
     QString denoise = value.toString().toLower();
-    if (denoise == QSL("yes") || denoise == QSL("on")) {
+    if (denoise == QSL("yes") || denoise == QSL("on"))
         return Qt::CheckState::Checked;
-    } else if (denoise == QSL("no") || denoise == QSL("off")) {
+
+    if (denoise == QSL("no") || denoise == QSL("off"))
         return Qt::CheckState::Unchecked;
-    }
+
     return Qt::CheckState::PartiallyChecked;
 }
 

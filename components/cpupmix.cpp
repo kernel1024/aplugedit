@@ -29,6 +29,9 @@ ZCPUpmix::ZCPUpmix(QWidget *parent, ZRenderArea *aOwner)
 
     fOut = new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
+
+    fCtlOut=new ZCPOutput(this, QSL("ctl"),CStructures::PinClass::pcCTL);
+    registerOutput(fCtlOut);
 }
 
 ZCPUpmix::~ZCPUpmix() = default;
@@ -54,7 +57,7 @@ QJsonValue ZCPUpmix::storeToJson() const
 
 QSize ZCPUpmix::minimumSizeHint() const
 {
-    return QSize(180,50);
+    return QSize(180,65);
 }
 
 void ZCPUpmix::paintEvent(QPaintEvent *event)
@@ -83,7 +86,8 @@ void ZCPUpmix::paintEvent(QPaintEvent *event)
 void ZCPUpmix::realignPins()
 {
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/3);
+    fCtlOut->relCoord=QPoint(width()-zcpPinSize/2,2*height()/3);
 }
 
 void ZCPUpmix::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
@@ -102,6 +106,12 @@ void ZCPUpmix::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
+    if (fCtlOut->toFilter) {
+        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        fCtlOut->toFilter->doCtlGenerate(stream,warnings);
+        stream << QSL("}") << endl;
+        stream << endl;
+    }
 }
 
 void ZCPUpmix::showSettingsDlg()

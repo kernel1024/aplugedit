@@ -66,6 +66,7 @@ protected:
 private:
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
 
     Qt::CheckState m_slowPtr { Qt::CheckState::PartiallyChecked }; // default - no change
     SharePlugin m_mode { spDMix };

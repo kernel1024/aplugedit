@@ -33,6 +33,9 @@ ZCPShare::ZCPShare(QWidget *parent, ZRenderArea *aOwner, ZCPShare::SharePlugin m
     fOut=new ZCPOutput(this, QSL("out"));
     registerOutput(fOut);
 
+    fCtlOut=new ZCPOutput(this, QSL("ctl"),CStructures::PinClass::pcCTL);
+    registerOutput(fCtlOut);
+
     m_IPCkey = QSL("%1").arg(QRandomGenerator::global()->bounded(1024,INT_MAX));
     m_IPCpermissions = QSL("0660");
 }
@@ -115,13 +118,14 @@ ZCPShare::~ZCPShare() = default;
 
 QSize ZCPShare::minimumSizeHint() const
 {
-    return QSize(180,50);
+    return QSize(180,65);
 }
 
 void ZCPShare::realignPins()
 {
     fInp->relCoord=QPoint(zcpPinSize/2,height()/2);
-    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/2);
+    fOut->relCoord=QPoint(width()-zcpPinSize/2,height()/3);
+    fCtlOut->relCoord=QPoint(width()-zcpPinSize/2,2*height()/3);
 }
 
 void ZCPShare::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
@@ -173,6 +177,12 @@ void ZCPShare::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
     ZCPBase::doInfoGenerate(stream,warnings);
     stream << QSL("}") << endl;
     stream << endl;
+    if (fCtlOut->toFilter) {
+        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        fCtlOut->toFilter->doCtlGenerate(stream,warnings);
+        stream << QSL("}") << endl;
+        stream << endl;
+    }
 }
 
 void ZCPShare::showSettingsDlg()

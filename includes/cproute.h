@@ -44,6 +44,7 @@ private:
     QVector<CRouteItem> m_routeTable;
     ZCPInput* fInp { nullptr };
     ZCPOutput* fOut { nullptr };
+    ZCPOutput* fCtlOut { nullptr };
 
 public:
     ZCPRoute(QWidget *parent, ZRenderArea *aOwner);

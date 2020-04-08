@@ -47,6 +47,7 @@ private:
     ZCPInput* fInp { nullptr };
     QVector<int> m_slaveChannels;
     QVector<CMultiBinding> m_bindings;
+    ZCPOutput* fCtlOut { nullptr };
 
     void regenerateOutputs(int outputsCount);
     void regenerateCapacity(int inputChannelsCount);
