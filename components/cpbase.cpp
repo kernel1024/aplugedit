@@ -331,10 +331,11 @@ void ZCPBase::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
     }
 }
 
-void ZCPBase::doCtlGenerate(QTextStream &stream, QStringList &warnings) const
+void ZCPBase::doCtlGenerate(QTextStream &stream, QStringList &warnings, bool softvol) const
 {
     Q_UNUSED(stream)
     Q_UNUSED(warnings)
+    Q_UNUSED(softvol)
 }
 
 QString ZCPBase::getHint() const

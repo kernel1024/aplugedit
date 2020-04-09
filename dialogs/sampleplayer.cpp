@@ -46,6 +46,8 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     connect(this,&ZSamplePlayer::stopped,ui->levelR,&ZLevelMeter::reset);
     connect(ui->sliderVolume,&QSlider::valueChanged,this,&ZSamplePlayer::updateVolume);
 
+    connect(gAlsa,&ZAlsaBackend::alsaErrorMsg,this,&ZSamplePlayer::addAuxMessage,Qt::QueuedConnection);
+
     QSettings stg;
     stg.beginGroup(QSL("SamplePlayer"));
     ui->editFilename->setText(stg.value(QSL("sampleFile"),QString()).toString());
@@ -291,6 +293,8 @@ void ZSamplePlayer::initGstreamer()
         }
     }
 
+    gAlsa->setupErrorLogger();
+
     gstInitialized = true;
 }
 
@@ -304,6 +308,8 @@ bool ZSamplePlayer::startGstreamer()
 
     gst_debug_add_log_function(debug_logger,this,nullptr);
     gst_debug_remove_log_function(gst_debug_log_default);
+
+    gAlsa->setupErrorLogger();
 
     bool useGenerator = ui->radioFuncGenerator->isChecked();
 
@@ -451,6 +457,7 @@ void ZSamplePlayer::addAuxMessageExt(ZSamplePlayer *instance, const QString &msg
 
 void ZSamplePlayer::addAuxMessage(const QString &msg)
 {
+    // TODO: add filter by substring
     ui->editLog->moveCursor(QTextCursor::End);
     ui->editLog->insertPlainText(QSL("%1 %2\n").arg(QTime::currentTime().toString(QSL("HH:mm:ss")),msg));
     ui->editLog->moveCursor(QTextCursor::End);

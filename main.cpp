@@ -34,6 +34,5 @@ int main(int argc, char *argv[])
     return QApplication::exec();
 }
 
-// TODO: softvol
 // TODO: alsamixer GUI, with staled soft-controls (from plugins) cleaner
 // TODO: pulse and oss sink plugin support (ctl and pcm)

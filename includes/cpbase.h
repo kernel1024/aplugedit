@@ -118,7 +118,7 @@ public:
 
     virtual bool canConnectOut(ZCPBase *toFilter);
     virtual bool canConnectIn(ZCPBase *toFilter);
-    virtual void doCtlGenerate(QTextStream & stream, QStringList & warnings) const;
+    virtual void doCtlGenerate(QTextStream & stream, QStringList & warnings, bool softvol = false) const;
 
     QSize sizeHint() const override;
 

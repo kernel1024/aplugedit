@@ -106,18 +106,32 @@ void ZCPHW::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
     stream << endl;
 }
 
-void ZCPHW::doCtlGenerate(QTextStream &stream, QStringList &warnings) const
+void ZCPHW::doCtlGenerate(QTextStream &stream, QStringList &warnings, bool softvol) const
 {
+    QString svSeparator;
+    if (!softvol) {
+        stream << QSL("  type hw") << endl;
+    } else {
+        svSeparator = QSL("  ");
+    }
+
     int card = m_card;
     if (card<0) {
         warnings.append(tr("HW plugin: incorrect card number for ctl"));
         card = 0;
     }
-    stream << QSL("  type hw") << endl;
+
     if (m_preferSymbolicName && !m_cardSymbolic.isEmpty()) {
-        stream << QSL("  card \"%1\"").arg(m_cardSymbolic) << endl;
+        stream << QSL("%1  card \"%2\"").arg(svSeparator,m_cardSymbolic) << endl;
     } else {
-        stream << QSL("  card %1").arg(card) << endl;
+        stream << QSL("%1  card %2").arg(svSeparator).arg(card) << endl;
+    }
+    if (softvol) {
+        if (m_device>=0) {
+            stream << QSL("%1  device %2").arg(svSeparator,m_device) << endl;
+            if (m_subdevice>=-1)
+                stream << QSL("%1  subdevice %2").arg(svSeparator).arg(m_subdevice) << endl;
+        }
     }
 }
 

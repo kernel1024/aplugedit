@@ -9,6 +9,7 @@ HEADERS       = includes/cpbase.h \
                 includes/cpmulti.h \
                 includes/cpplug.h \
                 includes/cpshare.h \
+                includes/cpsoftvol.h \
                 includes/cpspeex.h \
                 includes/cpupmix.h \
                 includes/cpvdownmix.h \
@@ -36,6 +37,7 @@ HEADERS       = includes/cpbase.h \
                 includes/sampleplayer.h \
                 includes/sampleplayer_p.h \
                 includes/sharedialog.h \
+                includes/softvoldialog.h \
                 includes/speexdialog.h \
                 jsedit/jsedit.h \
                 jsedit/jsedit_p.h
@@ -46,6 +48,7 @@ SOURCES       = main.cpp \
                 components/cpmulti.cpp \
                 components/cpplug.cpp \
                 components/cpshare.cpp \
+                components/cpsoftvol.cpp \
                 components/cpspeex.cpp \
                 components/cpupmix.cpp \
                 components/cpvdownmix.cpp \
@@ -62,6 +65,7 @@ SOURCES       = main.cpp \
                 dialogs/sampleplayer.cpp \
                 dialogs/sampleplayer_p.cpp \
                 dialogs/sharedialog.cpp \
+                dialogs/softvoldialog.cpp \
                 dialogs/speexdialog.cpp \
                 generic.cpp \
                 jsedit/jsedit.cpp \
@@ -95,6 +99,7 @@ FORMS         = \
                 ui/routedlg.ui \
                 ui/sampleplayer.ui \
                 ui/sharedialog.ui \
+                ui/softvoldialog.ui \
                 ui/speexdialog.ui \
                 ui/upmixdlg.ui
 

@@ -55,11 +55,12 @@ public:
     int getRate() const;
     int getChannels() const;
 
+    void doCtlGenerate(QTextStream & stream, QStringList & warnings, bool softvol = false) const override;
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     void realignPins() override;
     void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
-    void doCtlGenerate(QTextStream & stream, QStringList & warnings) const override;
     void showSettingsDlg() override;
     bool needSettingsDlg() override { return true; }
 

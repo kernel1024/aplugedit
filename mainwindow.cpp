@@ -69,6 +69,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditBlacklist->setData(QSL("ZCPBlacklist"));
     actionEditAsym->setData(QSL("ZCPAsym"));
     actionEditSpeex->setData(QSL("ZCPSpeex"));
+    actionEditSoftvol->setData(QSL("ZCPSoftvol"));
 
     actionEditDmix->setData(QSL("ZCPShare#Dmix"));
     actionEditDshare->setData(QSL("ZCPShare#Dshare"));
@@ -107,6 +108,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditBlacklist,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditAsym,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditSpeex,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditSoftvol,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLinear,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditFloat,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditIEC958,&QAction::triggered,this,&ZMainWindow::editComponent);

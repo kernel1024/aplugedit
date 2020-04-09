@@ -102,7 +102,13 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("denoise"),
                    QSL("agc"),
                    QSL("dereverb"),
-                   QSL("echo")
+                   QSL("echo"),
+                   QSL("name"),
+                   QSL("count"),
+                   QSL("control"),
+                   QSL("resolution"),
+                   QSL("min_dB"),
+                   QSL("max_dB")
                  };
 
     // ALSA built-in plugins and parameter values
@@ -131,7 +137,8 @@ JSHighlighter::JSHighlighter(QTextDocument *parent)
                    QSL("multi"),
                    QSL("upmix"),
                    QSL("vdownmix"),
-                   QSL("speex")
+                   QSL("speex"),
+                   QSL("softvol")
                  };
 }
 

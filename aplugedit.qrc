@@ -32,6 +32,7 @@
         <file>images/dsnoop.png</file>
         <file>images/asym.png</file>
         <file>images/speex.png</file>
+        <file>images/softvol.png</file>
     </qresource>
     <qresource prefix="/appicon">
         <file alias="16">images/appicon/16/aplugedit.png</file>

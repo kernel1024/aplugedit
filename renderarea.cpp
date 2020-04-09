@@ -39,6 +39,7 @@
 #include "includes/cpblacklist.h"
 #include "includes/cpasym.h"
 #include "includes/cpspeex.h"
+#include "includes/cpsoftvol.h"
 
 ZRenderArea::ZRenderArea(QScrollArea *aScroller)
     : QFrame(aScroller)
@@ -518,6 +519,7 @@ ZCPBase* ZRenderArea::createCpInstance(const QString& className, const QPoint& p
     else if (name==QSL("ZCPBlacklist")) res = new ZCPBlacklist(this,this);
     else if (name==QSL("ZCPAsym")) res = new ZCPAsym(this,this);
     else if (name==QSL("ZCPSpeex")) res = new ZCPSpeex(this,this);
+    else if (name==QSL("ZCPSoftvol")) res = new ZCPSoftvol(this,this);
 
     if (res==nullptr) {
         qCritical() << "Unable to create component " << className;

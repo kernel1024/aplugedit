@@ -10,35 +10,10 @@
     <height>421</height>
    </rect>
   </property>
-  <property name="contextMenuPolicy">
-   <enum>Qt::NoContextMenu</enum>
-  </property>
   <property name="windowTitle">
    <string>LADSPA effect plugin properties</string>
   </property>
-  <property name="windowIcon">
-   <iconset>
-    <normaloff>.</normaloff>.</iconset>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
-  </property>
-  <layout class="QVBoxLayout">
-   <property name="spacing">
-    <number>6</number>
-   </property>
-   <property name="leftMargin">
-    <number>9</number>
-   </property>
-   <property name="topMargin">
-    <number>9</number>
-   </property>
-   <property name="rightMargin">
-    <number>9</number>
-   </property>
-   <property name="bottomMargin">
-    <number>9</number>
-   </property>
+  <layout class="QVBoxLayout" name="_2">
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">

@@ -73,6 +73,7 @@ public:
     static ZAlsaBackend *instance();
     void initialize();
     void reloadGlobalConfig();
+    void setupErrorLogger();
 
     QVector<CCardItem> cards() const;
     QVector<CPCMItem> pcmList() const;
@@ -84,6 +85,10 @@ private:
     Q_DISABLE_COPY(ZAlsaBackend)
 
     void enumerateCards();
+    static void snd_lib_error_handler(const char *file, int line, const char *function, int err, const char *fmt,...);
+
+Q_SIGNALS:
+    void alsaErrorMsg(const QString& message); // cross-thread signal!
 };
 
 #define gAlsa (ZAlsaBackend::instance())

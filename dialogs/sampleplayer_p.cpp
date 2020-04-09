@@ -59,6 +59,10 @@ void ZSpecLogHighlighter::highlightBlock(const QString &text)
                                         QRegularExpression::CaseInsensitiveOption),Qt::blue,true);
     formatBlock(text,QRegularExpression(QSL("\\sAPlugEdit:\\s"),
                                         QRegularExpression::NoPatternOption),Qt::black,true);
+    formatBlock(text,QRegularExpression(QSL("\\sALSA:\\s"),
+                                        QRegularExpression::NoPatternOption),Qt::darkCyan,true);
+    formatBlock(text,QRegularExpression(QSL("\\sALSA:\\s(\\S+):\\s"),
+                                        QRegularExpression::NoPatternOption),Qt::black,true);
     formatBlock(text,QRegularExpression(QSL("\\(\\S+\\)$"),
                                         QRegularExpression::CaseInsensitiveOption),Qt::gray,false,true);
 }
@@ -87,7 +91,7 @@ void ZSpecLogHighlighter::formatBlock(const QString &text,
     auto it = exp.globalMatch(text);
     while (it.hasNext()) {
         auto match = it.next();
-        setFormat(match.capturedStart(), match.capturedLength(), fmt);
+        setFormat(match.capturedStart(match.lastCapturedIndex()), match.capturedLength(match.lastCapturedIndex()), fmt);
     }
 }
 

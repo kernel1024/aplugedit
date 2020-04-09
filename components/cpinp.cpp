@@ -56,7 +56,7 @@ void ZCPInp::showSettingsDlg()
     }
 
     bool ok;
-    QString item = QInputDialog::getItem(window(), tr("Plug I/O device"),
+    QString item = QInputDialog::getItem(window(), tr("PCM device"),
                                          tr("Unique ALSA PCM ID number"), items, c, true, &ok);
     if (ok && !item.isEmpty())
     {
@@ -66,7 +66,7 @@ void ZCPInp::showSettingsDlg()
             if ((cp->objectName()!=objectName()) && (cp->m_dspName==m_dspName))
             {
                 QMessageBox::warning(window(),tr("Duplicated ID"),
-                                     tr("You have entered duplicated identifier for this Plug device,\n"
+                                     tr("You have entered duplicated identifier for this Plug PCM device,\n"
                                         "that is already used in another component.\n"
                                         "Please, recheck your Plug PCM IDs!"));
                 break;
@@ -134,7 +134,7 @@ void ZCPInp::paintEvent(QPaintEvent *event)
     paintBase(p);
 
     setBaseFont(p,ftTitle);
-    p.drawText(rect(),Qt::AlignCenter,QSL("Plug I/O"));
+    p.drawText(rect(),Qt::AlignCenter,QSL("PCM device"));
 
     setBaseFont(p,ftDesc);
     p.drawText(QRect(0,2*height()/3,width(),height()/3),Qt::AlignCenter,m_dspName);

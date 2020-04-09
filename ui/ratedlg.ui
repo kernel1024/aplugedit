@@ -10,35 +10,10 @@
     <height>119</height>
    </rect>
   </property>
-  <property name="contextMenuPolicy">
-   <enum>Qt::NoContextMenu</enum>
-  </property>
   <property name="windowTitle">
-   <string>HW device properties</string>
+   <string>Sample rate properties</string>
   </property>
-  <property name="windowIcon">
-   <iconset>
-    <normaloff>.</normaloff>.</iconset>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
-  </property>
-  <layout class="QGridLayout">
-   <property name="leftMargin">
-    <number>9</number>
-   </property>
-   <property name="topMargin">
-    <number>9</number>
-   </property>
-   <property name="rightMargin">
-    <number>9</number>
-   </property>
-   <property name="bottomMargin">
-    <number>9</number>
-   </property>
-   <property name="spacing">
-    <number>6</number>
-   </property>
+  <layout class="QGridLayout" name="_2">
    <item row="0" column="0">
     <layout class="QVBoxLayout">
      <property name="spacing">

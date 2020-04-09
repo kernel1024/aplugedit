@@ -38,7 +38,7 @@
          <x>0</x>
          <y>0</y>
          <width>894</width>
-         <height>513</height>
+         <height>517</height>
         </rect>
        </property>
       </widget>
@@ -93,6 +93,7 @@
     <addaction name="actionEditLADSPA"/>
     <addaction name="actionEditSpeex"/>
     <addaction name="actionEditMeter"/>
+    <addaction name="actionEditSoftvol"/>
     <addaction name="separator"/>
     <addaction name="actionEditBlacklist"/>
     <addaction name="separator"/>
@@ -170,6 +171,7 @@
    <addaction name="actionEditLADSPA"/>
    <addaction name="actionEditSpeex"/>
    <addaction name="actionEditMeter"/>
+   <addaction name="actionEditSoftvol"/>
    <addaction name="separator"/>
    <addaction name="actionEditBlacklist"/>
    <addaction name="separator"/>
@@ -582,6 +584,21 @@
    </property>
    <property name="statusTip">
     <string>Add Speex DSP block</string>
+   </property>
+  </action>
+  <action name="actionEditSoftvol">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/softvol.png</normaloff>:/images/softvol.png</iconset>
+   </property>
+   <property name="text">
+    <string>Softvol plugin</string>
+   </property>
+   <property name="toolTip">
+    <string>Softvol plugin</string>
+   </property>
+   <property name="statusTip">
+    <string>Add softvol mixer control</string>
    </property>
   </action>
  </widget>

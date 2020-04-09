@@ -29,9 +29,9 @@
 #include "includes/generic.h"
 #include "includes/alsabackend.h"
 
-ZAlsaBackend::ZAlsaBackend(QObject *parent) : QObject(parent)
+ZAlsaBackend::ZAlsaBackend(QObject *parent)
+    : QObject(parent)
 {
-
 }
 
 ZAlsaBackend::~ZAlsaBackend() = default;
@@ -63,6 +63,29 @@ void ZAlsaBackend::reloadGlobalConfig()
 {
     snd_config_update_free_global();
     snd_config_update();
+}
+
+void ZAlsaBackend::snd_lib_error_handler(const char *file, int line, const char *function, int err, const char *fmt,...)
+{
+    va_list arg;
+    va_start(arg, fmt);
+    QString msg = QString::vasprintf(fmt,arg);
+    if (err != 0)
+        msg.append(QSL(": %1").arg(QString::fromUtf8(snd_strerror(err))));
+    va_end(arg);
+
+    msg = QSL("ALSA: %1: %2 (%3:%4)")
+            .arg(QString::fromUtf8(function),msg,QString::fromUtf8(file))
+            .arg(line);
+
+    auto alsa = gAlsa;
+    if (alsa)
+        Q_EMIT alsa->alsaErrorMsg(msg);
+}
+
+void ZAlsaBackend::setupErrorLogger()
+{
+    snd_lib_error_set_handler(&snd_lib_error_handler);
 }
 
 void ZAlsaBackend::enumerateCards()
