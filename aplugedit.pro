@@ -20,6 +20,7 @@ HEADERS       = includes/cpbase.h \
                 includes/ladspadialog.h \
                 includes/ladspalistdialog.h \
                 includes/meterdialog.h \
+                includes/mixerwindow.h \
                 includes/multidlg.h \
                 includes/ratedialog.h \
                 includes/renderarea.h \
@@ -70,6 +71,7 @@ SOURCES       = main.cpp \
                 generic.cpp \
                 jsedit/jsedit.cpp \
                 ladspa_p.cpp \
+                mixerwindow.cpp \
                 renderarea.cpp \
                 mainwindow.cpp \
                 components/cpbase.cpp \
@@ -94,6 +96,8 @@ FORMS         = \
                 ui/ladspalistdialog.ui \
                 ui/mainwindow.ui \
                 ui/meterdlg.ui \
+                ui/mixeritem.ui \
+                ui/mixerwindow.ui \
                 ui/multidlg.ui \
                 ui/ratedlg.ui \
                 ui/routedlg.ui \

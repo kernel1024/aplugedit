@@ -64,6 +64,50 @@ public:
     bool operator!=(const CPCMItem &s) const;
 };
 
+class CMixerItem
+{
+public:
+    enum ItemType {
+        itBoolean,
+        itInteger,
+        itInteger64,
+        itEnumerated
+    };
+
+    bool isUser { false };
+    bool isRelated { false };
+    int relatedNameLength { 0 };
+
+    unsigned int numid { 0 };
+    ItemType type { itInteger };
+    long long valueMin { 0 };
+    long long valueMax { 0 };
+    long long valueStep { 0 };
+
+    QString name;
+    QVector<long long> values;
+    QVector<QString> labels;
+
+    QVector<int> related;
+
+    CMixerItem() = default;
+    ~CMixerItem() = default;
+    CMixerItem(const CMixerItem& other) = default;
+    CMixerItem &operator=(const CMixerItem& other) = default;
+
+    CMixerItem(unsigned int aNumid, const QString& aName, const QVector<int> aValues);
+    CMixerItem(unsigned int aNumid, const QString& aName, const QVector<long> aValues,
+               long min, long max, long step);
+    CMixerItem(unsigned int aNumid, const QString& aName, const QVector<long long> aValues,
+               long long min, long long max, long long step);
+    CMixerItem(unsigned int aNumid, const QString& aName, const QVector<unsigned int> aValues,
+               const QVector<QString> aLabels);
+
+    bool isEmpty() const;
+    bool operator==(const CMixerItem &s) const;
+    bool operator!=(const CMixerItem &s) const;
+};
+
 class ZAlsaBackend : public QObject
 {
     Q_OBJECT
@@ -77,15 +121,25 @@ public:
 
     QVector<CCardItem> cards() const;
     QVector<CPCMItem> pcmList() const;
-    bool getCardNumber(const QString &name, QString &cardId, unsigned int* devNum, unsigned int *subdevNum) const;
+    bool getCardNumber(const QString &name, QString &cardId, unsigned int* devNum, unsigned int *subdevNum);
+
+    QVector<CMixerItem> getMixerControls(int cardNum);
+    void setMixerControl(int cardNum, const CMixerItem& item);
+    void deleteMixerControl(int cardNum, const CMixerItem& item);
+
+    QStringList getAlsaWarnings();
+    bool isWarnings() { return !m_alsaWarnings.isEmpty(); }
 
 private:
     QVector<CCardItem> m_cards;
+    QStringList m_alsaWarnings;
 
     Q_DISABLE_COPY(ZAlsaBackend)
 
     void enumerateCards();
     static void snd_lib_error_handler(const char *file, int line, const char *function, int err, const char *fmt,...);
+    static bool lessThanMixerItem(const CMixerItem &a, const CMixerItem &b);
+    QVector<int> findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items, int *topScore);
 
 Q_SIGNALS:
     void alsaErrorMsg(const QString& message); // cross-thread signal!

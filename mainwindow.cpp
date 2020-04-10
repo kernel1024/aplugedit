@@ -23,7 +23,6 @@
 #include "includes/cpbase.h"
 #include "includes/cpconv.h"
 #include "includes/cpshare.h"
-#include "includes/sampleplayer.h"
 
 ZMainWindow::ZMainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -118,6 +117,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 
     connect(actionToolAllocate,&QAction::triggered,this,&ZMainWindow::toolAllocate);
     connect(actionToolSamplePlayer,&QAction::triggered,this,&ZMainWindow::toolSamplePlayer);
+    connect(actionToolMixer,&QAction::triggered,this,&ZMainWindow::toolMixer);
 
     connect(actionHelpAbout,&QAction::triggered,this,&ZMainWindow::helpAbout);
     connect(actionHelpAboutQt,&QAction::triggered,qApp,&QApplication::aboutQt);
@@ -455,9 +455,19 @@ void ZMainWindow::toolSamplePlayer()
 #endif
 }
 
+void ZMainWindow::toolMixer()
+{
+    if (!mixerWindow) {
+        auto dlg = new ZMixerWindow(this);
+        mixerWindow.reset(dlg);
+    }
+    mixerWindow->show();
+    mixerWindow->showNormal();
+}
+
 void ZMainWindow::helpAbout()
 {
-    QMessageBox::about(this,tr("ALSA plugin editor 2.0.0"),
+    QMessageBox::about(this,tr("ALSA plugin editor 2.1.0"),
                        tr("ALSA plugin editor\n\n"
                           "(c) 2006 - 2020 kernelonline@gmail.com\n\n"
                           "This program is provided AS IS with NO WARRANTY OF ANY KIND,\n"

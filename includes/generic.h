@@ -25,6 +25,7 @@
 #include <QStyledItemDelegate>
 #include <QPainter>
 #include <QJsonValue>
+#include <QLabel>
 
 #define QSL QStringLiteral
 

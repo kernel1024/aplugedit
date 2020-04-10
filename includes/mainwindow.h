@@ -26,6 +26,7 @@
 #include "ui_mainwindow.h"
 #include "renderarea.h"
 #include "sampleplayer.h"
+#include "mixerwindow.h"
 
 class ZMainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -38,8 +39,9 @@ private:
     QString workFile;
     QString programTitle;
     QTimer repaintTimer;
-#ifdef WITH_GST
     QScopedPointer<ZSamplePlayer,QScopedPointerDeleteLater> samplePlayer;
+#ifdef WITH_GST
+    QScopedPointer<ZMixerWindow,QScopedPointerDeleteLater> mixerWindow;
 #endif
 
     void clearSchematic(const std::function<void()> &callback);
@@ -58,6 +60,7 @@ public Q_SLOTS:
     void editComponent();
     void toolAllocate();
     void toolSamplePlayer();
+    void toolMixer();
     void helpAbout();
     void repaintWithConnections();
     void changingComponents(ZCPBase *base);

@@ -110,6 +110,7 @@
     </property>
     <addaction name="actionToolAllocate"/>
     <addaction name="actionToolSamplePlayer"/>
+    <addaction name="actionToolMixer"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -599,6 +600,11 @@
    </property>
    <property name="statusTip">
     <string>Add softvol mixer control</string>
+   </property>
+  </action>
+  <action name="actionToolMixer">
+   <property name="text">
+    <string>ALSA Mixer</string>
    </property>
   </action>
  </widget>
