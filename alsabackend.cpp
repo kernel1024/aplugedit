@@ -17,8 +17,11 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************
 *                                                                         *
-*   Parts of this code from ALSA project aplay.c utility.                 *
+*   Parts of this code from ALSA project utilities:                       *
+*   amixer, aplay, alsactl.                                               *
 *                                                                         *
+*   Copyright (c) by Takashi Iwai <tiwai@suse.de>                         *
+*   Copyright (c) by Abramo Bagnara <abramo@alsa-project.org>             *
 *   Copyright (c) by Jaroslav Kysela <perex@perex.cz>                     *
 *   Based on vplay program by Michael Beck                                *
 *                                                                         *
@@ -28,12 +31,13 @@
 #include <QApplication>
 #include "includes/generic.h"
 #include "includes/alsabackend.h"
+#include "includes/alsabackend_p.h"
 
 extern "C" {
 #include <alsa/asoundlib.h>
 }
 
-#define WARN(MSG) m_alsaWarnings.append(QStringLiteral("%1: %2 (%3:%4)") \
+#define WARN(MSG) d->addAlsaWarning(QStringLiteral("%1: %2 (%3:%4)") \
     .arg(static_cast<const char *>(Q_FUNC_INFO)) \
     .arg(MSG) \
     .arg(static_cast<const char *>(__FILE__)) \
@@ -41,6 +45,7 @@ extern "C" {
 
 ZAlsaBackend::ZAlsaBackend(QObject *parent)
     : QObject(parent)
+    , dptr(new ZAlsaBackendPrivate(this))
 {
 }
 
@@ -66,7 +71,8 @@ ZAlsaBackend *ZAlsaBackend::instance()
 
 void ZAlsaBackend::initialize()
 {
-    enumerateCards();
+    Q_D(ZAlsaBackend);
+    d->enumerateCards();
 }
 
 void ZAlsaBackend::reloadGlobalConfig()
@@ -75,94 +81,15 @@ void ZAlsaBackend::reloadGlobalConfig()
     snd_config_update();
 }
 
-void ZAlsaBackend::snd_lib_error_handler(const char *file, int line, const char *function, int err, const char *fmt,...)
-{
-    va_list arg;
-    va_start(arg, fmt);
-    QString msg = QString::vasprintf(fmt,arg);
-    if (err != 0)
-        qWarning() << QSL(": %1").arg(QString::fromUtf8(snd_strerror(err)));
-    va_end(arg);
-
-    msg = QSL("ALSA: %1: %2 (%3:%4)")
-            .arg(QString::fromUtf8(function),msg,QString::fromUtf8(file))
-            .arg(line);
-
-    auto alsa = gAlsa;
-    if (alsa)
-        Q_EMIT alsa->alsaErrorMsg(msg);
-}
-
 void ZAlsaBackend::setupErrorLogger()
 {
-    snd_lib_error_set_handler(&snd_lib_error_handler);
-}
-
-void ZAlsaBackend::enumerateCards()
-{
-    m_cards.clear();
-
-    static snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
-
-    int card = -1;
-    int err;
-    int dev;
-    snd_ctl_t *handle = nullptr;
-
-    snd_ctl_card_info_t *info = nullptr;
-    snd_pcm_info_t *pcminfo = nullptr;
-    snd_ctl_card_info_alloca(&info);
-    snd_pcm_info_alloca(&pcminfo);
-
-    if (snd_card_next(&card) < 0 || card < 0) {
-        WARN(QSL("no soundcards found!"));
-        return;
-    }
-    // **** List of Hardware Devices ****
-    while (card >= 0) {
-        QString name = QSL("hw:%1").arg(card);
-
-        if ((err = snd_ctl_open(&handle, name.toLatin1().constData(), 0)) < 0) {
-            WARN(QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err))));
-        } else {
-            if ((err = snd_ctl_card_info(handle, info)) < 0) {
-                WARN(QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
-            } else {
-
-                m_cards << CCardItem(QString::fromUtf8(snd_ctl_card_info_get_id(info)),
-                                     QString::fromUtf8(snd_ctl_card_info_get_name(info)),
-                                     card);
-                dev = -1;
-                while (true) {
-                    unsigned int count;
-                    if (snd_ctl_pcm_next_device(handle, &dev)<0)
-                        WARN(QSL("snd_ctl_pcm_next_device: %1").arg(QString::fromUtf8(snd_strerror(err))));
-                    if (dev < 0)
-                        break;
-                    snd_pcm_info_set_device(pcminfo, static_cast<unsigned int>(dev));
-                    snd_pcm_info_set_subdevice(pcminfo, 0);
-                    snd_pcm_info_set_stream(pcminfo, stream);
-                    if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
-                        if (err != -ENOENT)
-                            WARN(QSL("snd_ctl_pcm_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
-                        continue;
-                    }
-                    count = snd_pcm_info_get_subdevices_count(pcminfo);
-                    m_cards.last().devices << CDeviceItem(dev,static_cast<int>(count),
-                                                          QString::fromUtf8(snd_pcm_info_get_name(pcminfo)));
-                }
-            }
-            if (handle)
-                snd_ctl_close(handle);
-        }
-        if (snd_card_next(&card) < 0)
-            break;
-    }
+    snd_lib_error_set_handler(&ZAlsaBackendPrivate::snd_lib_error_handler);
 }
 
 QVector<CCardItem> ZAlsaBackend::cards() const
 {
-    return m_cards;
+    Q_D(const ZAlsaBackend);
+    return d->m_cards;
 }
 
 QVector<CPCMItem> ZAlsaBackend::pcmList() const
@@ -195,6 +122,8 @@ QVector<CPCMItem> ZAlsaBackend::pcmList() const
 
 bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned int *devNum, unsigned int *subdevNum)
 {
+    Q_D(ZAlsaBackend);
+
     int err;
     QByteArray deviceName = name.toUtf8();
     snd_ctl_t *ctl;
@@ -235,34 +164,29 @@ bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned 
 
 QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
 {
+    Q_D(ZAlsaBackend);
+
     int err;
 
     QVector<CMixerItem> res;
 
-    QString name = QSL("hw:%1").arg(cardNum);
-
-    snd_ctl_t* ctl = nullptr;
-    if ((err = snd_ctl_open(&ctl, name.toLatin1().constData(), 0)) < 0) {
-        WARN(QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err))));
-        return res;
-    }
+    snd_ctl_t* ctl = d->getMixerCtl(cardNum);
+    if (ctl==nullptr) return res;
 
     snd_ctl_elem_list_t *clist = nullptr;
     snd_ctl_elem_list_alloca(&clist);
     if ((err = snd_ctl_elem_list(ctl, clist)) < 0) {
         WARN(QSL("snd_ctl_elem_list: %1").arg(QString::fromUtf8(snd_strerror(err))));
-        snd_ctl_close(ctl);
         return res;
     }
 
     if ((err = snd_ctl_elem_list_alloc_space(clist, snd_ctl_elem_list_get_count(clist))) < 0) {
         WARN(QSL("snd_ctl_elem_list_alloc_space: %1").arg(QString::fromUtf8(snd_strerror(err))));
-        snd_ctl_close(ctl);
         return res;
     }
     if ((err = snd_ctl_elem_list(ctl, clist)) < 0) {
         WARN(QSL("snd_ctl_elem_list: %1").arg(QString::fromUtf8(snd_strerror(err))));
-        snd_ctl_close(ctl);
+        snd_ctl_elem_list_free_space(clist);
         return res;
     }
 
@@ -325,7 +249,7 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
                     }
                     case SND_CTL_ELEM_TYPE_ENUMERATED: {
                         unsigned int cnt = snd_ctl_elem_info_get_items(cinfo);
-                        QVector<QString> labels;
+                        QStringList labels;
                         for (unsigned int k = 0; k < cnt; k++) {
                             snd_ctl_elem_info_set_item(cinfo,k);
                             snd_ctl_elem_info(ctl,cinfo);
@@ -353,15 +277,14 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
         if (cinfo) free(cinfo);
         if (cvalue) free(cvalue);
     } // loop control list
-
-    snd_ctl_close(ctl);
+    snd_ctl_elem_list_free_space(clist);
 
     // Sorting and binding
-    std::sort(res.begin(),res.end(),lessThanMixerItem);
+    std::sort(res.begin(),res.end(),ZAlsaBackendPrivate::lessThanMixerItem);
     for (int i=0; i<res.count(); i++) {
         if ((res.at(i).type == CMixerItem::itInteger) || (res.at(i).type == CMixerItem::itInteger64)) {
             int score = 0;
-            const auto relList = findRelatedMixerItems(res.at(i),res,&score);
+            const auto relList = d->findRelatedMixerItems(res.at(i),res,&score);
             res[i].related = relList;
             res[i].relatedNameLength = score;
             for (const auto &idx : relList)
@@ -372,128 +295,16 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
     return res;
 }
 
-bool ZAlsaBackend::lessThanMixerItem(const CMixerItem &a, const CMixerItem &b)
-{
-    static const QStringList names({ QSL("Master"),
-                                     QSL("Headphone"),
-                                     QSL("Speaker"),
-                                     QSL("Tone"),
-                                     QSL("Bass"),
-                                     QSL("Treble"),
-                                     QSL("3D Control"),
-                                     QSL("PCM"),
-                                     QSL("Front"),
-                                     QSL("Surround"),
-                                     QSL("Center"),
-                                     QSL("LFE"),
-                                     QSL("Side"),
-                                     QSL("Synth"),
-                                     QSL("FM"),
-                                     QSL("Wave"),
-                                     QSL("Music"),
-                                     QSL("DSP"),
-                                     QSL("Line"),
-                                     QSL("CD"),
-                                     QSL("Mic"),
-                                     QSL("Digital"),
-                                     QSL("Video"),
-                                     QSL("Zoom Video"),
-                                     QSL("Phone"),
-                                     QSL("I2S"),
-                                     QSL("IEC958"),
-                                     QSL("PC Speaker"),
-                                     QSL("Beep"),
-                                     QSL("Aux"),
-                                     QSL("Mono"),
-                                     QSL("Playback"),
-                                     QSL("Capture"),
-                                     QSL("Mix"),
-                                   });
-
-    static const QStringList subNames({ QSL("Mono"),
-                                        QSL("Digital"),
-                                        QSL("Switch"),
-                                        QSL("Depth"),
-                                        QSL("Wide"),
-                                        QSL("Space"),
-                                        QSL("Level"),
-                                        QSL("Center"),
-                                        QSL("Output"),
-                                        QSL("Boost"),
-                                        QSL("Tone"),
-                                        QSL("Bass"),
-                                        QSL("Treble"),
-                                      });
-
-    int weightA = names.count();
-    int weightB = names.count();
-    for (int i=0; i<names.count(); i++) {
-        if ((weightA>i) && (a.name.startsWith(names.at(i))))
-            weightA = i;
-        if ((weightB>i) && (b.name.startsWith(names.at(i))))
-            weightB = i;
-    }
-    if (weightA == weightB) {
-        int weightA = subNames.count();
-        int weightB = subNames.count();
-        for (int i=0; i<subNames.count(); i++) {
-            if ((weightA>i) && (a.name.endsWith(subNames.at(i))))
-                weightA = i;
-            if ((weightB>i) && (b.name.endsWith(subNames.at(i))))
-                weightB = i;
-        }
-    }
-
-    return weightA < weightB;
-}
-
-QVector<int> ZAlsaBackend::findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items, int* topScore)
-{
-    QVector<QPair<int,int> > scores;
-    int maxScore = 0;
-    for (int i=0; i<items.count(); i++) {
-        if (base.numid == items.at(i).numid) continue;
-        if (items.at(i).isRelated) continue;
-        if (items.at(i).type != CMixerItem::itBoolean) continue;
-
-        const QString a = base.name;
-        const QString b = items.at(i).name;
-        int maxLen = qMin(a.length(),b.length());
-        int score = 0;
-        while ((score<maxLen) && (a.at(score) == b.at(score)))
-            score++;
-
-        maxScore = qMax(maxScore,score);
-
-        scores.append(qMakePair(i,score));
-    }
-
-    QVector<int> res;
-    if (maxScore < base.name.length()/2) return res;
-    if (topScore)
-        *topScore = maxScore;
-
-    for (const auto &pair : qAsConst(scores)) {
-        if (pair.second == maxScore)
-            res.append(pair.first);
-    }
-
-    return res;
-}
-
 void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
 {
+    Q_D(ZAlsaBackend);
+
     int err;
 
     if (item.isEmpty()) return;
 
-    QString name = QSL("hw:%1").arg(cardNum);
-
-    snd_ctl_t* ctl = nullptr;
-    if ((err = snd_ctl_open(&ctl, name.toLatin1().constData(), 0)) < 0) {
-        WARN(QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err))));
-        return;
-    }
+    snd_ctl_t* ctl = d->getMixerCtl(cardNum);
+    if (ctl == nullptr) return;
 
     snd_ctl_elem_info_t* cinfo;
     snd_ctl_elem_info_alloca(&cinfo);
@@ -541,23 +352,18 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
             }
         }
     }
-
-    snd_ctl_close(ctl);
 }
 
 void ZAlsaBackend::deleteMixerControl(int cardNum, const CMixerItem &item)
 {
+    Q_D(ZAlsaBackend);
+
     int err;
 
     if (item.isEmpty() || !item.isUser) return;
 
-    QString name = QSL("hw:%1").arg(cardNum);
-
-    snd_ctl_t* ctl = nullptr;
-    if ((err = snd_ctl_open(&ctl, name.toLatin1().constData(), 0)) < 0) {
-        WARN(QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err))));
-        return;
-    }
+    snd_ctl_t* ctl = d->getMixerCtl(cardNum);
+    if (ctl == nullptr) return;
 
     snd_ctl_elem_id_t* cid;
     snd_ctl_elem_id_alloca(&cid);
@@ -582,100 +388,19 @@ void ZAlsaBackend::deleteMixerControl(int cardNum, const CMixerItem &item)
                 WARN(QSL("snd_ctl_elem_read: %1").arg(QString::fromUtf8(snd_strerror(err))));
         }
     }
-
-    snd_ctl_close(ctl);
 }
 
-CCardItem::CCardItem(const QString &aCardID, const QString &aCardName, int aCardNum)
+QStringList ZAlsaBackend::getAlsaWarnings()
 {
-    cardName = aCardName;
-    cardNum = aCardNum;
-    cardID = aCardID;
+    Q_D(ZAlsaBackend);
+
+    auto res = d->m_alsaWarnings;
+    d->m_alsaWarnings.clear();
+    return res;
 }
 
-CDeviceItem::CDeviceItem(int aDevNum, int aSubdevices, const QString& aName)
+bool ZAlsaBackend::isWarnings()
 {
-    devNum = aDevNum;
-    subdevices = aSubdevices;
-    devName = aName;
-}
-
-CPCMItem::CPCMItem(const QString &aName)
-{
-    name = aName;
-}
-
-CPCMItem::CPCMItem(const QString &aName, const QStringList &aDescription)
-{
-    name = aName;
-    description = aDescription;
-}
-
-bool CPCMItem::operator==(const CPCMItem &s) const
-{
-    return (name == s.name);
-}
-
-bool CPCMItem::operator!=(const CPCMItem &s) const
-{
-    return !operator==(s);
-}
-
-CMixerItem::CMixerItem(unsigned int aNumid, const QString& aName, const QVector<int> aValues)
-{
-    type = itBoolean;
-    numid = aNumid;
-    name = aName;
-    for (const auto &v : aValues)
-        values.append(v);
-}
-
-CMixerItem::CMixerItem(unsigned int aNumid, const QString& aName, const QVector<long> aValues,
-                       long min, long max, long step)
-{
-    type = itInteger;
-    numid = aNumid;
-    name = aName;
-    valueMin = min;
-    valueMax = max;
-    valueStep = step;
-    for (const auto &v : aValues)
-        values.append(v);
-}
-
-CMixerItem::CMixerItem(unsigned int aNumid, const QString& aName, const QVector<long long> aValues,
-                       long long min, long long max, long long step)
-{
-    type = itInteger64;
-    numid = aNumid;
-    name = aName;
-    valueMin = min;
-    valueMax = max;
-    valueStep = step;
-    values = aValues;
-}
-
-CMixerItem::CMixerItem(unsigned int aNumid, const QString &aName, const QVector<unsigned int> aValues, const QVector<QString> aLabels)
-{
-    type = itEnumerated;
-    numid = aNumid;
-    name = aName;
-    labels = aLabels;
-    for (const auto &v : aValues)
-        values.append(v);
-}
-
-bool CMixerItem::isEmpty() const
-{
-    return (numid == 0);
-}
-
-bool CMixerItem::operator==(const CMixerItem &s) const
-{
-    return (numid == s.numid);
-}
-
-bool CMixerItem::operator!=(const CMixerItem &s) const
-{
-    return !operator==(s);
+    Q_D(ZAlsaBackend);
+    return !d->m_alsaWarnings.isEmpty();
 }

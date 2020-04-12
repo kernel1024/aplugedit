@@ -17,6 +17,7 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QtWidgets>
 #include "includes/blacklistdialog.h"
 #include "includes/generic.h"
 #include "ui_blacklistdialog.h"
@@ -93,6 +94,8 @@ void ZBlacklistDialog::updatePCMList()
 {
     ui->comboPCMs->clear();
     const auto alsaPCMs = gAlsa->pcmList();
+    if (gAlsa->isWarnings())
+        QMessageBox::warning(this,tr("ALSA warnings"),gAlsa->getAlsaWarnings().join(QChar('\n')));
     for (const auto& pcm : alsaPCMs) {
         ui->comboPCMs->addItem(pcm.name,pcm.description);
         int lastIdx = ui->comboPCMs->count()-1;

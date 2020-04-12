@@ -46,7 +46,7 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     connect(this,&ZSamplePlayer::stopped,ui->levelR,&ZLevelMeter::reset);
     connect(ui->sliderVolume,&QSlider::valueChanged,this,&ZSamplePlayer::updateVolume);
 
-    connect(gAlsa,&ZAlsaBackend::alsaErrorMsg,this,&ZSamplePlayer::addAuxMessage,Qt::QueuedConnection);
+    connect(gAlsa,&ZAlsaBackend::alsaWarningMsg,this,&ZSamplePlayer::addAuxMessage,Qt::QueuedConnection);
 
     QSettings stg;
     stg.beginGroup(QSL("SamplePlayer"));
@@ -473,6 +473,8 @@ void ZSamplePlayer::updateSinkList()
 
     const auto pcms = m_renderArea->getAllPCMNames();
     const auto alsaPcms = gAlsa->pcmList();
+    if (gAlsa->isWarnings())
+        QMessageBox::warning(this,tr("ALSA warnings"),gAlsa->getAlsaWarnings().join(QChar('\n')));
 
     const auto allPcms = pcms + alsaPcms;
     if (!allPcms.contains(CPCMItem(QSL("default")))) {

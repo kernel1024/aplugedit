@@ -1,7 +1,7 @@
 #ifndef MIXERWINDOW_H
 #define MIXERWINDOW_H
 
-#include <QDialog>
+#include <QtWidgets>
 
 namespace Ui {
 class ZMixerWindow;
@@ -18,17 +18,25 @@ public:
     ~ZMixerWindow();
 
 public Q_SLOTS:
-    void reloadControls();
+    void reloadControls(int cardNum);
+    void updateControlsState(int cardNum);
 
 private:
     Ui::ZMixerWindow *ui;
     QVector<QVector<CMixerItem> > m_controls;
 
-    void addMixerItemWidget(QLayout* layout, QWidget* itemWidget);
+    void addSeparatedWidgetToLayout(QLayout* layout, QWidget* itemWidget);
+    bool getMixerItemIDs(QWidget *widget, int *card, unsigned int *numid);
+    void clearTab(int cardNum);
+    void clearLayout(QLayout *layout);
 
 private Q_SLOTS:
+    void reloadAllCards();
     void volumeChanged(int value);
     void switchClicked(bool state);
+    void switchListClicked(QListWidgetItem* item);
+    void enumClicked(int index);
+    void deleteClicked();
 };
 
 #endif // MIXERWINDOW_H

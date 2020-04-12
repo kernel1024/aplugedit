@@ -2,6 +2,8 @@ TEMPLATE += app
 QT += widgets
 HEADERS       = includes/cpbase.h \
                 includes/alsabackend.h \
+                includes/alsabackend_p.h \
+                includes/alsastructures.h \
                 includes/blacklistdialog.h \
                 includes/convdialog.h \
                 includes/cpasym.h \
@@ -44,6 +46,8 @@ HEADERS       = includes/cpbase.h \
                 jsedit/jsedit_p.h
 SOURCES       = main.cpp \
                 alsabackend.cpp \
+                alsabackend_p.cpp \
+                alsastructures.cpp \
                 components/cpasym.cpp \
                 components/cpblacklist.cpp \
                 components/cpmulti.cpp \

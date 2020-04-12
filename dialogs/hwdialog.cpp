@@ -17,6 +17,7 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QtWidgets>
 #include "includes/generic.h"
 #include "includes/hwdialog.h"
 #include "includes/alsabackend.h"
@@ -30,6 +31,8 @@ ZHWDialog::ZHWDialog(QWidget *parent)
     alCard->setCurrentIndex(0);
 
     m_cards = gAlsa->cards();
+    if (gAlsa->isWarnings())
+        QMessageBox::warning(this,tr("ALSA warnings"),gAlsa->getAlsaWarnings().join(QChar('\n')));
 
     for (const auto &hw : qAsConst(m_cards))
         alCard->addItem(QSL("%1 [%2]").arg(hw.cardID,hw.cardName),hw.cardID);

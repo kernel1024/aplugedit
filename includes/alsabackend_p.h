@@ -27,48 +27,46 @@
 *                                                                         *
 ***************************************************************************/
 
-#ifndef ALSABACKEND_H
-#define ALSABACKEND_H
+#ifndef ALSABACKENDPRIVATE_H
+#define ALSABACKENDPRIVATE_H
 
-#include <QtCore>
+#include <QObject>
+#include <QTimer>
 #include "alsastructures.h"
 
-class ZAlsaBackendPrivate;
+extern "C" {
+#include <alsa/asoundlib.h>
+}
 
-class ZAlsaBackend : public QObject
+class ZAlsaBackend;
+
+class ZAlsaBackendPrivate : public QObject
 {
     Q_OBJECT
 private:
-    Q_DISABLE_COPY(ZAlsaBackend)
-    Q_DECLARE_PRIVATE_D(dptr,ZAlsaBackend)
-    QScopedPointer<ZAlsaBackendPrivate> dptr;
+    Q_DISABLE_COPY(ZAlsaBackendPrivate)
+    Q_DECLARE_PUBLIC(ZAlsaBackend)
+    ZAlsaBackend* q_ptr { nullptr };
 
 public:
-    explicit ZAlsaBackend(QObject *parent = nullptr);
-    ~ZAlsaBackend() override;
-    static ZAlsaBackend *instance();
+    explicit ZAlsaBackendPrivate(ZAlsaBackend *parent);
+    ~ZAlsaBackendPrivate() override;
 
-    void initialize();
-    void reloadGlobalConfig();
-    void setupErrorLogger();
+    QVector<CCardItem> m_cards;
+    QVector<snd_ctl_t *> m_mixerCtl;
+    QStringList m_alsaWarnings;
+    QTimer m_mixerPollTimer;
 
-    QVector<CCardItem> cards() const;
-    QVector<CPCMItem> pcmList() const;
-    bool getCardNumber(const QString &name, QString &cardId, unsigned int* devNum, unsigned int *subdevNum);
+    snd_ctl_t* getMixerCtl(int cardNum);
+    void addAlsaWarning(const QString& msg);
+    void enumerateCards();
+    static void snd_lib_error_handler(const char *file, int line, const char *function, int err, const char *fmt,...);
+    static bool lessThanMixerItem(const CMixerItem &a, const CMixerItem &b);
+    QVector<int> findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items, int *topScore);
 
-    QVector<CMixerItem> getMixerControls(int cardNum);
-    void setMixerControl(int cardNum, const CMixerItem& item);
-    void deleteMixerControl(int cardNum, const CMixerItem& item);
+private Q_SLOTS:
+    void pollMixerEvents();
 
-    QStringList getAlsaWarnings();
-    bool isWarnings();
-
-Q_SIGNALS:
-    void alsaWarningMsg(const QString& message); // cross-thread signal!
-    void alsaMixerReconfigured(int cardNum);
-    void alsaMixerValueChanged(int cardNum);
 };
 
-#define gAlsa (ZAlsaBackend::instance())
-
-#endif // ALSABACKEND_H
+#endif // ALSABACKENDPRIVATE_H
