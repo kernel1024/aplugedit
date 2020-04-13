@@ -231,6 +231,7 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
                         QVector<long> values;
                         for (unsigned int k = 0; k < count; k++)
                             values.append(snd_ctl_elem_value_get_integer(cvalue,k));
+                        // TODO: dB correction?
                         mxItem = CMixerItem(numid,name,values,
                                             snd_ctl_elem_info_get_min(cinfo),
                                             snd_ctl_elem_info_get_max(cinfo),

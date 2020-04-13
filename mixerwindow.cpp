@@ -90,6 +90,7 @@ void ZMixerWindow::reloadControls(int cardNum)
 
     if (!switches.isEmpty()) {
         auto checkList = new QListWidget();
+        checkList->setObjectName(QSL("sw#%1").arg(cardNum));
         for (const auto &item : qAsConst(switches)) {
             auto itm = new QListWidgetItem(item.name);
             itm->setData(Qt::UserRole,item.numid);
@@ -136,10 +137,102 @@ void ZMixerWindow::reloadControls(int cardNum)
     }
 }
 
+void ZMixerWindow::reloadControlsQueued(int cardNum)
+{
+    QTimer::singleShot(0,this,[this,cardNum](){
+        reloadControls(cardNum);
+    });
+}
+
 void ZMixerWindow::updateControlsState(int cardNum)
 {
-    // TODO: update controls value, with update interlocks
+    if ((cardNum < 0) || (cardNum >= ui->tabWidget->count())) return;
+    auto tab = ui->tabWidget->widget(cardNum);
+    if (tab == nullptr) return;
 
+    const auto mixerItems = gAlsa->getMixerControls(cardNum);
+    if (mixerItems.count() != m_controls.at(cardNum).count()) {
+        reloadControlsQueued(cardNum);
+        return;
+    }
+
+    for (int i=0; i<mixerItems.count(); i++) {
+
+        const auto oldItem = m_controls.at(cardNum).at(i);
+        const auto newItem = mixerItems.at(i);
+        if ((newItem.numid != oldItem.numid) ||
+                (newItem.type != oldItem.type) ||
+                (newItem.values.count() != oldItem.values.count())){
+            reloadControlsQueued(cardNum);
+            return;
+        }
+
+        bool equal = true;
+        for (int k=0; k<newItem.values.count(); k++) {
+            if (newItem.values.at(k) != oldItem.values.at(k)) {
+                equal = false;
+                break;
+            }
+        }
+
+        const QString objName(QSL("ctl#%1#%2").arg(cardNum).arg(newItem.numid));
+
+        if (!equal) {
+            if ((newItem.type == CMixerItem::itInteger) ||
+                    (newItem.type == CMixerItem::itInteger64)) {
+                auto slider = tab->findChild<QSlider *>(objName);
+                if ((slider != nullptr) &&
+                        (!(slider->isSliderDown())) &&
+                        (slider->value() != newItem.values.constFirst())) {
+                    slider->blockSignals(true);
+                    slider->setValue(newItem.values.constFirst());
+                    slider->blockSignals(false);
+                }
+            } else if (newItem.type == CMixerItem::itBoolean) {
+                auto check = tab->findChild<QCheckBox *>(objName);
+                if (check) {
+                    if (check->isChecked() != (newItem.values.constFirst() == 0L)) {
+                        check->blockSignals(true);
+                        check->setChecked(newItem.values.constFirst() == 0L);
+                        check->blockSignals(false);
+                    }
+                } else {
+                    auto checkList = tab->findChild<QListWidget *>(QSL("sw#%1").arg(cardNum));
+                    if (checkList) {
+                        for (int k=0; k<checkList->count(); k++) {
+                            bool ok1;
+                            bool ok2;
+                            auto clItem = checkList->item(k);
+                            if (clItem) {
+                                unsigned int checkNumid = clItem->data(Qt::UserRole).toUInt(&ok1);
+                                int checkCardNum = clItem->data(Qt::UserRole + 1).toInt(&ok2);
+                                if ((checkCardNum == cardNum) && (checkNumid == newItem.numid)) {
+                                    bool oldState = (clItem->checkState() == Qt::Checked);
+                                    bool newState = (newItem.values.constFirst() == 0L);
+                                    if (oldState != newState) {
+                                        checkList->blockSignals(true);
+                                        clItem->setCheckState(newState ? Qt::Checked : Qt::Unchecked);
+                                        checkList->blockSignals(false);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (newItem.type == CMixerItem::itEnumerated) {
+                auto enList = tab->findChild<QComboBox *>(objName);
+                if ((enList != nullptr) &&
+                        (enList->currentIndex() != newItem.values.constFirst())) {
+                    enList->blockSignals(true);
+                    enList->setCurrentIndex(newItem.values.constFirst());
+                    enList->blockSignals(false);
+                }
+            }
+
+            m_controls[cardNum][i] = mixerItems.at(i);
+        }
+    }
 }
 
 void ZMixerWindow::addSeparatedWidgetToLayout(QLayout *layout, QWidget *itemWidget)
