@@ -34,8 +34,10 @@ void ZMixerWindow::reloadControls(int cardNum)
 
     const auto cards = gAlsa->cards();
     while (cardNum >= ui->tabWidget->count()) {
-        auto wtab = new QWidget();
-        ui->tabWidget->addTab(wtab,cards.at(ui->tabWidget->count()).cardName);
+        auto scroller = new QScrollArea();
+        scroller->setObjectName(QSL("scroll#%1").arg(cardNum));
+        scroller->setWidgetResizable(true);
+        ui->tabWidget->addTab(scroller,cards.at(ui->tabWidget->count()).cardName);
     }
 
     QVector<CMixerItem> enums;
@@ -92,6 +94,7 @@ void ZMixerWindow::reloadControls(int cardNum)
 
     if (!switches.isEmpty()) {
         auto checkList = new QListWidget();
+        // TODO: set minimal width
         checkList->setObjectName(QSL("sw#%1").arg(cardNum));
         for (const auto &item : qAsConst(switches)) {
             auto itm = new QListWidgetItem(item.name);
@@ -130,10 +133,17 @@ void ZMixerWindow::reloadControls(int cardNum)
         addSeparatedWidgetToLayout(boxLayout,enumsList);
     }
 
-    auto wtab = ui->tabWidget->widget(cardNum);
-    if ((wtab != nullptr) && (boxLayout->count() > 0)) {
-        clearTab(cardNum);
+    auto scroller = findChild<QScrollArea *>(QSL("scroll#%1").arg(cardNum));
+    if ((scroller != nullptr) && (boxLayout->count() > 0)) {
+        if (scroller->widget())
+            scroller->takeWidget()->deleteLater(); // NOTE: check control widgets deallocation with valgrind
+
+        auto wtab = new QWidget();
+        wtab->setObjectName(QSL("card#%1").arg(cardNum));
+//        clearTab(cardNum);
         wtab->setLayout(boxLayout);
+
+        scroller->setWidget(wtab);
     } else {
         boxLayout->deleteLater();
     }
@@ -148,8 +158,7 @@ void ZMixerWindow::reloadControlsQueued(int cardNum)
 
 void ZMixerWindow::updateControlsState(int cardNum)
 {
-    if ((cardNum < 0) || (cardNum >= ui->tabWidget->count())) return;
-    auto tab = ui->tabWidget->widget(cardNum);
+    auto tab = findChild<QWidget *>(QSL("card#%1").arg(cardNum));
     if (tab == nullptr) return;
 
     const auto mixerItems = gAlsa->getMixerControls(cardNum);
@@ -267,7 +276,8 @@ bool ZMixerWindow::getMixerItemIDs(QWidget *widget, int *card, unsigned int *num
 
 void ZMixerWindow::clearTab(int cardNum)
 {
-    const auto wtab = ui->tabWidget->widget(cardNum);
+    // TODO: remove this, not usable with scroller
+    auto wtab = findChild<QWidget *>(QSL("card#%1").arg(cardNum));
     clearLayout(wtab->layout()); // delete layouts and layouted widgets
     const auto wlist = wtab->findChildren<QWidget *>(); // delete remaining widgets, if any
     for (const auto& w : wlist)
@@ -276,6 +286,7 @@ void ZMixerWindow::clearTab(int cardNum)
 
 void ZMixerWindow::clearLayout(QLayout *layout)
 {
+    // TODO: remove this
     if (layout == nullptr) return;
     QLayoutItem * item;
     QWidget * widget;
