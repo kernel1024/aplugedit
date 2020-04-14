@@ -27,8 +27,6 @@ private:
 
     void addSeparatedWidgetToLayout(QLayout* layout, QWidget* itemWidget);
     bool getMixerItemIDs(QWidget *widget, int *card, unsigned int *numid);
-    void clearTab(int cardNum);
-    void clearLayout(QLayout *layout);
     void reloadControlsQueued(int cardNum);
 
 private Q_SLOTS:

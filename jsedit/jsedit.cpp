@@ -863,7 +863,7 @@ void JSEdit::updateCursor()
         highlight.cursor = textCursor();
         highlight.cursor.clearSelection();
 
-        QList<QTextEdit::ExtraSelection> extraSelections;
+        QList<QTextEdit::ExtraSelection> extraSelections; // NOLINT
         extraSelections.reserve(d->matchPositions.count() + d->errorPositions.count() + 1);
         extraSelections.append(highlight);
 

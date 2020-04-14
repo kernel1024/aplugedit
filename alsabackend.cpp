@@ -55,8 +55,6 @@ ZAlsaBackend *ZAlsaBackend::instance()
             inst = new ZAlsaBackend(QApplication::instance());
             return inst.data();
         }
-
-        qCritical() << "Accessing to gAlsa after destruction!!!";
         return nullptr;
     }
 
@@ -295,7 +293,6 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
 {
     Q_D(ZAlsaBackend);
 
-    qWarning() << "test";
     int err;
 
     if (item.isEmpty()) return;

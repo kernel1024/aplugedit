@@ -12,8 +12,8 @@ ZMixerWindow::ZMixerWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->tabWidget->clear();
 
-    connect(gAlsa,&ZAlsaBackend::alsaMixerReconfigured,this,&ZMixerWindow::reloadControls);//,Qt::QueuedConnection);
-    connect(gAlsa,&ZAlsaBackend::alsaMixerValueChanged,this,&ZMixerWindow::updateControlsState);//,Qt::QueuedConnection);
+    connect(gAlsa,&ZAlsaBackend::alsaMixerReconfigured,this,&ZMixerWindow::reloadControls);
+    connect(gAlsa,&ZAlsaBackend::alsaMixerValueChanged,this,&ZMixerWindow::updateControlsState);
     connect(ui->btnReloadAll,&QPushButton::clicked,this,&ZMixerWindow::reloadAllCards);
 
     reloadAllCards();
@@ -136,11 +136,10 @@ void ZMixerWindow::reloadControls(int cardNum)
     auto scroller = findChild<QScrollArea *>(QSL("scroll#%1").arg(cardNum));
     if ((scroller != nullptr) && (boxLayout->count() > 0)) {
         if (scroller->widget())
-            scroller->takeWidget()->deleteLater(); // NOTE: check control widgets deallocation with valgrind
+            scroller->takeWidget()->deleteLater();
 
         auto wtab = new QWidget();
         wtab->setObjectName(QSL("card#%1").arg(cardNum));
-//        clearTab(cardNum);
         wtab->setLayout(boxLayout);
 
         scroller->setWidget(wtab);
@@ -272,31 +271,6 @@ bool ZMixerWindow::getMixerItemIDs(QWidget *widget, int *card, unsigned int *num
     *card = sl.at(1).toInt(&ok1);
     *numid = sl.at(2).toUInt(&ok2);
     return (ok1 && ok2);
-}
-
-void ZMixerWindow::clearTab(int cardNum)
-{
-    // TODO: remove this, not usable with scroller
-    auto wtab = findChild<QWidget *>(QSL("card#%1").arg(cardNum));
-    clearLayout(wtab->layout()); // delete layouts and layouted widgets
-    const auto wlist = wtab->findChildren<QWidget *>(); // delete remaining widgets, if any
-    for (const auto& w : wlist)
-        w->deleteLater();
-}
-
-void ZMixerWindow::clearLayout(QLayout *layout)
-{
-    // TODO: remove this
-    if (layout == nullptr) return;
-    QLayoutItem * item;
-    QWidget * widget;
-    while ((item = layout->takeAt(0))) {
-        clearLayout(item->layout());
-        if ((widget = item->widget()) != nullptr)
-            widget->deleteLater();
-        delete item;
-    }
-    delete layout;
 }
 
 void ZMixerWindow::reloadAllCards()
