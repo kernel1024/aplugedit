@@ -270,6 +270,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="buttonFilterLog">
+         <property name="text">
+          <string>Filter...</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="labelClock">
          <property name="minimumSize">
           <size>
@@ -430,7 +437,9 @@
   <tabstop>comboWaveform</tabstop>
   <tabstop>spinFrequency</tabstop>
   <tabstop>buttonClearLog</tabstop>
+  <tabstop>buttonFilterLog</tabstop>
   <tabstop>editLog</tabstop>
+  <tabstop>sliderVolume</tabstop>
  </tabstops>
  <resources/>
  <connections>

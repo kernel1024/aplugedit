@@ -25,6 +25,7 @@
 #include "includes/sampleplayer.h"
 #include "includes/alsabackend.h"
 #include "ui_sampleplayer.h"
+#include "ui_stringlistdialog.h"
 #include <QDebug>
 
 ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
@@ -45,8 +46,10 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     connect(this,&ZSamplePlayer::stopped,ui->levelL,&ZLevelMeter::reset);
     connect(this,&ZSamplePlayer::stopped,ui->levelR,&ZLevelMeter::reset);
     connect(ui->sliderVolume,&QSlider::valueChanged,this,&ZSamplePlayer::updateVolume);
+    connect(ui->buttonFilterLog,&QPushButton::clicked,this,&ZSamplePlayer::editMessagesFilter);
 
     connect(gAlsa,&ZAlsaBackend::alsaWarningMsg,this,&ZSamplePlayer::addAuxMessage,Qt::QueuedConnection);
+    connect(gAlsa,&ZAlsaBackend::debugOutputUpdated,this,&ZSamplePlayer::updateDebugMessages,Qt::QueuedConnection);
 
     QSettings stg;
     stg.beginGroup(QSL("SamplePlayer"));
@@ -54,9 +57,12 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     ui->comboWaveform->setCurrentText(stg.value(QSL("generatorWaveform"),QSL("sine")).toString());
     ui->spinFrequency->setValue(stg.value(QSL("generatorFreq"),440.0).toDouble());
     ui->sliderVolume->setValue(stg.value(QSL("volume"),90).toInt());
-
     ui->radioFuncGenerator->setChecked(true); // force widget disabling logic
     ui->radioMediaFile->setChecked(!(stg.value(QSL("funcGenerator"),false).toBool()));
+    stg.endGroup();
+
+    stg.beginGroup(QSL("logViewer"));
+    m_logFilter = stg.value(QSL("logFilter"),QStringList()).toStringList();
     stg.endGroup();
 
     ui->comboAlsaSink->setItemDelegate(new ZDescListItemDelegate(this));
@@ -82,6 +88,10 @@ ZSamplePlayer::~ZSamplePlayer()
     stg.setValue(QSL("generatorFreq"),ui->spinFrequency->value());
     stg.setValue(QSL("funcGenerator"),ui->radioFuncGenerator->isChecked());
     stg.setValue(QSL("volume"),ui->sliderVolume->value());
+    stg.endGroup();
+
+    stg.beginGroup(QSL("logViewer"));
+    stg.setValue(QSL("logFilter"),m_logFilter);
     stg.endGroup();
 
     delete ui;
@@ -457,10 +467,38 @@ void ZSamplePlayer::addAuxMessageExt(ZSamplePlayer *instance, const QString &msg
 
 void ZSamplePlayer::addAuxMessage(const QString &msg)
 {
-    // TODO: add filter by substring
+    for (const auto& pattern : qAsConst(m_logFilter))
+        if (msg.contains(pattern)) return;
+
     ui->editLog->moveCursor(QTextCursor::End);
     ui->editLog->insertPlainText(QSL("%1 %2\n").arg(QTime::currentTime().toString(QSL("HH:mm:ss")),msg));
     ui->editLog->moveCursor(QTextCursor::End);
+}
+
+void ZSamplePlayer::updateDebugMessages()
+{
+    if (QApplication::closingDown()) return;
+    if (!isVisible()) return;
+
+    const QStringList msgList = gAlsa->getDebugMessages();
+    if (msgList.isEmpty()) return;
+
+    addAuxMessage(msgList.join('\n'));
+}
+
+void ZSamplePlayer::editMessagesFilter()
+{
+    QDialog dlg;
+    Ui::ZStringListDialog ui;
+    ui.setupUi(&dlg);
+
+    dlg.setWindowTitle(tr("Messages log filter"));
+    ui.label->setText(tr("Pattern list (one per row)"));
+    ui.edit->setPlainText(m_logFilter.join('\n'));
+
+    if (dlg.exec() == QDialog::Rejected) return;
+
+    m_logFilter = ui.edit->toPlainText().split('\n',Qt::SkipEmptyParts);
 }
 
 void ZSamplePlayer::updateSinkList()

@@ -53,6 +53,8 @@ public Q_SLOTS:
     void updatePosition();
     void updateVolume(int value);
     void getSinkInfo();
+    void updateDebugMessages();
+    void editMessagesFilter();
 
 protected:
     bool event(QEvent *event) override;
@@ -64,6 +66,7 @@ private:
     QTimer *m_positionTimer;
     CStreamerData m_data;
     QStringList m_log;
+    QStringList m_logFilter;
 
     static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data);
     static void pad_added_handler(GstElement *src, GstPad *new_pad, gpointer *data);

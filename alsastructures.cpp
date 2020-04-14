@@ -60,6 +60,7 @@ CMixerItem::CMixerItem(unsigned int aNumid, const QString& aName, const QVector<
     type = itBoolean;
     numid = aNumid;
     name = aName;
+    values.reserve(aValues.count());
     for (const auto &v : aValues)
         values.append(v);
 }
@@ -73,6 +74,7 @@ CMixerItem::CMixerItem(unsigned int aNumid, const QString& aName, const QVector<
     valueMin = min;
     valueMax = max;
     valueStep = step;
+    values.reserve(aValues.count());
     for (const auto &v : aValues)
         values.append(v);
 }
@@ -95,6 +97,7 @@ CMixerItem::CMixerItem(unsigned int aNumid, const QString &aName, const QVector<
     numid = aNumid;
     name = aName;
     labels = aLabels;
+    values.reserve(aValues.count());
     for (const auto &v : aValues)
         values.append(v);
 }

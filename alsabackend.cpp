@@ -37,12 +37,6 @@ extern "C" {
 #include <alsa/asoundlib.h>
 }
 
-#define WARN(MSG) d->addAlsaWarning(QStringLiteral("%1: %2 (%3:%4)") \
-    .arg(static_cast<const char *>(Q_FUNC_INFO)) \
-    .arg(MSG) \
-    .arg(static_cast<const char *>(__FILE__)) \
-    .arg(__LINE__))
-
 ZAlsaBackend::ZAlsaBackend(QObject *parent)
     : QObject(parent)
     , dptr(new ZAlsaBackendPrivate(this))
@@ -122,8 +116,6 @@ QVector<CPCMItem> ZAlsaBackend::pcmList() const
 
 bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned int *devNum, unsigned int *subdevNum)
 {
-    Q_D(ZAlsaBackend);
-
     int err;
     QByteArray deviceName = name.toUtf8();
     snd_ctl_t *ctl;
@@ -134,13 +126,13 @@ bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned 
 
     err = snd_ctl_open(&ctl, deviceName.constData(), SND_CTL_NONBLOCK);
     if (err < 0) {
-        WARN(QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err)));
         return false;
     }
 
     err = snd_ctl_card_info(ctl,info);
     if (err < 0) {
-        WARN(QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
         snd_ctl_close(ctl);
         return false;
     }
@@ -149,7 +141,7 @@ bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned 
 
     err = snd_ctl_pcm_info(ctl,pcminfo);
     if (err < 0) {
-        WARN(QSL("snd_ctl_pcm_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_pcm_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
         snd_ctl_close(ctl);
         return false;
     }
@@ -176,19 +168,24 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
     snd_ctl_elem_list_t *clist = nullptr;
     snd_ctl_elem_list_alloca(&clist);
     if ((err = snd_ctl_elem_list(ctl, clist)) < 0) {
-        WARN(QSL("snd_ctl_elem_list: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_elem_list: %1").arg(QString::fromUtf8(snd_strerror(err)));
         return res;
     }
 
     if ((err = snd_ctl_elem_list_alloc_space(clist, snd_ctl_elem_list_get_count(clist))) < 0) {
-        WARN(QSL("snd_ctl_elem_list_alloc_space: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_elem_list_alloc_space: %1").arg(QString::fromUtf8(snd_strerror(err)));
         return res;
     }
     if ((err = snd_ctl_elem_list(ctl, clist)) < 0) {
-        WARN(QSL("snd_ctl_elem_list: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_elem_list: %1").arg(QString::fromUtf8(snd_strerror(err)));
         snd_ctl_elem_list_free_space(clist);
         return res;
     }
+
+    QVector<int> values_int;
+    QVector<long> values_long;
+    QVector<long long> values_64;
+    QVector<unsigned int> values_uint;
 
     unsigned int controls = snd_ctl_elem_list_get_used(clist);
     for (unsigned int cidx = 0; cidx < controls; cidx++) {
@@ -203,16 +200,16 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
 
         snd_ctl_elem_info_set_id(cinfo,cid);
         if ((err = snd_ctl_elem_info(ctl,cinfo)) < 0) {
-            WARN(QSL("snd_ctl_elem_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
+            qWarning() << QSL("snd_ctl_elem_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
         } else {
             snd_ctl_elem_value_set_id(cvalue,cid);
             if ((err = snd_ctl_elem_read(ctl,cvalue)) < 0) {
-                WARN(QSL("snd_ctl_elem_read: %1").arg(QString::fromUtf8(snd_strerror(err))));
+                qWarning() << QSL("snd_ctl_elem_read: %1").arg(QString::fromUtf8(snd_strerror(err)));
             } else {
 
                 // Only accept mixer controls
                 if (snd_ctl_elem_info_get_interface(cinfo) == SND_CTL_ELEM_IFACE_MIXER) {
-                    unsigned int count = snd_ctl_elem_info_get_count(cinfo);
+                    int count = static_cast<int>(snd_ctl_elem_info_get_count(cinfo));
                     unsigned int numid = snd_ctl_elem_info_get_numid(cinfo);
                     QString name = QString::fromUtf8(snd_ctl_elem_info_get_name(cinfo));
                     auto ctype = snd_ctl_elem_info_get_type(cinfo);
@@ -220,49 +217,47 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
                     // Acceptable control types and basic parameters
                     CMixerItem mxItem;
                     switch (ctype) {
-                    case SND_CTL_ELEM_TYPE_BOOLEAN: {
-                        QVector<int> values;
-                        for (unsigned int k = 0; k < count; k++)
-                            values.append(snd_ctl_elem_value_get_boolean(cvalue,k));
-                        res.append(CMixerItem(numid,name,values));
-                        break;
-                    }
-                    case SND_CTL_ELEM_TYPE_INTEGER: {
-                        QVector<long> values;
-                        for (unsigned int k = 0; k < count; k++)
-                            values.append(snd_ctl_elem_value_get_integer(cvalue,k));
-                        // TODO: dB correction?
-                        mxItem = CMixerItem(numid,name,values,
-                                            snd_ctl_elem_info_get_min(cinfo),
-                                            snd_ctl_elem_info_get_max(cinfo),
-                                            snd_ctl_elem_info_get_step(cinfo));
-                        break;
-                    }
-                    case SND_CTL_ELEM_TYPE_INTEGER64: {
-                        QVector<long long> values;
-                        for (unsigned int k = 0; k < count; k++)
-                            values.append(snd_ctl_elem_value_get_integer64(cvalue,k));
-                        mxItem = CMixerItem(numid,name,values,
-                                            snd_ctl_elem_info_get_min64(cinfo),
-                                            snd_ctl_elem_info_get_max64(cinfo),
-                                            snd_ctl_elem_info_get_step64(cinfo));
-                        break;
-                    }
-                    case SND_CTL_ELEM_TYPE_ENUMERATED: {
-                        unsigned int cnt = snd_ctl_elem_info_get_items(cinfo);
-                        QStringList labels;
-                        for (unsigned int k = 0; k < cnt; k++) {
-                            snd_ctl_elem_info_set_item(cinfo,k);
-                            snd_ctl_elem_info(ctl,cinfo);
-                            labels.append(QString::fromUtf8(snd_ctl_elem_info_get_item_name(cinfo)));
+                        case SND_CTL_ELEM_TYPE_BOOLEAN:
+                            values_int.resize(count);
+                            for (int k = 0; k < count; k++)
+                                values_int[k] = snd_ctl_elem_value_get_boolean(cvalue,static_cast<unsigned int>(k));
+                            res.append(CMixerItem(numid,name,values_int));
+                            break;
+                        case SND_CTL_ELEM_TYPE_INTEGER:
+                            values_long.resize(count);
+                            for (int k = 0; k < count; k++)
+                                values_long[k] = snd_ctl_elem_value_get_integer(cvalue,static_cast<unsigned int>(k));
+                            // TODO: dB correction?
+                            mxItem = CMixerItem(numid,name,values_long,
+                                                snd_ctl_elem_info_get_min(cinfo),
+                                                snd_ctl_elem_info_get_max(cinfo),
+                                                snd_ctl_elem_info_get_step(cinfo));
+                            break;
+                        case SND_CTL_ELEM_TYPE_INTEGER64:
+                            values_64.resize(count);
+                            for (int k = 0; k < count; k++)
+                                values_64[k] = snd_ctl_elem_value_get_integer64(cvalue,static_cast<unsigned int>(k));
+                            mxItem = CMixerItem(numid,name,values_64,
+                                                snd_ctl_elem_info_get_min64(cinfo),
+                                                snd_ctl_elem_info_get_max64(cinfo),
+                                                snd_ctl_elem_info_get_step64(cinfo));
+                            break;
+                        case SND_CTL_ELEM_TYPE_ENUMERATED: {
+                            unsigned int cnt = snd_ctl_elem_info_get_items(cinfo);
+                            QStringList labels;
+                            labels.reserve(static_cast<int>(cnt));
+                            for (unsigned int k = 0; k < cnt; k++) {
+                                snd_ctl_elem_info_set_item(cinfo,k);
+                                snd_ctl_elem_info(ctl,cinfo);
+                                labels.append(QString::fromUtf8(snd_ctl_elem_info_get_item_name(cinfo)));
+                            }
+                            values_uint.resize(count);
+                            for (int k = 0; k < count; k++)
+                                values_uint[k] = snd_ctl_elem_value_get_enumerated(cvalue,static_cast<unsigned int>(k));
+                            mxItem = CMixerItem(numid,name,values_uint,labels);
+                            break;
                         }
-                        QVector<unsigned int> values;
-                        for (unsigned int k = 0; k < count; k++)
-                            values.append(snd_ctl_elem_value_get_enumerated(cvalue,k));
-                        mxItem = CMixerItem(numid,name,values,labels);
-                        break;
-                    }
-                    default: break;
+                        default: break;
                     }
 
                     // Postprocessing
@@ -274,9 +269,9 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
                 } // snd_ctl_elem_info_get_interface(cinfo) == SND_CTL_ELEM_IFACE_MIXER
             } // snd_ctl_elem_read
         } // snd_ctl_elem_info
-        if (cid) free(cid);
-        if (cinfo) free(cinfo);
-        if (cvalue) free(cvalue);
+        if (cid) free(cid); // NOLINT
+        if (cinfo) free(cinfo); // NOLINT
+        if (cvalue) free(cvalue); // NOLINT
     } // loop control list
     snd_ctl_elem_list_free_space(clist);
 
@@ -300,6 +295,7 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
 {
     Q_D(ZAlsaBackend);
 
+    qWarning() << "test";
     int err;
 
     if (item.isEmpty()) return;
@@ -314,14 +310,14 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
 
     snd_ctl_elem_info_set_numid(cinfo,item.numid);
     if ((err = snd_ctl_elem_info(ctl,cinfo)) < 0) {
-        WARN(QSL("snd_ctl_elem_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_elem_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
 
     } else if (static_cast<int>(snd_ctl_elem_info_get_count(cinfo)) == item.values.count()) {
         unsigned int type = snd_ctl_elem_info_get_type(cinfo);
         snd_ctl_elem_value_set_numid(cvalue,item.numid);
 
         if ((err = snd_ctl_elem_read(ctl,cvalue)) < 0) {
-            WARN(QSL("snd_ctl_elem_read: %1").arg(QString::fromUtf8(snd_strerror(err))));
+            qWarning() << QSL("snd_ctl_elem_read: %1").arg(QString::fromUtf8(snd_strerror(err)));
 
         } else {
             bool needWrite = false;
@@ -349,7 +345,7 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
 
             if (needWrite) {
                 if ((err = snd_ctl_elem_write(ctl,cvalue)) < 0)
-                    WARN(QSL("snd_ctl_elem_write: %1").arg(QString::fromUtf8(snd_strerror(err))));
+                    qWarning() << QSL("snd_ctl_elem_write: %1").arg(QString::fromUtf8(snd_strerror(err)));
             }
         }
     }
@@ -375,7 +371,7 @@ void ZAlsaBackend::deleteMixerControl(int cardNum, const CMixerItem &item)
 
     snd_ctl_elem_info_set_numid(cinfo,item.numid);
     if ((err = snd_ctl_elem_info(ctl,cinfo)) < 0) {
-        WARN(QSL("snd_ctl_elem_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
+        qWarning() << QSL("snd_ctl_elem_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
 
     } else if (static_cast<int>(snd_ctl_elem_info_get_count(cinfo)) == item.values.count()) {
         unsigned int type = snd_ctl_elem_info_get_type(cinfo);
@@ -386,7 +382,7 @@ void ZAlsaBackend::deleteMixerControl(int cardNum, const CMixerItem &item)
 
             snd_ctl_elem_id_set_numid(cid,item.numid);
             if ((err = snd_ctl_elem_remove(ctl,cid)) < 0)
-                WARN(QSL("snd_ctl_elem_read: %1").arg(QString::fromUtf8(snd_strerror(err))));
+                qWarning() << QSL("snd_ctl_elem_read: %1").arg(QString::fromUtf8(snd_strerror(err)));
         }
     }
 }
@@ -404,4 +400,14 @@ bool ZAlsaBackend::isWarnings()
 {
     Q_D(ZAlsaBackend);
     return !d->m_alsaWarnings.isEmpty();
+}
+
+QStringList ZAlsaBackend::getDebugMessages()
+{
+    Q_D(ZAlsaBackend);
+    QMutexLocker lock(&(d->m_loggerMutex));
+
+    auto res = d->m_debugMessages;
+    d->m_debugMessages.clear();
+    return res;
 }

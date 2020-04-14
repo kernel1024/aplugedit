@@ -32,6 +32,7 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QMutex>
 #include "alsastructures.h"
 
 extern "C" {
@@ -48,6 +49,8 @@ private:
     Q_DECLARE_PUBLIC(ZAlsaBackend)
     ZAlsaBackend* q_ptr { nullptr };
 
+    void addDebugOutputPrivate(const QString& msg);
+
 public:
     explicit ZAlsaBackendPrivate(ZAlsaBackend *parent);
     ~ZAlsaBackendPrivate() override;
@@ -56,6 +59,8 @@ public:
     QVector<snd_ctl_t *> m_mixerCtl;
     QStringList m_alsaWarnings;
     QTimer m_mixerPollTimer;
+    QStringList m_debugMessages;
+    QMutex m_loggerMutex;
 
     snd_ctl_t* getMixerCtl(int cardNum);
     void addAlsaWarning(const QString& msg);
@@ -63,6 +68,8 @@ public:
     static void snd_lib_error_handler(const char *file, int line, const char *function, int err, const char *fmt,...);
     static bool lessThanMixerItem(const CMixerItem &a, const CMixerItem &b);
     QVector<int> findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items, int *topScore);
+
+    static void stdConsoleOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 private Q_SLOTS:
     void pollMixerEvents();

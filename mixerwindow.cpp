@@ -40,8 +40,10 @@ void ZMixerWindow::reloadControls(int cardNum)
 
     QVector<CMixerItem> enums;
     QVector<CMixerItem> switches;
+    enums.reserve(mixerItems.count());
+    switches.reserve(mixerItems.count());
 
-    QHBoxLayout* boxLayout = new QHBoxLayout();
+    auto boxLayout = new QHBoxLayout();
 
     for (const auto& item : mixerItems) {
         if (item.type == CMixerItem::itEnumerated) enums.append(item);
@@ -59,11 +61,11 @@ void ZMixerWindow::reloadControls(int cardNum)
             iui.label->setText(item.name);
         }
 
-        iui.slider->setMinimum(item.valueMin);
-        iui.slider->setMaximum(item.valueMax);
+        iui.slider->setMinimum(static_cast<int>(item.valueMin));
+        iui.slider->setMaximum(static_cast<int>(item.valueMax));
         if (item.valueStep>0)
-            iui.slider->setSingleStep(item.valueStep);
-        iui.slider->setValue(item.values.constFirst());
+            iui.slider->setSingleStep(static_cast<int>(item.valueStep));
+        iui.slider->setValue(static_cast<int>(item.values.constFirst()));
         iui.slider->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(item.numid));
 
         iui.btnDelete->setVisible(item.isUser);
@@ -71,7 +73,7 @@ void ZMixerWindow::reloadControls(int cardNum)
 
         iui.check->setVisible(false);
         for (const auto& ridx : qAsConst(item.related)) {
-            const auto ritem = mixerItems.at(ridx);
+            const auto& ritem = mixerItems.at(ridx);
             if (ritem.type == CMixerItem::itBoolean) {
                 iui.check->setVisible(true);
                 iui.check->setChecked(ritem.values.constFirst() == 0L);
@@ -111,7 +113,7 @@ void ZMixerWindow::reloadControls(int cardNum)
             auto enLabel = new QLabel(item.name);
             auto enList = new QComboBox();
             enList->addItems(item.labels);
-            enList->setCurrentIndex(item.values.constFirst());
+            enList->setCurrentIndex(static_cast<int>(item.values.constFirst()));
             enList->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(item.numid));
 
             auto subLayout = new QVBoxLayout();
@@ -158,8 +160,8 @@ void ZMixerWindow::updateControlsState(int cardNum)
 
     for (int i=0; i<mixerItems.count(); i++) {
 
-        const auto oldItem = m_controls.at(cardNum).at(i);
-        const auto newItem = mixerItems.at(i);
+        const auto& oldItem = m_controls.at(cardNum).at(i);
+        const auto& newItem = mixerItems.at(i);
         if ((newItem.numid != oldItem.numid) ||
                 (newItem.type != oldItem.type) ||
                 (newItem.values.count() != oldItem.values.count())){
@@ -185,7 +187,7 @@ void ZMixerWindow::updateControlsState(int cardNum)
                         (!(slider->isSliderDown())) &&
                         (slider->value() != newItem.values.constFirst())) {
                     slider->blockSignals(true);
-                    slider->setValue(newItem.values.constFirst());
+                    slider->setValue(static_cast<int>(newItem.values.constFirst()));
                     slider->blockSignals(false);
                 }
             } else if (newItem.type == CMixerItem::itBoolean) {
@@ -225,7 +227,7 @@ void ZMixerWindow::updateControlsState(int cardNum)
                 if ((enList != nullptr) &&
                         (enList->currentIndex() != newItem.values.constFirst())) {
                     enList->blockSignals(true);
-                    enList->setCurrentIndex(newItem.values.constFirst());
+                    enList->setCurrentIndex(static_cast<int>(newItem.values.constFirst()));
                     enList->blockSignals(false);
                 }
             }
@@ -238,7 +240,7 @@ void ZMixerWindow::updateControlsState(int cardNum)
 void ZMixerWindow::addSeparatedWidgetToLayout(QLayout *layout, QWidget *itemWidget)
 {
     if (layout->count()>0) {
-        QFrame* line = new QFrame();
+        auto line = new QFrame();
         if (qobject_cast<QVBoxLayout *>(layout) != nullptr) {
             line->setFrameShape(QFrame::HLine);
         } else {

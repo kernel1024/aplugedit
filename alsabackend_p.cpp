@@ -32,16 +32,12 @@
 #include "includes/generic.h"
 #include <QDebug>
 
-#define WARN(MSG) addAlsaWarning(QStringLiteral("%1: %2 (%3:%4)") \
-    .arg(static_cast<const char *>(Q_FUNC_INFO)) \
-    .arg(MSG) \
-    .arg(static_cast<const char *>(__FILE__)) \
-    .arg(__LINE__))
-
 ZAlsaBackendPrivate::ZAlsaBackendPrivate(ZAlsaBackend *parent)
     : QObject(parent)
     , q_ptr(parent)
 {
+    qInstallMessageHandler(ZAlsaBackendPrivate::stdConsoleOutput);
+
     m_mixerPollTimer.setInterval(1000);
     connect(&m_mixerPollTimer,&QTimer::timeout,this,&ZAlsaBackendPrivate::pollMixerEvents);
     m_mixerPollTimer.start();
@@ -71,12 +67,12 @@ snd_ctl_t *ZAlsaBackendPrivate::getMixerCtl(int cardNum)
 
         QString name = QSL("hw:%1").arg(cardNum);
         if ((err = snd_ctl_open(&res, name.toLatin1().constData(), 0)) < 0) {
-            WARN(QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err))));
+            qWarning() << QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err)));
             res = nullptr;
         }
 
         if ((err = snd_ctl_subscribe_events(res, 1)) < 0) {
-            WARN(QSL("snd_ctl_subscribe_events: %1").arg(QString::fromUtf8(snd_strerror(err))));
+            qWarning() << QSL("snd_ctl_subscribe_events: %1").arg(QString::fromUtf8(snd_strerror(err)));
             snd_ctl_close(res);
             res = nullptr;
         }
@@ -102,7 +98,7 @@ void ZAlsaBackendPrivate::enumerateCards()
     snd_pcm_info_alloca(&pcminfo);
 
     if (snd_card_next(&card) < 0 || card < 0) {
-        WARN(QSL("no soundcards found!"));
+        qWarning() << QSL("no soundcards found!");
         return;
     }
     // **** List of Hardware Devices ****
@@ -110,7 +106,7 @@ void ZAlsaBackendPrivate::enumerateCards()
         snd_ctl_t *handle = getMixerCtl(card);
         if (handle) {
             if ((err = snd_ctl_card_info(handle, info)) < 0) {
-                WARN(QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
+                qWarning() << QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
             } else {
 
                 m_cards << CCardItem(QString::fromUtf8(snd_ctl_card_info_get_id(info)),
@@ -120,7 +116,7 @@ void ZAlsaBackendPrivate::enumerateCards()
                 while (true) {
                     unsigned int count;
                     if (snd_ctl_pcm_next_device(handle, &dev)<0)
-                        WARN(QSL("snd_ctl_pcm_next_device: %1").arg(QString::fromUtf8(snd_strerror(err))));
+                        qWarning() << QSL("snd_ctl_pcm_next_device: %1").arg(QString::fromUtf8(snd_strerror(err)));
                     if (dev < 0)
                         break;
                     snd_pcm_info_set_device(pcminfo, static_cast<unsigned int>(dev));
@@ -128,7 +124,7 @@ void ZAlsaBackendPrivate::enumerateCards()
                     snd_pcm_info_set_stream(pcminfo, stream);
                     if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
                         if (err != -ENOENT)
-                            WARN(QSL("snd_ctl_pcm_info: %1").arg(QString::fromUtf8(snd_strerror(err))));
+                            qWarning() << QSL("snd_ctl_pcm_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
                         continue;
                     }
                     count = snd_pcm_info_get_subdevices_count(pcminfo);
@@ -274,9 +270,11 @@ void ZAlsaBackendPrivate::pollMixerEvents()
     Q_Q(ZAlsaBackend);
 
     const int ctlCount = m_mixerCtl.count();
-    QScopedPointer<pollfd, QScopedPointerArrayDeleter<pollfd> > fds(new pollfd[ctlCount]);
+    QScopedPointer<pollfd, QScopedPointerArrayDeleter<pollfd> >
+            fds(new pollfd[static_cast<unsigned int>(ctlCount)]);
     QVector<snd_ctl_t *> ctls;
     QHash<int,int> ctlIdx;
+    ctls.reserve(m_mixerCtl.count());
 
     for (int i=0; i< m_mixerCtl.count(); i++) {
         const auto ctl = m_mixerCtl.at(i);
@@ -288,13 +286,13 @@ void ZAlsaBackendPrivate::pollMixerEvents()
     }
     if (ctls.isEmpty()) return;
 
-    int err = poll(fds.data(), ctls.count(), 0);
+    int err = poll(fds.data(), static_cast<nfds_t>(ctls.count()), 0);
     if (err <= 0) return;
 
     for (int i = 0; i < ctls.count(); i++) {
         unsigned short revents;
         snd_ctl_poll_descriptors_revents(ctls.at(i), &fds.data()[i], 1, &revents);
-        if (revents & POLLIN) {
+        if ((revents & POLLIN) != 0) {
             snd_ctl_event_t *event;
             snd_ctl_event_alloca(&event);
 
@@ -309,7 +307,7 @@ void ZAlsaBackendPrivate::pollMixerEvents()
                 if (((mask & SND_CTL_EVENT_MASK_ADD) != 0) ||
                         ((mask & SND_CTL_EVENT_MASK_INFO) != 0)) {
                     Q_EMIT q->alsaMixerReconfigured(ctlIdx.value(i)); // reconfigure also load all values
-                } else if (mask & SND_CTL_EVENT_MASK_VALUE) {
+                } else if ((mask & SND_CTL_EVENT_MASK_VALUE) != 0) {
                     Q_EMIT q->alsaMixerValueChanged(ctlIdx.value(i));
                 }
             }
@@ -322,4 +320,58 @@ void ZAlsaBackendPrivate::addAlsaWarning(const QString &msg)
     Q_Q(ZAlsaBackend);
     m_alsaWarnings.append(msg);
     Q_EMIT q->alsaWarningMsg(msg);
+}
+
+void ZAlsaBackendPrivate::stdConsoleOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    QString lmsg = QString();
+    int line = context.line;
+    QString file(QString::fromUtf8(context.file));
+    QString category(QString::fromUtf8(context.category));
+    if (category==QSL("default")) {
+        category.clear();
+    } else {
+        category.append(' ');
+    }
+
+    switch (type) {
+        case QtDebugMsg:
+            lmsg = QSL("%1DEBUG: %2 (%3:%4)").arg(category, msg, file, QString::number(line));
+            break;
+        case QtWarningMsg:
+            lmsg = QSL("%1WARN: %2 (%3:%4)").arg(category, msg, file, QString::number(line));
+            break;
+        case QtCriticalMsg:
+            lmsg = QSL("%1ERROR: %2 (%3:%4)").arg(category, msg, file, QString::number(line));
+            break;
+        case QtFatalMsg:
+            lmsg = QSL("%1FATAL: %2 (%3:%4)").arg(category, msg, file, QString::number(line));
+            break;
+        case QtInfoMsg:
+            lmsg = QSL("%1INFO: %2 (%3:%4)").arg(category, msg, file, QString::number(line));
+            break;
+    }
+
+    auto alsa = gAlsa;
+    if (!lmsg.isEmpty() && (alsa != nullptr)) {
+        alsa->d_func()->addDebugOutputPrivate(lmsg);
+        QString fmsg = QSL("%1 %2\n").arg(QTime::currentTime()
+                                                   .toString(QSL("h:mm:ss")),lmsg);
+        if (ZGenericFuncs::runnedFromQtCreator()) {
+            fprintf(stderr, "%s", fmsg.toLocal8Bit().constData());
+        }
+    }
+}
+
+void ZAlsaBackendPrivate::addDebugOutputPrivate(const QString &msg)
+{
+    Q_Q(ZAlsaBackend);
+    QMutexLocker lock(&m_loggerMutex);
+    const int maxMessagesCount = 5000;
+
+    m_debugMessages.append(msg);
+    while (m_debugMessages.count()>maxMessagesCount)
+        m_debugMessages.removeFirst();
+
+    Q_EMIT q->debugOutputUpdated();
 }

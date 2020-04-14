@@ -34,6 +34,7 @@
 #include "alsastructures.h"
 
 class ZAlsaBackendPrivate;
+class ZSamplePlayer;
 
 class ZAlsaBackend : public QObject
 {
@@ -62,9 +63,11 @@ public:
 
     QStringList getAlsaWarnings();
     bool isWarnings();
+    QStringList getDebugMessages();
 
 Q_SIGNALS:
     void alsaWarningMsg(const QString& message); // cross-thread signal!
+    void debugOutputUpdated(); // cross-thread signal!
     void alsaMixerReconfigured(int cardNum);
     void alsaMixerValueChanged(int cardNum);
 };

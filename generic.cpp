@@ -4,6 +4,10 @@
 #include "includes/generic.h"
 #include "ui_errorshowdlg.h"
 
+extern "C" {
+#include <unistd.h>
+}
+
 ZGenericFuncs::ZGenericFuncs(QObject *parent)
     : QObject(parent)
 {
@@ -88,6 +92,27 @@ QJsonValue ZGenericFuncs::writeTristateToJson(Qt::CheckState state)
         case Qt::CheckState::PartiallyChecked: return QJsonValue(QSL("default"));
     }
     return QJsonValue(QSL("undefined"));
+}
+
+bool ZGenericFuncs::runnedFromQtCreator()
+{
+    static int ppid = -1;
+    static bool res = true;
+    static QMutex mtx;
+    QMutexLocker locker(&mtx);
+
+    int tpid = getppid();
+    if (tpid==ppid)
+        return res;
+
+    ppid = tpid;
+    if (ppid>0) {
+        QFileInfo fi(QFile::symLinkTarget(QSL("/proc/%1/exe").arg(ppid)));
+        res = (fi.fileName().contains(QSL("creator"),Qt::CaseInsensitive) ||
+               (fi.fileName().compare(QSL("gdb"))==0));
+    }
+
+    return res;
 }
 
 ZDescListItemDelegate::ZDescListItemDelegate(QObject *parent)

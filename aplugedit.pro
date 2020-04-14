@@ -109,6 +109,7 @@ FORMS         = \
                 ui/sharedialog.ui \
                 ui/softvoldialog.ui \
                 ui/speexdialog.ui \
+                ui/stringlistdialog.ui \
                 ui/upmixdlg.ui
 
 CONFIG += warn_on \

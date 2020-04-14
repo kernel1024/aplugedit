@@ -43,6 +43,7 @@ public:
                                        const QString& text, const QStringList& warnings);
     static Qt::CheckState readTristateFromJson(const QJsonValue& value);
     static QJsonValue writeTristateToJson(Qt::CheckState state);
+    static bool runnedFromQtCreator();
 };
 
 class ZDescListItemDelegate : public QStyledItemDelegate
