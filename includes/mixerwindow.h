@@ -15,7 +15,7 @@ class ZMixerWindow : public QDialog
 
 public:
     explicit ZMixerWindow(QWidget *parent = nullptr);
-    ~ZMixerWindow();
+    ~ZMixerWindow() override;
 
 public Q_SLOTS:
     void reloadControls(int cardNum);
@@ -29,13 +29,16 @@ private:
     bool getMixerItemIDs(QWidget *widget, int *card, unsigned int *numid);
     void reloadControlsQueued(int cardNum);
 
+protected:
+    bool event(QEvent* event) override;
+
 private Q_SLOTS:
     void reloadAllCards();
     void volumeChanged(int value);
     void switchClicked(bool state);
     void switchListClicked(QListWidgetItem* item);
     void enumClicked(int index);
-    void deleteClicked();
+    void mixerCtxMenuClicked();
 };
 
 #endif // MIXERWINDOW_H

@@ -12,6 +12,8 @@ ZMixerWindow::ZMixerWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->tabWidget->clear();
 
+    ui->statusLabel->clear();
+
     connect(gAlsa,&ZAlsaBackend::alsaMixerReconfigured,this,&ZMixerWindow::reloadControls);
     connect(gAlsa,&ZAlsaBackend::alsaMixerValueChanged,this,&ZMixerWindow::updateControlsState);
     connect(ui->btnReloadAll,&QPushButton::clicked,this,&ZMixerWindow::reloadAllCards);
@@ -58,11 +60,10 @@ void ZMixerWindow::reloadControls(int cardNum)
 
         if (item.relatedNameLength>0) {
             iui.label->setText(item.name.left(item.relatedNameLength));
-            //iui.slider->setToolTip(item.name);
         } else {
             iui.label->setText(item.name);
         }
-
+        iui.slider->setStatusTip(item.name);
         iui.slider->setMinimum(static_cast<int>(item.valueMin));
         iui.slider->setMaximum(static_cast<int>(item.valueMax));
         if (item.valueStep>0)
@@ -70,31 +71,29 @@ void ZMixerWindow::reloadControls(int cardNum)
         iui.slider->setValue(static_cast<int>(item.values.constFirst()));
         iui.slider->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(item.numid));
 
-        iui.btnDelete->setVisible(item.isUser);
-        iui.btnDelete->setObjectName(QSL("btn#%1#%2").arg(cardNum).arg(item.numid));
+        iui.btnMenu->setObjectName(QSL("btn#%1#%2").arg(cardNum).arg(item.numid));
 
-        iui.check->setVisible(false);
+        iui.check->setEnabled(false);
         for (const auto& ridx : qAsConst(item.related)) {
             const auto& ritem = mixerItems.at(ridx);
             if (ritem.type == CMixerItem::itBoolean) {
-                iui.check->setVisible(true);
+                iui.check->setEnabled(true);
                 iui.check->setChecked(ritem.values.constFirst() == 0L);
                 iui.check->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(ritem.numid));
-                //iui.check->setToolTip(ritem.name);
+                iui.check->setStatusTip(ritem.name);
                 break;
             }
         }
 
         connect(iui.slider,&QSlider::valueChanged,this,&ZMixerWindow::volumeChanged);
         connect(iui.check,&QCheckBox::toggled,this,&ZMixerWindow::switchClicked);
-        connect(iui.btnDelete,&QPushButton::clicked,this,&ZMixerWindow::deleteClicked);
+        connect(iui.btnMenu,&QPushButton::clicked,this,&ZMixerWindow::mixerCtxMenuClicked);
 
         addSeparatedWidgetToLayout(boxLayout,witem);
     }
 
     if (!switches.isEmpty()) {
         auto checkList = new QListWidget();
-        // TODO: set minimal width
         checkList->setObjectName(QSL("sw#%1").arg(cardNum));
         for (const auto &item : qAsConst(switches)) {
             auto itm = new QListWidgetItem(item.name);
@@ -102,8 +101,11 @@ void ZMixerWindow::reloadControls(int cardNum)
             itm->setData(Qt::UserRole+1,cardNum);
             itm->setFlags(itm->flags() | Qt::ItemIsUserCheckable);
             itm->setCheckState((item.values.constFirst() == 0L) ? Qt::Checked : Qt::Unchecked);
+            itm->setStatusTip(item.name);
             checkList->addItem(itm);
         }
+        checkList->setMinimumWidth(checkList->sizeHintForColumn(0) +
+                                   checkList->fontMetrics().horizontalAdvance(QChar('X')));
         connect(checkList,&QListWidget::itemChanged,this,&ZMixerWindow::switchListClicked);
         addSeparatedWidgetToLayout(boxLayout,checkList);
     }
@@ -118,6 +120,7 @@ void ZMixerWindow::reloadControls(int cardNum)
             enList->addItems(item.labels);
             enList->setCurrentIndex(static_cast<int>(item.values.constFirst()));
             enList->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(item.numid));
+            enList->setStatusTip(item.name);
 
             auto subLayout = new QVBoxLayout();
             subLayout->setContentsMargins(QMargins());
@@ -138,11 +141,10 @@ void ZMixerWindow::reloadControls(int cardNum)
         if (scroller->widget())
             scroller->takeWidget()->deleteLater();
 
-        auto wtab = new QWidget();
-        wtab->setObjectName(QSL("card#%1").arg(cardNum));
-        wtab->setLayout(boxLayout);
-
-        scroller->setWidget(wtab);
+        auto wcontainer = new QWidget();
+        wcontainer->setObjectName(QSL("card#%1").arg(cardNum));
+        wcontainer->setLayout(boxLayout);
+        scroller->setWidget(wcontainer);
     } else {
         boxLayout->deleteLater();
     }
@@ -153,6 +155,17 @@ void ZMixerWindow::reloadControlsQueued(int cardNum)
     QTimer::singleShot(0,this,[this,cardNum](){
         reloadControls(cardNum);
     });
+}
+
+bool ZMixerWindow::event(QEvent *event)
+{
+    if (event->type() == QEvent::StatusTip) {
+        auto ev = dynamic_cast<QStatusTipEvent *>(event);
+        ui->statusLabel->setText(ev->tip());
+        return true;
+    }
+
+    return QDialog::event(event);
 }
 
 void ZMixerWindow::updateControlsState(int cardNum)
@@ -367,7 +380,7 @@ void ZMixerWindow::enumClicked(int index)
         QMessageBox::warning(this,tr("ALSA mixer"),gAlsa->getAlsaWarnings().join(QChar('\n')));
 }
 
-void ZMixerWindow::deleteClicked()
+void ZMixerWindow::mixerCtxMenuClicked()
 {
     auto w = qobject_cast<QPushButton *>(sender());
     if (w == nullptr) return;
@@ -376,12 +389,23 @@ void ZMixerWindow::deleteClicked()
     unsigned int numid;
     if (!getMixerItemIDs(w,&card,&numid)) return;
 
-    for (int i=0; i<m_controls.at(card).count(); i++) {
-        if (m_controls.at(card).at(i).numid == numid) {
-            gAlsa->deleteMixerControl(card,m_controls.at(card).at(i));
+    CMixerItem mxItem;
+    for (const auto& itm : qAsConst(m_controls.at(card))) {
+        if (itm.numid == numid) {
+            mxItem = itm;
             break;
         }
     }
-    if (gAlsa->isWarnings())
-        QMessageBox::warning(this,tr("ALSA mixer"),gAlsa->getAlsaWarnings().join(QChar('\n')));
+    if (mxItem.isEmpty()) return;
+
+    QMenu menu;
+    auto ac = menu.addAction(tr("Delete control"));
+    ac->setEnabled(mxItem.isUser);
+    connect(ac,&QAction::triggered,this,[this,card,mxItem](){
+        gAlsa->deleteMixerControl(card,mxItem);
+        if (gAlsa->isWarnings())
+            QMessageBox::warning(this,tr("ALSA mixer"),gAlsa->getAlsaWarnings().join(QChar('\n')));
+    });
+
+    menu.exec(QCursor::pos());
 }

@@ -28,6 +28,7 @@
 ***************************************************************************/
 
 #include <algorithm>
+#include <cmath>
 #include <QApplication>
 #include "includes/generic.h"
 #include "includes/alsabackend.h"
@@ -36,6 +37,8 @@
 extern "C" {
 #include <alsa/asoundlib.h>
 }
+
+const long maxLinearDBScale = 24; // minimal acceptable dB range = 24dB
 
 ZAlsaBackend::ZAlsaBackend(QObject *parent)
     : QObject(parent)
@@ -221,16 +224,48 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
                                 values_int[k] = snd_ctl_elem_value_get_boolean(cvalue,static_cast<unsigned int>(k));
                             res.append(CMixerItem(numid,name,values_int));
                             break;
-                        case SND_CTL_ELEM_TYPE_INTEGER:
+                        case SND_CTL_ELEM_TYPE_INTEGER: {
+                            long rangemin = snd_ctl_elem_info_get_min(cinfo);
+                            long rangemax = snd_ctl_elem_info_get_max(cinfo);
+                            long dBmin = -1;
+                            long dBmax = -1;
+
+                            unsigned int *tlvp = nullptr;
+                            unsigned int tlv[256]; // NOLINT
+                            if (snd_ctl_elem_info_is_tlv_readable(cinfo) != 0) {
+                                if ((err = snd_ctl_elem_tlv_read(ctl,cid,tlv,sizeof(tlv))) >= 0) {
+                                    if (snd_tlv_parse_dB_info(tlv,sizeof(tlv),&tlvp) > 0)
+                                        snd_tlv_get_dB_range(tlvp,rangemin,rangemax,&dBmin,&dBmax);
+                                }
+                            }
+
                             values_long.resize(count);
-                            for (int k = 0; k < count; k++)
-                                values_long[k] = snd_ctl_elem_value_get_integer(cvalue,static_cast<unsigned int>(k));
-                            // TODO: dB correction?
-                            mxItem = CMixerItem(numid,name,values_long,
-                                                snd_ctl_elem_info_get_min(cinfo),
-                                                snd_ctl_elem_info_get_max(cinfo),
-                                                snd_ctl_elem_info_get_step(cinfo));
+                            for (int k = 0; k < count; k++) {
+                                long value = snd_ctl_elem_value_get_integer(cvalue,static_cast<unsigned int>(k));
+                                if ((tlvp != nullptr) && (dBmin < dBmax)) {
+                                    long dBgain;
+                                    snd_tlv_convert_to_dB(tlvp,rangemin,rangemax,value,&dBgain);
+                                    if ((dBmax - dBmin) <= (maxLinearDBScale * 100)) {
+                                        // linear scale for small dB range
+                                        value = (100 * (dBgain - dBmin)) / (dBmax - dBmin);
+                                    } else {
+                                        // logarithmic scale
+                                        value = static_cast<long>(100.0 * pow(10, (dBgain - dBmax) / 6000.0));
+                                        if (dBmin != SND_CTL_TLV_DB_GAIN_MUTE) {
+                                            long min_norm = static_cast<long>(100.0 * pow(10, (dBmin - dBmax) / 6000.0));
+                                            value = (100 * (value - min_norm)) / (100 - min_norm);
+                                        }
+                                    }
+                                } else {
+                                    // simple linear scale
+                                    value = (100 * (value - rangemin)) / (rangemax - rangemin);
+                                }
+                                values_long[k] = value;
+                            }
+                            mxItem = CMixerItem(numid,name,values_long,0,100,10);
+
                             break;
+                        }
                         case SND_CTL_ELEM_TYPE_INTEGER64:
                             values_64.resize(count);
                             for (int k = 0; k < count; k++)
@@ -300,6 +335,8 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
     snd_ctl_t* ctl = d->getMixerCtl(cardNum);
     if (ctl == nullptr) return;
 
+    snd_ctl_elem_id_t* cid;
+    snd_ctl_elem_id_malloc(&cid);
     snd_ctl_elem_info_t* cinfo;
     snd_ctl_elem_info_alloca(&cinfo);
     snd_ctl_elem_value_t* cvalue;
@@ -310,6 +347,7 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
         qWarning() << QSL("snd_ctl_elem_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
 
     } else if (static_cast<int>(snd_ctl_elem_info_get_count(cinfo)) == item.values.count()) {
+        snd_ctl_elem_info_get_id(cinfo,cid);
         unsigned int type = snd_ctl_elem_info_get_type(cinfo);
         snd_ctl_elem_value_set_numid(cvalue,item.numid);
 
@@ -320,22 +358,62 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
             bool needWrite = false;
             if ((item.type == CMixerItem::itBoolean) && (type == SND_CTL_ELEM_TYPE_BOOLEAN)) {
                 for (int i=0; i<item.values.count(); i++) {
-                    snd_ctl_elem_value_set_boolean(cvalue,static_cast<unsigned int>(i),static_cast<long>(item.values.at(i)));
+                    snd_ctl_elem_value_set_boolean(cvalue,static_cast<unsigned int>(i),
+                                                   static_cast<long>(item.values.at(i)));
                 }
                 needWrite = true;
             } else if ((item.type == CMixerItem::itInteger) && (type == SND_CTL_ELEM_TYPE_INTEGER)) {
+                long rangemin = snd_ctl_elem_info_get_min(cinfo);
+                long rangemax = snd_ctl_elem_info_get_max(cinfo);
+                long dBmin = -1;
+                long dBmax = -1;
+
+                unsigned int *tlvp = nullptr;
+                unsigned int tlv[256]; // NOLINT
+                if (snd_ctl_elem_info_is_tlv_readable(cinfo) != 0) {
+                    if ((err = snd_ctl_elem_tlv_read(ctl,cid,tlv,sizeof(tlv))) >= 0) {
+                        if (snd_tlv_parse_dB_info(tlv,sizeof(tlv),&tlvp) > 0)
+                            snd_tlv_get_dB_range(tlvp,rangemin,rangemax,&dBmin,&dBmax);
+                    }
+                }
+
                 for (int i=0; i<item.values.count(); i++) {
-                    snd_ctl_elem_value_set_integer(cvalue,static_cast<unsigned int>(i),static_cast<long>(item.values.at(i)));
+                    long value = static_cast<long>(item.values.at(i));
+                    if (dBmin < dBmax) {
+                        long dBgain = value;
+                        if ((dBmax - dBmin) <= (maxLinearDBScale * 100)) {
+                            // linear scale for small dB range
+                            dBgain = (dBgain * (dBmax - dBmin)) / 100 + dBmin;
+                        } else {
+                            // logarithmic scale
+                            if (dBmin != SND_CTL_TLV_DB_GAIN_MUTE) {
+                                long min_norm = static_cast<long>(100.0 * pow(10, (dBmin - dBmax) / 6000.0));
+                                dBgain = (dBgain * (100 - min_norm) / 100) + min_norm;
+                            }
+                            double tmp = 6000.0 * log10(static_cast<double>(dBgain) / 100.0);
+                            if (dBgain>0) {
+                                dBgain = static_cast<long>(std::ceil(tmp)) + dBmax;
+                            } else {
+                                dBgain = static_cast<long>(std::floor(tmp)) + dBmax;
+                            }
+                        }
+                        snd_tlv_convert_from_dB(tlvp,rangemin,rangemax,dBgain,&value,((dBgain>0) ? 1 : -1));
+                    } else {
+                        value = (value * (rangemax - rangemin)) / 100 + rangemin;
+                    }
+                    snd_ctl_elem_value_set_integer(cvalue,static_cast<unsigned int>(i),value);
                 }
                 needWrite = true;
             } else if ((item.type == CMixerItem::itInteger64) && (type == SND_CTL_ELEM_TYPE_INTEGER64)) {
                 for (int i=0; i<item.values.count(); i++) {
-                    snd_ctl_elem_value_set_integer64(cvalue,static_cast<unsigned int>(i),static_cast<long long>(item.values.at(i)));
+                    snd_ctl_elem_value_set_integer64(cvalue,static_cast<unsigned int>(i),
+                                                     static_cast<long long>(item.values.at(i)));
                 }
                 needWrite = true;
             } else if ((item.type == CMixerItem::itEnumerated) && (type == SND_CTL_ELEM_TYPE_ENUMERATED)) {
                 for (int i=0; i<item.values.count(); i++) {
-                    snd_ctl_elem_value_set_enumerated(cvalue,static_cast<unsigned int>(i),static_cast<unsigned int>(item.values.at(i)));
+                    snd_ctl_elem_value_set_enumerated(cvalue,static_cast<unsigned int>(i),
+                                                      static_cast<unsigned int>(item.values.at(i)));
                 }
                 needWrite = true;
             }

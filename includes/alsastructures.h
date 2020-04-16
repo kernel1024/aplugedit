@@ -82,9 +82,9 @@ public:
 
     unsigned int numid { 0 };
     ItemType type { itInteger };
-    long long valueMin { 0 };
-    long long valueMax { 0 };
-    long long valueStep { 0 };
+    long long valueMin { 0L };
+    long long valueMax { 0L };
+    long long valueStep { 0L };
 
     QString name;
     QVector<long long> values;

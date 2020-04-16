@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>ALSA Mixer</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="windowLayout">
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
@@ -32,6 +32,20 @@
       <widget class="QPushButton" name="btnReloadAll">
        <property name="text">
         <string>Reload all</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="statusLabel">
+       <property name="text">
+        <string>TextLabel</string>
        </property>
       </widget>
      </item>
