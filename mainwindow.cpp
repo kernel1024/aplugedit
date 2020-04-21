@@ -24,10 +24,20 @@
 #include "includes/cpconv.h"
 #include "includes/cpshare.h"
 
+namespace CDefaults {
+const auto IPCName = "org.kernel1024.aplugedit.ipc.main";
+const auto ipcEOF = "\n###";
+const int ipcTimeout = 1000;
+}
+
 ZMainWindow::ZMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    if (!setupIPC())
+        ::exit(0);
+
     setupUi(this);
+    programTitle=tr("ALSA Plugin Editor");
 
     QIcon appIcon;
     appIcon.addFile(QSL(":/appicon/16"),QSize(16,16));
@@ -40,6 +50,8 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     appIcon.addFile(QSL(":/appicon/512"),QSize(512,512));
     setWindowIcon(appIcon);
 
+    mixerWindow.reset(new ZMixerWindow(this));
+
     mouseLabel = new QLabel(this);
     statusBar()->addPermanentWidget(mouseLabel);
     statusLabel = new QLabel(this);
@@ -47,8 +59,6 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 
     renderArea = new ZRenderArea(scrollArea);
     scrollArea->setWidget(renderArea);
-
-    programTitle=tr("ALSA Plugin Editor");
 
     repaintTimer.setInterval(1000);
     repaintTimer.setSingleShot(true);
@@ -87,7 +97,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionFileSaveAs,&QAction::triggered,this,&ZMainWindow::fileSaveAs);
     connect(actionFileGenerate,&QAction::triggered,this,&ZMainWindow::fileGenerate);
     connect(actionFileGeneratePart,&QAction::triggered,this,&ZMainWindow::fileGeneratePart);
-    connect(actionFileExit,&QAction::triggered,this,&ZMainWindow::close);
+    connect(actionFileExit,&QAction::triggered,this,&ZMainWindow::closeApp);
 
     connect(actionEditHW,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditInp,&QAction::triggered,this,&ZMainWindow::editComponent);
@@ -120,11 +130,31 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionToolMixer,&QAction::triggered,this,&ZMainWindow::toolMixer);
 
     connect(actionHelpAbout,&QAction::triggered,this,&ZMainWindow::helpAbout);
-    connect(actionHelpAboutQt,&QAction::triggered,qApp,&QApplication::aboutQt);
+    connect(actionHelpAboutQt,&QAction::triggered,qApp,&QApplication::aboutQt); //NOLINT
 
     connect(&repaintTimer,&QTimer::timeout,this,&ZMainWindow::repaintWithConnections);
 
-    qApp->installEventFilter(this);
+    qApp->installEventFilter(this); //NOLINT
+
+    if (QSystemTrayIcon::isSystemTrayAvailable()) {
+        trayIcon.reset(new QSystemTrayIcon(appIcon,this));
+        trayIcon->setToolTip(programTitle);
+        trayIcon->show();
+
+        connect(trayIcon.data(),&QSystemTrayIcon::activated,this,&ZMainWindow::systemTrayClicked);
+
+        auto cm = new QMenu(this);
+        auto ac = cm->addAction(tr("Restore"));
+        connect(ac,&QAction::triggered,this,&ZMainWindow::restoreMainWindow);
+        ac = cm->addAction(tr("Show mixer"));
+        connect(ac,&QAction::triggered,this,&ZMainWindow::toolMixer);
+        cm->addSeparator();
+        ac = cm->addAction(tr("Quit"));
+        connect(ac,&QAction::triggered,this,&ZMainWindow::closeApp);
+
+        trayIcon->setContextMenu(cm);
+    }
+
 
 #ifndef WITH_GST
     actionToolSamplePlayer->setEnabled(false);
@@ -133,7 +163,8 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     modified=false;
     updateStatus();
 
-    QStringList fileNames = qApp->arguments();
+    // TODO: add minimized to tray start
+    QStringList fileNames = qApp->arguments(); //NOLINT
     if (!fileNames.isEmpty())
         fileNames.takeFirst();
     for (const auto& arg : qAsConst(fileNames)) {
@@ -207,6 +238,165 @@ bool ZMainWindow::saveFile(const QString &fname)
     file.write(renderArea->storeSchematic());
     file.close();
     return true;
+}
+
+void ZMainWindow::systemTrayClicked(QSystemTrayIcon::ActivationReason reason)
+{
+    if (reason == QSystemTrayIcon::Trigger) {
+        if (isVisible()) {
+            hide();
+        } else if (mixerWindow->isVisible()) {
+            mixerWindow->hide();
+        } else {
+            toolMixer();
+        }
+    }
+}
+
+void ZMainWindow::restoreMainWindow()
+{
+    showNormal();
+    activateWindow();
+    raise();
+}
+
+void ZMainWindow::closeApp()
+{
+    if (!windowCloseRequested()) return;
+
+    qApp->quit(); //NOLINT
+}
+
+bool ZMainWindow::windowCloseRequested()
+{
+    if (!modified) {
+        return true;
+    }
+    switch (QMessageBox::question(this,tr("Exit ALSA Plugin Editor"),
+                                  tr("Current file has been modified and not saved. Save?"),
+                                  QMessageBox::Yes,QMessageBox::No,QMessageBox::Cancel))
+    {
+        case QMessageBox::Cancel:
+            return false;
+        case QMessageBox::Yes:
+            fileSave();
+            if (modified) {
+                return false;
+            }
+            break;
+    }
+
+    return true;
+}
+
+QScreen* ZMainWindow::getCurrentScreen()
+{
+    QScreen* res = nullptr;
+
+    if (window() && window()->windowHandle()) {
+        res = window()->windowHandle()->screen();
+    } else if (!QApplication::screens().isEmpty()) {
+        res = QApplication::screenAt(QCursor::pos());
+    }
+    if (res == nullptr)
+        res = QApplication::primaryScreen();
+
+    return res;
+}
+
+bool ZMainWindow::setupIPC()
+{
+    if (!ipcServer.isNull()) return false;
+
+    QString serverName = QString::fromLatin1(CDefaults::IPCName);
+    serverName.replace(QRegularExpression(QSL("[^\\w\\-.]")), QString());
+
+    QScopedPointer<QLocalSocket> socket(new QLocalSocket());
+    socket->connectToServer(serverName);
+    if (socket->waitForConnected(CDefaults::ipcTimeout)){
+        // Connected. Process is already running, send message to it
+        if (ZGenericFuncs::runnedFromQtCreator()) { // This is debug run, try to close old instance
+            // Send close request
+            sendIPCMessage(socket.data(),QSL("debugRestart"));
+            socket->flush();
+            socket->close();
+            QApplication::processEvents();
+            QThread::sleep(3);
+            QApplication::processEvents();
+            // Check for closing
+            socket->connectToServer(serverName);
+            if (socket->waitForConnected(CDefaults::ipcTimeout)) { // connected, unable to close
+                sendIPCMessage(socket.data(),QSL("showMainWindow"));
+                socket->flush();
+                socket->close();
+                return false;
+            }
+            // Old instance closed, start new one
+            QLocalServer::removeServer(serverName);
+            ipcServer.reset(new QLocalServer());
+            ipcServer->listen(serverName);
+            connect(ipcServer.data(), &QLocalServer::newConnection, this, &ZMainWindow::ipcMessageReceived);
+        } else {
+            sendIPCMessage(socket.data(),QSL("showMainWindow"));
+            socket->flush();
+            socket->close();
+            return false;
+        }
+    } else {
+        // New process. Startup server normally, listen for new instances
+        QLocalServer::removeServer(serverName);
+        ipcServer.reset(new QLocalServer());
+        ipcServer->listen(serverName);
+        connect(ipcServer.data(), &QLocalServer::newConnection, this, &ZMainWindow::ipcMessageReceived);
+    }
+    if (socket->isOpen())
+        socket->close();
+    return true;
+}
+
+void  ZMainWindow::sendIPCMessage(QLocalSocket *socket, const QString &msg)
+{
+    if (socket==nullptr) return;
+
+    QString s = QSL("%1%2").arg(msg,QString::fromLatin1(CDefaults::ipcEOF));
+    socket->write(s.toUtf8());
+}
+
+void ZMainWindow::ipcMessageReceived()
+{
+    QLocalSocket *socket = ipcServer->nextPendingConnection();
+    QByteArray bmsg;
+    do {
+        if (!socket->waitForReadyRead(CDefaults::ipcTimeout)) return;
+        bmsg.append(socket->readAll());
+    } while (!bmsg.contains(CDefaults::ipcEOF));
+    socket->close();
+    socket->deleteLater();
+
+    QStringList cmd = QString::fromUtf8(bmsg).split('\n');
+    if (cmd.first().startsWith(QSL("showMainWindow"))) {
+        restoreMainWindow();
+    } else if (cmd.first().startsWith(QSL("debugRestart"))) {
+        qInfo() << tr("Closing aplugedit instance (pid: %1)"
+                      "after debugRestart request")
+                   .arg(QApplication::applicationPid());
+        qApp->quit(); //NOLINT
+    }
+}
+
+void ZMainWindow::closeEvent(QCloseEvent *event)
+{
+    if (!trayIcon.isNull() && trayIcon->isVisible()) {
+        hide();
+        event->ignore();
+        return;
+    }
+
+    if (windowCloseRequested()) {
+        event->accept();
+    } else {
+        event->ignore();
+    }
 }
 
 void ZMainWindow::fileNew()
@@ -357,30 +547,6 @@ void ZMainWindow::changingComponents(ZCPBase *base)
     updateStatus();
 }
 
-void ZMainWindow::closeEvent(QCloseEvent *event)
-{
-    if (!modified) {
-        event->accept();
-        return;
-    }
-    switch (QMessageBox::question(this,tr("Exit ALSA Plugin Editor"),
-                                  tr("Current file has been modified and not saved. Save?"),
-                                  QMessageBox::Yes,QMessageBox::No,QMessageBox::Cancel))
-    {
-        case QMessageBox::Cancel:
-            event->ignore();
-            return;
-        case QMessageBox::Yes:
-            fileSave();
-            if (modified) {
-                event->ignore();
-                return;
-            }
-            break;
-    }
-    event->accept();
-}
-
 void ZMainWindow::editComponent()
 {
     auto action = qobject_cast<QAction *>(sender());
@@ -457,12 +623,30 @@ void ZMainWindow::toolSamplePlayer()
 
 void ZMainWindow::toolMixer()
 {
-    if (!mixerWindow) {
-        auto dlg = new ZMixerWindow(this);
-        mixerWindow.reset(dlg);
-    }
     mixerWindow->show();
     mixerWindow->showNormal();
+    if (!isVisible()) {
+        if (mixerWindow->width()>0) {
+            QScreen* screen = getCurrentScreen();
+            QRect scr = screen->availableGeometry();
+            QPoint center(scr.width() / 2 + scr.x(),
+                          scr.height() / 2 + scr.y());
+            QPoint cur = QCursor::pos(screen);
+            QPoint pos = scr.topLeft();
+            if (cur.x() < center.x() && cur.y() > center.y()) {
+                pos.setY(scr.height() - mixerWindow->frameSize().height());
+            } else if (cur.x() > center.x() && cur.y() < center.y()) {
+                pos.setX(scr.width() - mixerWindow->frameSize().width());
+            } else if (cur.x() > center.x() && cur.y() > center.y()) {
+                pos.setY(scr.height() - mixerWindow->frameSize().height());
+                pos.setX(scr.width() - mixerWindow->frameSize().width());
+            }
+            mixerWindow->move(pos);
+        }
+
+        mixerWindow->activateWindow();
+        mixerWindow->raise();
+    }
 }
 
 void ZMainWindow::helpAbout()

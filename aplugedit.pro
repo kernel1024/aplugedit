@@ -1,5 +1,5 @@
 TEMPLATE += app
-QT += widgets
+QT += widgets network
 HEADERS       = includes/cpbase.h \
                 includes/alsabackend.h \
                 includes/alsabackend_p.h \

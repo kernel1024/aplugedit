@@ -23,6 +23,7 @@
 #include <functional>
 #include <QtCore>
 #include <QtGui>
+#include <QtNetwork>
 #include "ui_mainwindow.h"
 #include "renderarea.h"
 #include "sampleplayer.h"
@@ -39,12 +40,19 @@ private:
     QString workFile;
     QString programTitle;
     QTimer repaintTimer;
-    QScopedPointer<ZSamplePlayer,QScopedPointerDeleteLater> samplePlayer;
 #ifdef WITH_GST
-    QScopedPointer<ZMixerWindow,QScopedPointerDeleteLater> mixerWindow;
+    QScopedPointer<ZSamplePlayer,QScopedPointerDeleteLater> samplePlayer;
 #endif
+    QScopedPointer<ZMixerWindow,QScopedPointerDeleteLater> mixerWindow;
+    QScopedPointer<QSystemTrayIcon,QScopedPointerDeleteLater> trayIcon;
+    QScopedPointer<QLocalServer,QScopedPointerDeleteLater> ipcServer;
 
     void clearSchematic(const std::function<void()> &callback);
+    bool windowCloseRequested();
+    QScreen *getCurrentScreen();
+    bool setupIPC();
+    void sendIPCMessage(QLocalSocket *socket, const QString &msg);
+    void ipcMessageReceived();
 
 public:
     explicit ZMainWindow(QWidget *parent = nullptr);
@@ -67,6 +75,9 @@ public Q_SLOTS:
     void updateStatus();
     void loadFile(const QString& fname);
     bool saveFile(const QString& fname);
+    void systemTrayClicked(QSystemTrayIcon::ActivationReason reason);
+    void restoreMainWindow();
+    void closeApp();
 
 Q_SIGNALS:
     void alsaConfigUpdated();
