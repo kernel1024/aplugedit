@@ -37,7 +37,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
         ::exit(0);
 
     setupUi(this);
-    programTitle=tr("ALSA Plugin Editor");
+    m_programTitle=tr("ALSA Plugin Editor");
 
     QIcon appIcon;
     appIcon.addFile(QSL(":/appicon/16"),QSize(16,16));
@@ -60,8 +60,8 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     renderArea = new ZRenderArea(scrollArea);
     scrollArea->setWidget(renderArea);
 
-    repaintTimer.setInterval(1000);
-    repaintTimer.setSingleShot(true);
+    m_repaintTimer.setInterval(1000);
+    m_repaintTimer.setSingleShot(true);
 
     actionEditHW->setData(QSL("ZCPHW"));
     actionEditInp->setData(QSL("ZCPInp"));
@@ -131,14 +131,16 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 
     connect(actionHelpAbout,&QAction::triggered,this,&ZMainWindow::helpAbout);
     connect(actionHelpAboutQt,&QAction::triggered,qApp,&QApplication::aboutQt); //NOLINT
+    connect(actionHelpArguments,&QAction::triggered,this,&ZMainWindow::helpArguments);
 
-    connect(&repaintTimer,&QTimer::timeout,this,&ZMainWindow::repaintWithConnections);
+
+    connect(&m_repaintTimer,&QTimer::timeout,this,&ZMainWindow::repaintWithConnections);
 
     qApp->installEventFilter(this); //NOLINT
 
     if (QSystemTrayIcon::isSystemTrayAvailable()) {
         trayIcon.reset(new QSystemTrayIcon(appIcon,this));
-        trayIcon->setToolTip(programTitle);
+        trayIcon->setToolTip(m_programTitle);
         trayIcon->show();
 
         connect(trayIcon.data(),&QSystemTrayIcon::activated,this,&ZMainWindow::systemTrayClicked);
@@ -160,16 +162,39 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionToolSamplePlayer->setEnabled(false);
 #endif
 
-    modified=false;
+    m_modified=false;
     updateStatus();
 
-    // TODO: add minimized to tray start
-    QStringList fileNames = qApp->arguments(); //NOLINT
-    if (!fileNames.isEmpty())
-        fileNames.takeFirst();
-    for (const auto& arg : qAsConst(fileNames)) {
-        QTimer::singleShot(500,this,[this,arg](){
-            loadFile(arg);
+    QString fileName;
+    QString errorMsg;
+    QCommandLineParser parser;
+    auto res = ZGenericFuncs::parseCommandLine(parser,&fileName,&errorMsg,&m_startMinimized);
+    m_argumentsHelpText = QSL("<html><head/><body><pre>%1</pre></body></html>")
+                          .arg(parser.helpText());
+    switch (res) {
+        case ZGenericFuncs::CommandLineOk: break;
+        case ZGenericFuncs::CommandLineError: {
+            QString text = QSL("<html><head/><body><h2>%1</h2><pre>%2</pre></body></html>")
+                           .arg(errorMsg,parser.helpText());
+            QTimer::singleShot(500,this,[this,text](){
+                QMessageBox::warning(this, QGuiApplication::applicationDisplayName(),text);
+            });
+            break;
+        }
+        case ZGenericFuncs::CommandLineVersionRequested: {
+            QTimer::singleShot(500,this,&ZMainWindow::helpAbout);
+            break;
+        }
+        case ZGenericFuncs::CommandLineHelpRequested: {
+            QTimer::singleShot(500,this,&ZMainWindow::helpArguments);
+            break;
+        }
+    }
+
+    if (!fileName.isEmpty()) {
+        m_startMinimized = false;
+        QTimer::singleShot(500,this,[this,fileName](){
+            loadFile(fileName);
         });
     }
 }
@@ -178,17 +203,17 @@ ZMainWindow::~ZMainWindow() = default;
 
 void ZMainWindow::updateStatus()
 {
-    if (modified) {
+    if (m_modified) {
         statusLabel->setText(tr("Modified"));
     } else {
         statusLabel->setText(QString());
     }
     
-    QString s = workFile;
-    if (workFile.isEmpty()) s = tr("[unnamed]");
-    if (modified) s.append(QSL(" *"));
+    QString s = m_workFile;
+    if (m_workFile.isEmpty()) s = tr("[unnamed]");
+    if (m_modified) s.append(QSL(" *"));
 
-    setWindowTitle(QSL("%1 - %2").arg(programTitle,s));
+    setWindowTitle(QSL("%1 - %2").arg(m_programTitle,s));
 }
 
 bool ZMainWindow::eventFilter(QObject *obj, QEvent *event)
@@ -225,7 +250,7 @@ void ZMainWindow::loadFile(const QString &fname)
         connect(cp,&ZCPBase::componentChanged,this,&ZMainWindow::changingComponents);
     }
 
-    repaintTimer.start();
+    m_repaintTimer.start();
 }
 
 bool ZMainWindow::saveFile(const QString &fname)
@@ -269,7 +294,7 @@ void ZMainWindow::closeApp()
 
 bool ZMainWindow::windowCloseRequested()
 {
-    if (!modified) {
+    if (!m_modified) {
         return true;
     }
     switch (QMessageBox::question(this,tr("Exit ALSA Plugin Editor"),
@@ -280,7 +305,7 @@ bool ZMainWindow::windowCloseRequested()
             return false;
         case QMessageBox::Yes:
             fileSave();
-            if (modified) {
+            if (m_modified) {
                 return false;
             }
             break;
@@ -401,7 +426,7 @@ void ZMainWindow::closeEvent(QCloseEvent *event)
 
 void ZMainWindow::fileNew()
 {
-    if (modified)
+    if (m_modified)
     {
         switch (QMessageBox::question(this,tr("New file"),tr("Current file has been modified and not saved. Save?"),
                                       QMessageBox::Yes,QMessageBox::No,QMessageBox::Cancel))
@@ -410,17 +435,22 @@ void ZMainWindow::fileNew()
                 return;
             case QMessageBox::Yes:
                 fileSave();
-                if (modified) return;
+                if (m_modified) return;
                 break;
         }
     }
 
-    modified=false;
-    workFile.clear();
+    m_modified=false;
+    m_workFile.clear();
     clearSchematic([this](){
         updateStatus();
-        repaintTimer.start();
+        m_repaintTimer.start();
     });
+}
+
+bool ZMainWindow::isStartMinimized() const
+{
+    return (m_startMinimized && !trayIcon.isNull() && trayIcon->isVisible());
 }
 
 void ZMainWindow::clearSchematic(const std::function<void()>& callback)
@@ -431,7 +461,7 @@ void ZMainWindow::clearSchematic(const std::function<void()>& callback)
 
 void ZMainWindow::fileOpen()
 {
-    if (modified)
+    if (m_modified)
     {
         switch (QMessageBox::question(this,tr("Open file"),tr("Current file has been modified and not saved. Save?"),
                                       QMessageBox::Yes,QMessageBox::No,QMessageBox::Cancel))
@@ -440,7 +470,7 @@ void ZMainWindow::fileOpen()
                 return;
             case QMessageBox::Yes:
                 fileSave();
-                if (modified) return;
+                if (m_modified) return;
                 break;
         }
     }
@@ -448,8 +478,8 @@ void ZMainWindow::fileOpen()
                     tr("ALSA Plugin editor files v2 [*.ape2] (*.ape2)"));
     if (s.isEmpty()) return;
 
-    workFile=s;
-    modified=false;
+    m_workFile=s;
+    m_modified=false;
     clearSchematic([this,s](){
         loadFile(s);
         updateStatus();
@@ -458,12 +488,12 @@ void ZMainWindow::fileOpen()
 
 void ZMainWindow::fileSave()
 {
-    if (!modified) return;
-    if (workFile.isEmpty())
+    if (!m_modified) return;
+    if (m_workFile.isEmpty())
         fileSaveAs();
 
-    if (saveFile(workFile)) {
-        modified=false;
+    if (saveFile(m_workFile)) {
+        m_modified=false;
     } else {
         QMessageBox::critical(this,tr("Save file"),tr("Unable to save file"));
     }
@@ -481,10 +511,10 @@ void ZMainWindow::fileSaveAs()
 
     const auto selectedFiles = d.selectedFiles();
     if (selectedFiles.isEmpty()) return;
-    workFile=selectedFiles.first();
+    m_workFile=selectedFiles.first();
 
-    if (saveFile(workFile)) {
-        modified=false;
+    if (saveFile(m_workFile)) {
+        m_modified=false;
     } else {
         QMessageBox::critical(this,tr("Save file"),tr("Unable to save file"));
     }
@@ -543,7 +573,7 @@ void ZMainWindow::changingComponents(ZCPBase *base)
 {
     Q_UNUSED(base)
 
-    modified=true;
+    m_modified=true;
     updateStatus();
 }
 
@@ -651,8 +681,8 @@ void ZMainWindow::toolMixer()
 
 void ZMainWindow::helpAbout()
 {
-    QMessageBox::about(this,tr("ALSA plugin editor 2.1.0"),
-                       tr("ALSA plugin editor\n\n"
+    QMessageBox::about(this,QGuiApplication::applicationDisplayName(),
+                       tr("%1 %2\n\n"
                           "(c) 2006 - 2020 kernelonline@gmail.com\n\n"
                           "This program is provided AS IS with NO WARRANTY OF ANY KIND,\n"
                           "INCLUDING THE WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS\n"
@@ -661,5 +691,12 @@ void ZMainWindow::helpAbout()
                           "This program is free software; you can redistribute it and/or\n"
                           "modify it under the terms of the GNU General Public License as\n"
                           "published by the Free Software Foundation; either version 3 of\n"
-                          "the License, or (at your option) any later version. "));
+                          "the License, or (at your option) any later version. ")
+                       .arg(QGuiApplication::applicationDisplayName(),
+                            QCoreApplication::applicationVersion()));
+}
+
+void ZMainWindow::helpArguments()
+{
+    QMessageBox::information(this, QGuiApplication::applicationDisplayName(),m_argumentsHelpText);
 }

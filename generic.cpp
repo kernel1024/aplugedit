@@ -45,8 +45,8 @@ QString ZGenericFuncs::getLADSPAPath()
         if (ladspa_path.isEmpty()) {
             ladspa_path = QSL("/usr/lib/ladspa:/usr/local/lib/ladspa");
             QWidget* w = nullptr;
-            if (!(qApp->topLevelWidgets().isEmpty()))
-                w = qApp->topLevelWidgets().first();
+            if (!(qApp->topLevelWidgets().isEmpty())) // NOLINT
+                w = qApp->topLevelWidgets().first(); // NOLINT
             QMessageBox::warning(w,tr("LADSPA warning"),
                                  tr("Warning: You do not have a LADSPA_PATH environment variable set.\n"
                                     "Defaulting to /usr/lib/ladspa, /usr/local/lib/ladspa."));
@@ -113,6 +113,42 @@ bool ZGenericFuncs::runnedFromQtCreator()
     }
 
     return res;
+}
+
+ZGenericFuncs::CommandLineParseResult ZGenericFuncs::parseCommandLine(QCommandLineParser &parser,
+                                                                      QString* fileName,
+                                                                      QString* errorMessage,
+                                                                      bool* startMinimized)
+{
+    const QCommandLineOption minimizedOption({ QSL("m"), QSL("minimized") },
+                                             QSL("Start application minimized to system tray."));
+    parser.addOption(minimizedOption);
+    parser.addPositionalArgument(QSL("filename"), QSL("The file to open in editor up."));
+    const QCommandLineOption helpOption = parser.addHelpOption();
+    const QCommandLineOption versionOption = parser.addVersionOption();
+
+    if (!parser.parse(QCoreApplication::arguments())) {
+        *errorMessage = parser.errorText();
+        return CommandLineError;
+    }
+
+    if (parser.isSet(versionOption))
+        return CommandLineVersionRequested;
+
+    if (parser.isSet(helpOption))
+        return CommandLineHelpRequested;
+
+    *startMinimized = parser.isSet(minimizedOption);
+
+    const QStringList positionalArguments = parser.positionalArguments();
+    if (positionalArguments.size() > 1) {
+        *errorMessage = QSL("Several 'filename' arguments specified.");
+        return CommandLineError;
+    }
+    if (!positionalArguments.isEmpty())
+        *fileName = positionalArguments.first();
+
+    return CommandLineOk;
 }
 
 ZDescListItemDelegate::ZDescListItemDelegate(QObject *parent)

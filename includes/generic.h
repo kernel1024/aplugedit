@@ -26,6 +26,7 @@
 #include <QPainter>
 #include <QJsonValue>
 #include <QLabel>
+#include <QCommandLineParser>
 
 #define QSL QStringLiteral
 
@@ -33,6 +34,15 @@ class ZGenericFuncs : public QObject
 {
     Q_OBJECT
 public:
+    enum CommandLineParseResult
+    {
+        CommandLineOk,
+        CommandLineError,
+        CommandLineVersionRequested,
+        CommandLineHelpRequested
+    };
+    Q_ENUM(CommandLineParseResult)
+
     ZGenericFuncs(QObject *parent);
     virtual ~ZGenericFuncs();
 
@@ -44,6 +54,9 @@ public:
     static Qt::CheckState readTristateFromJson(const QJsonValue& value);
     static QJsonValue writeTristateToJson(Qt::CheckState state);
     static bool runnedFromQtCreator();
+    static ZGenericFuncs::CommandLineParseResult parseCommandLine(QCommandLineParser &parser, QString *fileName,
+                                                                  QString *errorMessage,
+                                                                  bool *startMinimized);
 };
 
 class ZDescListItemDelegate : public QStyledItemDelegate

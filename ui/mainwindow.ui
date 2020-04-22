@@ -38,7 +38,7 @@
          <x>0</x>
          <y>0</y>
          <width>894</width>
-         <height>517</height>
+         <height>513</height>
         </rect>
        </property>
       </widget>
@@ -118,6 +118,7 @@
     </property>
     <addaction name="actionHelpAbout"/>
     <addaction name="actionHelpAboutQt"/>
+    <addaction name="actionHelpArguments"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -605,6 +606,11 @@
   <action name="actionToolMixer">
    <property name="text">
     <string>ALSA Mixer</string>
+   </property>
+  </action>
+  <action name="actionHelpArguments">
+   <property name="text">
+    <string>Command line arguments...</string>
    </property>
   </action>
  </widget>

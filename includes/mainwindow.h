@@ -33,19 +33,23 @@ class ZMainWindow : public QMainWindow, public Ui::MainWindow
 {
     Q_OBJECT
 private:
-    bool modified;
-    ZRenderArea *renderArea;
-    QLabel* statusLabel;
-    QLabel* mouseLabel;
-    QString workFile;
-    QString programTitle;
-    QTimer repaintTimer;
+    bool m_modified;
+    bool m_startMinimized;
+    QString m_workFile;
+    QString m_programTitle;
+    QTimer m_repaintTimer;
+    QString m_argumentsHelpText;
+
 #ifdef WITH_GST
     QScopedPointer<ZSamplePlayer,QScopedPointerDeleteLater> samplePlayer;
 #endif
     QScopedPointer<ZMixerWindow,QScopedPointerDeleteLater> mixerWindow;
     QScopedPointer<QSystemTrayIcon,QScopedPointerDeleteLater> trayIcon;
     QScopedPointer<QLocalServer,QScopedPointerDeleteLater> ipcServer;
+
+    ZRenderArea *renderArea;
+    QLabel* statusLabel;
+    QLabel* mouseLabel;
 
     void clearSchematic(const std::function<void()> &callback);
     bool windowCloseRequested();
@@ -58,6 +62,8 @@ public:
     explicit ZMainWindow(QWidget *parent = nullptr);
     ~ZMainWindow() override;
     
+    bool isStartMinimized() const;
+
 public Q_SLOTS:
     void fileNew();
     void fileOpen();
@@ -70,6 +76,7 @@ public Q_SLOTS:
     void toolSamplePlayer();
     void toolMixer();
     void helpAbout();
+    void helpArguments();
     void repaintWithConnections();
     void changingComponents(ZCPBase *base);
     void updateStatus();

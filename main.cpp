@@ -26,11 +26,14 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    QGuiApplication::setApplicationDisplayName(QSL("ALSA plugin editor"));
     QCoreApplication::setOrganizationName(QSL("kernel1024"));
     QCoreApplication::setApplicationName(QSL("aplugedit"));
+    QCoreApplication::setApplicationVersion(QSL("2.1.0"));
     gAlsa->initialize();
     ZMainWindow mainWindow;
-    mainWindow.show();
+    if (!mainWindow.isStartMinimized())
+        mainWindow.show();
     return QApplication::exec();
 }
 
