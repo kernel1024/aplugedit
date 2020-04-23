@@ -33,8 +33,44 @@ const int ipcTimeout = 1000;
 ZMainWindow::ZMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    if (!setupIPC())
+    QString fileName;
+    QString errorMsg;
+    QCommandLineParser parser;
+    auto res = ZGenericFuncs::parseCommandLine(parser,&fileName,&errorMsg,&m_startMinimized);
+    m_argumentsHelpText = QSL("<html><head/><body><pre>%1</pre></body></html>")
+                          .arg(parser.helpText());
+    switch (res) {
+        case ZGenericFuncs::CommandLineOk: break;
+        case ZGenericFuncs::CommandLineError: {
+            QString text = QSL("<html><head/><body><h2>%1</h2><pre>%2</pre></body></html>")
+                           .arg(errorMsg,parser.helpText());
+            QTimer::singleShot(500,this,[this,text](){
+                QMessageBox::warning(this, QGuiApplication::applicationDisplayName(),text);
+            });
+            break;
+        }
+        case ZGenericFuncs::CommandLineVersionRequested: {
+            QTimer::singleShot(500,this,&ZMainWindow::helpAbout);
+            break;
+        }
+        case ZGenericFuncs::CommandLineHelpRequested: {
+            QTimer::singleShot(500,this,&ZMainWindow::helpArguments);
+            break;
+        }
+    }
+
+    QDir dir;
+    if (!fileName.isEmpty())
+        fileName = dir.absoluteFilePath(fileName);
+    if (!setupIPC(fileName))
         ::exit(0);
+
+    if (!fileName.isEmpty()) {
+        m_startMinimized = false;
+        QTimer::singleShot(500,this,[this,fileName](){
+            loadFile(fileName);
+        });
+    }
 
     setupUi(this);
     m_programTitle=tr("ALSA Plugin Editor");
@@ -164,39 +200,6 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 
     m_modified=false;
     updateStatus();
-
-    QString fileName;
-    QString errorMsg;
-    QCommandLineParser parser;
-    auto res = ZGenericFuncs::parseCommandLine(parser,&fileName,&errorMsg,&m_startMinimized);
-    m_argumentsHelpText = QSL("<html><head/><body><pre>%1</pre></body></html>")
-                          .arg(parser.helpText());
-    switch (res) {
-        case ZGenericFuncs::CommandLineOk: break;
-        case ZGenericFuncs::CommandLineError: {
-            QString text = QSL("<html><head/><body><h2>%1</h2><pre>%2</pre></body></html>")
-                           .arg(errorMsg,parser.helpText());
-            QTimer::singleShot(500,this,[this,text](){
-                QMessageBox::warning(this, QGuiApplication::applicationDisplayName(),text);
-            });
-            break;
-        }
-        case ZGenericFuncs::CommandLineVersionRequested: {
-            QTimer::singleShot(500,this,&ZMainWindow::helpAbout);
-            break;
-        }
-        case ZGenericFuncs::CommandLineHelpRequested: {
-            QTimer::singleShot(500,this,&ZMainWindow::helpArguments);
-            break;
-        }
-    }
-
-    if (!fileName.isEmpty()) {
-        m_startMinimized = false;
-        QTimer::singleShot(500,this,[this,fileName](){
-            loadFile(fileName);
-        });
-    }
 }
 
 ZMainWindow::~ZMainWindow() = default;
@@ -210,7 +213,7 @@ void ZMainWindow::updateStatus()
     }
     
     QString s = m_workFile;
-    if (m_workFile.isEmpty()) s = tr("[unnamed]");
+    if (s.isEmpty()) s = tr("[unnamed]");
     if (m_modified) s.append(QSL(" *"));
 
     setWindowTitle(QSL("%1 - %2").arg(m_programTitle,s));
@@ -240,6 +243,8 @@ void ZMainWindow::loadFile(const QString &fname)
     QByteArray data = file.readAll();
     file.close();
 
+    m_modified = false;
+
     if (!(renderArea->readSchematic(data))) {
         renderArea->deleteComponents({});
         QMessageBox::critical(this,tr("Error"),tr("Unable to open file - reading error."));
@@ -250,7 +255,11 @@ void ZMainWindow::loadFile(const QString &fname)
         connect(cp,&ZCPBase::componentChanged,this,&ZMainWindow::changingComponents);
     }
 
+    m_workFile = fname;
+
     m_repaintTimer.start();
+
+    updateStatus();
 }
 
 bool ZMainWindow::saveFile(const QString &fname)
@@ -262,6 +271,11 @@ bool ZMainWindow::saveFile(const QString &fname)
     }
     file.write(renderArea->storeSchematic());
     file.close();
+    m_modified = false;
+    m_workFile = fname;
+
+    updateStatus();
+
     return true;
 }
 
@@ -329,7 +343,7 @@ QScreen* ZMainWindow::getCurrentScreen()
     return res;
 }
 
-bool ZMainWindow::setupIPC()
+bool ZMainWindow::setupIPC(const QString &sendFilename)
 {
     if (!ipcServer.isNull()) return false;
 
@@ -351,7 +365,7 @@ bool ZMainWindow::setupIPC()
             // Check for closing
             socket->connectToServer(serverName);
             if (socket->waitForConnected(CDefaults::ipcTimeout)) { // connected, unable to close
-                sendIPCMessage(socket.data(),QSL("showMainWindow"));
+                sendIPCMessage(socket.data(),QSL("showMainWindow#%1").arg(sendFilename));
                 socket->flush();
                 socket->close();
                 return false;
@@ -362,7 +376,7 @@ bool ZMainWindow::setupIPC()
             ipcServer->listen(serverName);
             connect(ipcServer.data(), &QLocalServer::newConnection, this, &ZMainWindow::ipcMessageReceived);
         } else {
-            sendIPCMessage(socket.data(),QSL("showMainWindow"));
+            sendIPCMessage(socket.data(),QSL("showMainWindow#%1").arg(sendFilename));
             socket->flush();
             socket->close();
             return false;
@@ -400,7 +414,14 @@ void ZMainWindow::ipcMessageReceived()
 
     QStringList cmd = QString::fromUtf8(bmsg).split('\n');
     if (cmd.first().startsWith(QSL("showMainWindow"))) {
+        auto sl = cmd.first().split(QChar('#'),Qt::KeepEmptyParts);
         restoreMainWindow();
+        auto fileName = sl.last();
+        if (!fileName.isEmpty()) {
+            clearSchematic([this,fileName](){
+                loadFile(fileName);
+            });
+        }
     } else if (cmd.first().startsWith(QSL("debugRestart"))) {
         qInfo() << tr("Closing aplugedit instance (pid: %1)"
                       "after debugRestart request")
@@ -440,9 +461,9 @@ void ZMainWindow::fileNew()
         }
     }
 
-    m_modified=false;
-    m_workFile.clear();
     clearSchematic([this](){
+        m_modified=false;
+        m_workFile.clear();
         updateStatus();
         m_repaintTimer.start();
     });
@@ -478,27 +499,22 @@ void ZMainWindow::fileOpen()
                     tr("ALSA Plugin editor files v2 [*.ape2] (*.ape2)"));
     if (s.isEmpty()) return;
 
-    m_workFile=s;
-    m_modified=false;
     clearSchematic([this,s](){
         loadFile(s);
-        updateStatus();
     });
 }
 
 void ZMainWindow::fileSave()
 {
     if (!m_modified) return;
-    if (m_workFile.isEmpty())
+    if (m_workFile.isEmpty()) {
         fileSaveAs();
-
-    if (saveFile(m_workFile)) {
-        m_modified=false;
-    } else {
-        QMessageBox::critical(this,tr("Save file"),tr("Unable to save file"));
+        return;
     }
 
-    updateStatus();
+    if (!saveFile(m_workFile)) {
+        QMessageBox::critical(this,tr("Save file"),tr("Unable to save file"));
+    }
 }
 
 void ZMainWindow::fileSaveAs()
@@ -511,15 +527,10 @@ void ZMainWindow::fileSaveAs()
 
     const auto selectedFiles = d.selectedFiles();
     if (selectedFiles.isEmpty()) return;
-    m_workFile=selectedFiles.first();
 
-    if (saveFile(m_workFile)) {
-        m_modified=false;
-    } else {
+    if (!saveFile(selectedFiles.first())) {
         QMessageBox::critical(this,tr("Save file"),tr("Unable to save file"));
     }
-
-    updateStatus();
 }
 
 void ZMainWindow::repaintWithConnections()

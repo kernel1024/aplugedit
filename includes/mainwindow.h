@@ -54,7 +54,7 @@ private:
     void clearSchematic(const std::function<void()> &callback);
     bool windowCloseRequested();
     QScreen *getCurrentScreen();
-    bool setupIPC();
+    bool setupIPC(const QString &sendFilename);
     void sendIPCMessage(QLocalSocket *socket, const QString &msg);
     void ipcMessageReceived();
 
