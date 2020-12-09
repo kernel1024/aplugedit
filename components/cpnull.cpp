@@ -41,11 +41,11 @@ void ZCPNull::realignPins()
 
 void ZCPNull::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type null") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type null") << Qt::endl;
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 }
 
 void ZCPNull::paintEvent(QPaintEvent * event)

@@ -69,18 +69,18 @@ void ZCPConv::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
         case alcImaADPCM: conv=QSL("adpcm"); break;
     }
 
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type ") << conv << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type ") << conv << Qt::endl;
     if (fOut->toFilter) {
-        stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+        stream << QSL("  slave {") << Qt::endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
         if (m_converter!=alcIEC958)
-            stream << QSL("    format ") << m_format << endl;
-        stream << QSL("  }") << endl;
+            stream << QSL("    format ") << m_format << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
     }
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 }
 
 void ZCPConv::paintEvent(QPaintEvent * event)

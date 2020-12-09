@@ -64,18 +64,18 @@ void ZCPAsym::paintEvent(QPaintEvent *event)
 
 void ZCPAsym::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type asym") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type asym") << Qt::endl;
     if (fOutPlayback->toFilter)
-        stream << QSL("  playback.pcm \"%1\"").arg(fOutPlayback->toFilter->objectName()) << endl;
+        stream << QSL("  playback.pcm \"%1\"").arg(fOutPlayback->toFilter->objectName()) << Qt::endl;
     if (fOutCapture->toFilter)
-        stream << QSL("  capture.pcm \"%1\"").arg(fOutCapture->toFilter->objectName()) << endl;
+        stream << QSL("  capture.pcm \"%1\"").arg(fOutCapture->toFilter->objectName()) << Qt::endl;
 
     if ((fOutPlayback->toFilter==nullptr) ||
             (fOutCapture->toFilter==nullptr))
         warnings.append(tr("Asym plugin: both slave PCMs (playback and capture) must be connected."));
 
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 }

@@ -43,14 +43,14 @@ void ZCPFile::realignPins()
 
 void ZCPFile::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type file") << endl;
-    stream << QSL("  slave.pcm null") << endl;
-    stream << QSL("  file \"") << m_fileName << QSL("\"") << endl;
-    stream << QSL("  format \"raw\"") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type file") << Qt::endl;
+    stream << QSL("  slave.pcm null") << Qt::endl;
+    stream << QSL("  file \"") << m_fileName << QSL("\"") << Qt::endl;
+    stream << QSL("  format \"raw\"") << Qt::endl;
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 }
 
 void ZCPFile::paintEvent (QPaintEvent * event)

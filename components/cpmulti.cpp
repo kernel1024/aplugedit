@@ -139,36 +139,36 @@ void ZCPMulti::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
         warnings.append(tr("Multi plugin: PLUG or ROUTE plugin not connected to the input of MULTI plugin. "
                            "Consider to use some interleaved <-> complex converter at the input of MULTI."));
     }
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type multi") << endl;
-    stream << QSL("  slaves {") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type multi") << Qt::endl;
+    stream << QSL("  slaves {") << Qt::endl;
     for (int i=1;i<fOutputs.count();i++) {
-        stream << QSL("    s%1 {").arg(i) << endl;
+        stream << QSL("    s%1 {").arg(i) << Qt::endl;
         if (fOutputs.at(i)->toFilter) {
-            stream << QSL("      pcm \"%1\"").arg(fOutputs.at(i)->toFilter->objectName()) << endl;
-            stream << QSL("      channels ") << m_slaveChannels.at(i-1) << endl;
+            stream << QSL("      pcm \"%1\"").arg(fOutputs.at(i)->toFilter->objectName()) << Qt::endl;
+            stream << QSL("      channels ") << m_slaveChannels.at(i-1) << Qt::endl;
         }
-        stream << QSL("    }") << endl;
+        stream << QSL("    }") << Qt::endl;
 
     }
-    stream << QSL("  }") << endl;
-    stream << QSL("  bindings {") << endl;
+    stream << QSL("  }") << Qt::endl;
+    stream << QSL("  bindings {") << Qt::endl;
     for (int i=0;i<m_bindings.count();i++)
     {
-        stream << QSL("    %1 {").arg(i) << endl;
-        stream << QSL("      slave \"s%1\"").arg(m_bindings.at(i).first) << endl;
-        stream << QSL("      channel %1").arg(m_bindings.at(i).second) << endl;
-        stream << QSL("    }") << endl;
+        stream << QSL("    %1 {").arg(i) << Qt::endl;
+        stream << QSL("      slave \"s%1\"").arg(m_bindings.at(i).first) << Qt::endl;
+        stream << QSL("      channel %1").arg(m_bindings.at(i).second) << Qt::endl;
+        stream << QSL("    }") << Qt::endl;
     }
-    stream << QSL("  }") << endl;
+    stream << QSL("  }") << Qt::endl;
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
     if (fCtlOut->toFilter) {
-        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        stream << QSL("ctl.") << objectName() << QSL(" {") << Qt::endl;
         fCtlOut->toFilter->doCtlGenerate(stream,warnings);
-        stream << QSL("}") << endl;
-        stream << endl;
+        stream << QSL("}") << Qt::endl;
+        stream << Qt::endl;
     }
 }
 

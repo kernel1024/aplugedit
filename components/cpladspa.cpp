@@ -59,17 +59,17 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream, QStringList &warnings) cons
         warnings.append(tr("LADSPA plugin: FLOAT converter not connected to the output of LADSPA plugin. "
                            "Consider to use PLUG or FLOAT CONVERTER plugin at the output of LADSPA."));
     }
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type ladspa") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type ladspa") << Qt::endl;
     if (fOut->toFilter) {
-        stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
-        stream << QSL("  }") << endl;
-        stream << QSL("  channels %1").arg(m_channels) << endl;
-        stream << QSL("  path \"%1\"").arg(ZGenericFuncs::getLADSPAPath()) << endl;
+        stream << QSL("  slave {") << Qt::endl;
+        stream << QSL("    pcm \"%1\"").arg(fOut->toFilter->objectName()) << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
+        stream << QSL("  channels %1").arg(m_channels) << Qt::endl;
+        stream << QSL("  path \"%1\"").arg(ZGenericFuncs::getLADSPAPath()) << Qt::endl;
 
         if (!m_plugins.isEmpty()) {
-            stream << QSL("  plugins {") << endl;
+            stream << QSL("  plugins {") << Qt::endl;
             int idx = 0;
             for (const auto& plug : qAsConst(m_plugins)) {
                 QFileInfo fi(plug.plugLibrary);
@@ -77,20 +77,20 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream, QStringList &warnings) cons
                 if (plug.policy == ZLADSPA::Policy::plDuplicate)
                     policy = QSL("duplicate");
 
-                stream << QSL("    %1 {").arg(idx++) << endl;
-                stream << QSL("      id %1  # Label: '%2'").arg(plug.plugID).arg(plug.plugLabel) << endl;
-                stream << QSL("      filename \"%1\"").arg(fi.absoluteFilePath()) << endl;
+                stream << QSL("    %1 {").arg(idx++) << Qt::endl;
+                stream << QSL("      id %1  # Label: '%2'").arg(plug.plugID).arg(plug.plugLabel) << Qt::endl;
+                stream << QSL("      filename \"%1\"").arg(fi.absoluteFilePath()) << Qt::endl;
                 if (plug.usePolicy)
-                    stream << QSL("      policy %1").arg(policy) << endl;
+                    stream << QSL("      policy %1").arg(policy) << Qt::endl;
                 for (const auto& inp : qAsConst(plug.inputBindings)) {
                     stream << QSL("      input.bindings.%1 \"%2\"")
-                              .arg(inp.first).arg(inp.second) << endl;
+                              .arg(inp.first).arg(inp.second) << Qt::endl;
                 }
                 for (const auto& out : qAsConst(plug.outputBindings)) {
                     stream << QSL("      output.bindings.%1 \"%2\"")
-                              .arg(out.first).arg(out.second) << endl;
+                              .arg(out.first).arg(out.second) << Qt::endl;
                 }
-                stream << QSL("      input {") << endl;
+                stream << QSL("      input {") << Qt::endl;
                 stream << QSL("        controls [ ");
                 for (const auto& ctl : qAsConst(plug.plugControls)) {
                     switch (ctl.aatType)
@@ -108,21 +108,21 @@ void ZCPLADSPA::doInfoGenerate(QTextStream & stream, QStringList &warnings) cons
                     }
                     stream << QSL(" ");
                 }
-                stream << QSL("]") << endl
-                       << QSL("      }") << endl
-                       << QSL("    }") << endl;
+                stream << QSL("]") << Qt::endl
+                       << QSL("      }") << Qt::endl
+                       << QSL("    }") << Qt::endl;
             }
         }
     }
-    stream << QSL("  }") << endl;
+    stream << QSL("  }") << Qt::endl;
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
     if (fCtlOut->toFilter) {
-        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        stream << QSL("ctl.") << objectName() << QSL(" {") << Qt::endl;
         fCtlOut->toFilter->doCtlGenerate(stream,warnings);
-        stream << QSL("}") << endl;
-        stream << endl;
+        stream << QSL("}") << Qt::endl;
+        stream << Qt::endl;
     }
 }
 

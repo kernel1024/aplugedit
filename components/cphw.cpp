@@ -58,59 +58,59 @@ void ZCPHW::realignPins()
 
 void ZCPHW::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.%1 {").arg(objectName()) << endl;
-    stream << QSL("  type hw") << endl;
+    stream << QSL("pcm.%1 {").arg(objectName()) << Qt::endl;
+    stream << QSL("  type hw") << Qt::endl;
     if (m_card>=0) {
         if (m_preferSymbolicName && !m_cardSymbolic.isEmpty()) {
-            stream << QSL("  card \"%1\"").arg(m_cardSymbolic) << endl;
+            stream << QSL("  card \"%1\"").arg(m_cardSymbolic) << Qt::endl;
         } else {
-            stream << QSL("  card %1").arg(m_card) << endl;
+            stream << QSL("  card %1").arg(m_card) << Qt::endl;
         }
         if (m_device>=0) {
-            stream << QSL("  device %1").arg(m_device) << endl;
+            stream << QSL("  device %1").arg(m_device) << Qt::endl;
             if (m_subdevice>=-1)
-                stream << QSL("  subdevice %1").arg(m_subdevice) << endl;
+                stream << QSL("  subdevice %1").arg(m_subdevice) << Qt::endl;
         }
     } else {
-        stream << QSL("  pcm \"hw:0,0\"") << endl;
+        stream << QSL("  pcm \"hw:0,0\"") << Qt::endl;
     }
     if (m_mmap_emulation==0) {
-        stream << QSL("  mmap_emulation false") << endl;
+        stream << QSL("  mmap_emulation false") << Qt::endl;
     } else if (m_mmap_emulation==1) {
-        stream << QSL("  mmap_emulation true") << endl;
+        stream << QSL("  mmap_emulation true") << Qt::endl;
     }
 
     if (m_sync_ptr_ioctl==0) {
-        stream << QSL("  sync_ptr_ioctl false") << endl;
+        stream << QSL("  sync_ptr_ioctl false") << Qt::endl;
     } else if (m_sync_ptr_ioctl==1) {
-        stream << QSL("  sync_ptr_ioctl true") << endl;
+        stream << QSL("  sync_ptr_ioctl true") << Qt::endl;
     }
 
     if (m_nonblock==0) {
-        stream << QSL("  nonblock false") << endl;
+        stream << QSL("  nonblock false") << Qt::endl;
     } else if (m_nonblock==1) {
-        stream << QSL("  nonblock true") << endl;
+        stream << QSL("  nonblock true") << Qt::endl;
     }
 
     if (!m_format.startsWith(QSL("<NONE>")))
-        stream << QSL("  format \"%1\"").arg(m_format) << endl;
+        stream << QSL("  format \"%1\"").arg(m_format) << Qt::endl;
 
     if (m_channels!=-1)
-        stream << QSL("  channels %1").arg(m_channels) << endl;
+        stream << QSL("  channels %1").arg(m_channels) << Qt::endl;
 
     if (m_rate!=-1)
-        stream << QSL("  rate %1").arg(m_rate) << endl;
+        stream << QSL("  rate %1").arg(m_rate) << Qt::endl;
 
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 }
 
 void ZCPHW::doCtlGenerate(QTextStream &stream, QStringList &warnings, bool softvol) const
 {
     QString svSeparator;
     if (!softvol) {
-        stream << QSL("  type hw") << endl;
+        stream << QSL("  type hw") << Qt::endl;
     } else {
         svSeparator = QSL("  ");
     }
@@ -122,15 +122,15 @@ void ZCPHW::doCtlGenerate(QTextStream &stream, QStringList &warnings, bool softv
     }
 
     if (m_preferSymbolicName && !m_cardSymbolic.isEmpty()) {
-        stream << QSL("%1  card \"%2\"").arg(svSeparator,m_cardSymbolic) << endl;
+        stream << QSL("%1  card \"%2\"").arg(svSeparator,m_cardSymbolic) << Qt::endl;
     } else {
-        stream << QSL("%1  card %2").arg(svSeparator).arg(card) << endl;
+        stream << QSL("%1  card %2").arg(svSeparator).arg(card) << Qt::endl;
     }
     if (softvol) {
         if (m_device>=0) {
-            stream << QSL("%1  device %2").arg(svSeparator,m_device) << endl;
+            stream << QSL("%1  device %2").arg(svSeparator,m_device) << Qt::endl;
             if (m_subdevice>=-1)
-                stream << QSL("%1  subdevice %2").arg(svSeparator).arg(m_subdevice) << endl;
+                stream << QSL("%1  subdevice %2").arg(svSeparator).arg(m_subdevice) << Qt::endl;
         }
     }
 }

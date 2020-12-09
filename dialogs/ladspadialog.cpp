@@ -49,7 +49,7 @@ ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
 
     m_vboxLayout = new QVBoxLayout(m_controls);
     m_vboxLayout->setSpacing(6);
-    m_vboxLayout->setMargin(9);
+    m_vboxLayout->setContentsMargins(9,9,9,9);
     m_vboxLayout->setObjectName(QSL("vboxCLayout"));
 
     m_sampleRate = sampleRate;
@@ -294,7 +294,7 @@ void ZLADSPADialog::scanPlugins()
     m_controls->resize(sizeHint());
 
     QFileInfoList pluginsList;
-    const QStringList ladspa_dirs=ZGenericFuncs::getLADSPAPath().split(':',QString::SkipEmptyParts);
+    const QStringList ladspa_dirs=ZGenericFuncs::getLADSPAPath().split(':',Qt::SkipEmptyParts);
     for (const auto &dir : ladspa_dirs) {
         QDir ladspa_dir(dir);
         pluginsList.append(ladspa_dir.entryInfoList({QSL("*.so")},QDir::Files));
@@ -489,7 +489,7 @@ void ZLADSPADialog::analyzePlugin()
                         } else {
                             auto ahboxLayout = new QHBoxLayout();
                             ahboxLayout->setSpacing(6);
-                            ahboxLayout->setMargin(0);
+                            ahboxLayout->setContentsMargins(0,0,0,0);
                             auto alabel=new QLabel(m_controls);
                             if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
                                 alabel->setText(tr("%1 (in dB)").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));

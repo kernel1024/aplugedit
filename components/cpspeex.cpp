@@ -87,49 +87,49 @@ void ZCPSpeex::realignPins()
 
 void ZCPSpeex::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type speex") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type speex") << Qt::endl;
     if (fOut->toFilter) {
-        stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
-        stream << QSL("  }") << endl;
+        stream << QSL("  slave {") << Qt::endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
     }
     if (m_frames>0)
-        stream << QSL("  frames %1").arg(m_frames) << endl;
+        stream << QSL("  frames %1").arg(m_frames) << Qt::endl;
     if (m_agcLevel>0)
-        stream << QSL("  agc_level %1").arg(m_agcLevel) << endl;
+        stream << QSL("  agc_level %1").arg(m_agcLevel) << Qt::endl;
     if (m_filterLength>0)
-        stream << QSL("  filter_length %1").arg(m_filterLength) << endl;
+        stream << QSL("  filter_length %1").arg(m_filterLength) << Qt::endl;
 
     if (m_denoise == Qt::CheckState::Checked) {
-        stream << QSL("  denoise yes") << endl;
+        stream << QSL("  denoise yes") << Qt::endl;
     } else if (m_denoise == Qt::CheckState::Unchecked) {
-        stream << QSL("  denoise no") << endl;
+        stream << QSL("  denoise no") << Qt::endl;
     }
     if (m_agc == Qt::CheckState::Checked) {
-        stream << QSL("  agc yes") << endl;
+        stream << QSL("  agc yes") << Qt::endl;
     } else if (m_agc == Qt::CheckState::Unchecked) {
-        stream << QSL("  agc no") << endl;
+        stream << QSL("  agc no") << Qt::endl;
     }
     if (m_dereverb == Qt::CheckState::Checked) {
-        stream << QSL("  dereverb yes") << endl;
+        stream << QSL("  dereverb yes") << Qt::endl;
     } else if (m_dereverb == Qt::CheckState::Unchecked) {
-        stream << QSL("  dereverb no") << endl;
+        stream << QSL("  dereverb no") << Qt::endl;
     }
     if (m_echo == Qt::CheckState::Checked) {
-        stream << QSL("  echo yes") << endl;
+        stream << QSL("  echo yes") << Qt::endl;
     } else if (m_echo == Qt::CheckState::Unchecked) {
-        stream << QSL("  echo no") << endl;
+        stream << QSL("  echo no") << Qt::endl;
     }
 
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
     if (fCtlOut->toFilter) {
-        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        stream << QSL("ctl.") << objectName() << QSL(" {") << Qt::endl;
         fCtlOut->toFilter->doCtlGenerate(stream,warnings);
-        stream << QSL("}") << endl;
-        stream << endl;
+        stream << QSL("}") << Qt::endl;
+        stream << Qt::endl;
     }
 }
 

@@ -51,10 +51,10 @@ void ZCPSoftvol::realignPins()
 
 void ZCPSoftvol::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.%1 {").arg(objectName()) << endl;
-    stream << QSL("  type softvol") << endl;
+    stream << QSL("pcm.%1 {").arg(objectName()) << Qt::endl;
+    stream << QSL("  type softvol") << Qt::endl;
     if (fOut->toFilter) {
-        stream << QSL("  slave.pcm \"%1\"").arg(fOut->toFilter->objectName()) << endl;
+        stream << QSL("  slave.pcm \"%1\"").arg(fOut->toFilter->objectName()) << Qt::endl;
     } else {
         warnings.append(tr("Softvol plugin: slave PCM not connected."));
     }
@@ -65,24 +65,24 @@ void ZCPSoftvol::doInfoGenerate(QTextStream &stream, QStringList &warnings) cons
     } else if (hwCtl==nullptr) {
         warnings.append(tr("Softvol plugin: control must be connected to HW sink plugin."));
     } else {
-        stream << QSL("  control {") << endl;
-        stream << QSL("    name \"%1\"").arg(m_name) << endl;
+        stream << QSL("  control {") << Qt::endl;
+        stream << QSL("    name \"%1\"").arg(m_name) << Qt::endl;
         hwCtl->doCtlGenerate(stream,warnings,true);
         if (m_channels>0)
-            stream << QSL("    count %1").arg(m_channels) << endl;
-        stream << QSL("  }") << endl;
+            stream << QSL("    count %1").arg(m_channels) << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
     }
 
     if (m_min_dB<0.0)
-        stream << QSL("  min_dB %1").arg(m_min_dB,0,'f',1) << endl;
+        stream << QSL("  min_dB %1").arg(m_min_dB,0,'f',1) << Qt::endl;
     if ((m_max_dB>m_min_dB) && (m_max_dB<90.0))
-        stream << QSL("  max_dB %1").arg(m_max_dB,0,'f',1) << endl;
+        stream << QSL("  max_dB %1").arg(m_max_dB,0,'f',1) << Qt::endl;
     if ((m_resolution>1) && (m_resolution<=1024))
-        stream << QSL("  resolution %1").arg(m_resolution) << endl;
+        stream << QSL("  resolution %1").arg(m_resolution) << Qt::endl;
 
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 
 }
 

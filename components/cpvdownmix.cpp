@@ -67,20 +67,20 @@ void ZCPVDownmix::realignPins()
 
 void ZCPVDownmix::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type vdownmix") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type vdownmix") << Qt::endl;
     if (fOut->toFilter) {
-        stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
-        stream << QSL("  }") << endl;
+        stream << QSL("  slave {") << Qt::endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
     }
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
     if (fCtlOut->toFilter) {
-        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        stream << QSL("ctl.") << objectName() << QSL(" {") << Qt::endl;
         fCtlOut->toFilter->doCtlGenerate(stream,warnings);
-        stream << QSL("}") << endl;
-        stream << endl;
+        stream << QSL("}") << Qt::endl;
+        stream << Qt::endl;
     }
 }

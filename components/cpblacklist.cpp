@@ -107,10 +107,10 @@ void ZCPBlacklist::doInfoGenerate(QTextStream &stream, QStringList &warnings) co
         if (!name.isEmpty() && !pcms.contains(name)) {
             pcms.append(name);
 
-            stream << QSL("pcm.!%1 0").arg(name) << endl;
+            stream << QSL("pcm.!%1 0").arg(name) << Qt::endl;
         }
     }
-    stream << endl;
+    stream << Qt::endl;
 }
 
 void ZCPBlacklist::showSettingsDlg()

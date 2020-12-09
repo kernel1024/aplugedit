@@ -46,31 +46,31 @@ void ZCPMeter::realignPins()
 
 void ZCPMeter::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    stream << QSL("pcm_scope_type.") << objectName() << QSL(" {") << endl;
+    stream << QSL("pcm_scope_type.") << objectName() << QSL(" {") << Qt::endl;
     if (!m_meterLib.isEmpty())
-        stream << QSL("  lib \"") << m_meterLib << QSL("\"") << endl;
+        stream << QSL("  lib \"") << m_meterLib << QSL("\"") << Qt::endl;
     if (!m_meterFunc.isEmpty())
-        stream << QSL("  open \"") << m_meterFunc << QSL("\"") << endl;
-    stream << QSL("}") << endl;
-    stream << endl;
+        stream << QSL("  open \"") << m_meterFunc << QSL("\"") << Qt::endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 
-    stream << QSL("pcm_scope.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type ") << objectName() << endl;
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("pcm_scope.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type ") << objectName() << Qt::endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type meter") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type meter") << Qt::endl;
     if (fOut->toFilter) {
-        stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
-        stream << QSL("  }") << endl;
+        stream << QSL("  slave {") << Qt::endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
     }
-    stream << QSL("  frequency ") << m_refreshRate << endl;
-    stream << QSL("  scopes.0 ") << objectName() << endl;
+    stream << QSL("  frequency ") << m_refreshRate << Qt::endl;
+    stream << QSL("  scopes.0 ") << objectName() << Qt::endl;
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
 }
 
 void ZCPMeter::paintEvent (QPaintEvent * event)

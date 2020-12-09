@@ -324,10 +324,10 @@ void ZCPBase::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
         if (m_hintShow)
             opt = QSL("on");
 
-        stream << QSL("  hint {") << endl;
-        stream << QSL("    show %1").arg(opt) << endl;
-        stream << QSL("    description \"%1\"").arg(m_hint) << endl;
-        stream << QSL("  }") << endl;
+        stream << QSL("  hint {") << Qt::endl;
+        stream << QSL("    show %1").arg(opt) << Qt::endl;
+        stream << QSL("    description \"%1\"").arg(m_hint) << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
     }
 }
 

@@ -104,23 +104,23 @@ void ZCPInp::realignPins()
 
 void ZCPInp::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << m_dspName << QSL(" {") << endl;
+    stream << QSL("pcm.") << m_dspName << QSL(" {") << Qt::endl;
     if (fOut->toFilter)
     {
-        stream << QSL("  type plug") << endl;
-        stream << QSL("  slave.pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+        stream << QSL("  type plug") << Qt::endl;
+        stream << QSL("  slave.pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
     } else {
-        stream << QSL("  type hw") << endl;
-        stream << QSL("  card 0") << endl;
+        stream << QSL("  type hw") << Qt::endl;
+        stream << QSL("  card 0") << Qt::endl;
     }
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
     if (fCtlOut->toFilter) {
-        stream << QSL("ctl.") << m_dspName << QSL(" {") << endl;
+        stream << QSL("ctl.") << m_dspName << QSL(" {") << Qt::endl;
         fCtlOut->toFilter->doCtlGenerate(stream,warnings);
-        stream << QSL("}") << endl;
-        stream << endl;
+        stream << QSL("}") << Qt::endl;
+        stream << Qt::endl;
     }
 }
 

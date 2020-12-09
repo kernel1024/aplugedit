@@ -136,11 +136,11 @@ void ZCPShare::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
         case spDSnoop: type = QSL("dsnoop"); break;
         case spDShare: type = QSL("dshare"); break;
     }
-    stream << QSL("pcm.%1 {").arg(objectName()) << endl;
-    stream << QSL("  type %1").arg(type) << endl;
-    stream << QSL("  ipc_key %1").arg(m_IPCkey) << endl;
+    stream << QSL("pcm.%1 {").arg(objectName()) << Qt::endl;
+    stream << QSL("  type %1").arg(type) << Qt::endl;
+    stream << QSL("  ipc_key %1").arg(m_IPCkey) << Qt::endl;
     if (!m_IPCpermissions.isEmpty())
-        stream << QSL("  ipc_perm %1").arg(m_IPCpermissions) << endl;
+        stream << QSL("  ipc_perm %1").arg(m_IPCpermissions) << Qt::endl;
 
     QString ptr;
     switch (m_hwPtrAlignment) {
@@ -151,37 +151,37 @@ void ZCPShare::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
         default: break;
     }
     if (!ptr.isEmpty())
-        stream << QSL("  hw_ptr_alignment %1").arg(ptr) << endl;
+        stream << QSL("  hw_ptr_alignment %1").arg(ptr) << Qt::endl;
 
     if (fOut->toFilter) {
-        stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
+        stream << QSL("  slave {") << Qt::endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
         auto hw=qobject_cast<ZCPHW*>(fOut->toFilter);
         if (hw) {
             if (hw->getChannels()!=-1)
-                stream << QSL("    channels ") << hw->getChannels() << endl;
+                stream << QSL("    channels ") << hw->getChannels() << Qt::endl;
             if (hw->getRate()!=-1)
-                stream << QSL("    rate ") << hw->getRate() << endl;
+                stream << QSL("    rate ") << hw->getRate() << Qt::endl;
         }
-        stream << QSL("  }") << endl;
+        stream << QSL("  }") << Qt::endl;
     }
     for (int i=0;i<m_bindings.count();i++) {
-        stream << QSL("  bindings.%1 %2").arg(i).arg(m_bindings.at(i)) << endl;
+        stream << QSL("  bindings.%1 %2").arg(i).arg(m_bindings.at(i)) << Qt::endl;
     }
     if (m_slowPtr == Qt::CheckState::Checked) {
-        stream << QSL("  slowptr true") << endl;
+        stream << QSL("  slowptr true") << Qt::endl;
     } else if (m_slowPtr == Qt::CheckState::Unchecked) {
-        stream << QSL("  slowptr false") << endl;
+        stream << QSL("  slowptr false") << Qt::endl;
     }
 
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
     if (fCtlOut->toFilter) {
-        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        stream << QSL("ctl.") << objectName() << QSL(" {") << Qt::endl;
         fCtlOut->toFilter->doCtlGenerate(stream,warnings);
-        stream << QSL("}") << endl;
-        stream << endl;
+        stream << QSL("}") << Qt::endl;
+        stream << Qt::endl;
     }
 }
 

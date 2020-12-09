@@ -60,28 +60,28 @@ void ZCPRoute::realignPins()
 
 void ZCPRoute::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    stream << QSL("pcm.") << objectName() << QSL(" {") << endl;
-    stream << QSL("  type route") << endl;
+    stream << QSL("pcm.") << objectName() << QSL(" {") << Qt::endl;
+    stream << QSL("  type route") << Qt::endl;
     if (fOut->toFilter)
     {
-        stream << QSL("  slave {") << endl;
-        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << endl;
-        stream << QSL("    channels ") << getChannelsOut() << endl;
-        stream << QSL("  }") << endl;
+        stream << QSL("  slave {") << Qt::endl;
+        stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
+        stream << QSL("    channels ") << getChannelsOut() << Qt::endl;
+        stream << QSL("  }") << Qt::endl;
     }
     for (int i=0;i<getChannelsOut();i++)
     {
         stream << QSL("  ttable.") << m_routeTable.at(i).from << QSL(".") << i << QSL(" ")
-               << QSL("%1").arg(m_routeTable.at(i).coeff,1,'f',1) << endl;
+               << QSL("%1").arg(m_routeTable.at(i).coeff,1,'f',1) << Qt::endl;
     }
     ZCPBase::doInfoGenerate(stream,warnings);
-    stream << QSL("}") << endl;
-    stream << endl;
+    stream << QSL("}") << Qt::endl;
+    stream << Qt::endl;
     if (fCtlOut->toFilter) {
-        stream << QSL("ctl.") << objectName() << QSL(" {") << endl;
+        stream << QSL("ctl.") << objectName() << QSL(" {") << Qt::endl;
         fCtlOut->toFilter->doCtlGenerate(stream,warnings);
-        stream << QSL("}") << endl;
-        stream << endl;
+        stream << QSL("}") << Qt::endl;
+        stream << Qt::endl;
     }
 }
 
