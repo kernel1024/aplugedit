@@ -55,6 +55,24 @@ bool CPCMItem::operator!=(const CPCMItem &s) const
     return !operator==(s);
 }
 
+CCTLItem::CCTLItem(const QString &aName, const QStringList &aDescription, const QString &aDisplayName, snd_ctl_t *aCtl)
+{
+    name = aName;
+    description = aDescription;
+    displayName = aDisplayName;
+    ctl = aCtl;
+}
+
+bool CCTLItem::operator==(const CCTLItem &s) const
+{
+    return (ctl == s.ctl);
+}
+
+bool CCTLItem::operator!=(const CCTLItem &s) const
+{
+    return !operator==(s);
+}
+
 CMixerItem::CMixerItem(unsigned int aNumid, const QString& aName, const QVector<int> &aValues)
 {
     type = itBoolean;

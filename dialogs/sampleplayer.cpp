@@ -111,10 +111,10 @@ gboolean ZSamplePlayer::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 
         case GST_MESSAGE_EOS:
             if (dlg) {
-                QTimer::singleShot(0,dlg,[dlg](){
+                QMetaObject::invokeMethod(dlg,[dlg](){
                     dlg->addAuxMessage(tr("APlugEdit: End of stream"));
                     dlg->stop();
-                });
+                },Qt::QueuedConnection);
             }
             break;
         case GST_MESSAGE_ERROR:   gst_message_parse_error(msg, &error, &debug); prefix = QSL("ERROR"); break;
@@ -460,9 +460,9 @@ void ZSamplePlayer::addAuxMessageExt(ZSamplePlayer *instance, const QString &msg
         qCritical() << QSL("Unable to add message to null-instance \"%1\"").arg(msg);
         return;
     }
-    QTimer::singleShot(0,instance,[instance,msg](){
+    QMetaObject::invokeMethod(instance,[instance,msg](){
         instance->addAuxMessage(msg);
-    });
+    },Qt::QueuedConnection);
 }
 
 void ZSamplePlayer::addAuxMessage(const QString &msg)

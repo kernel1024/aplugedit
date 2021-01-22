@@ -57,19 +57,21 @@ public:
     QVector<CPCMItem> pcmList() const;
     bool getCardNumber(const QString &name, QString &cardId, unsigned int* devNum, unsigned int *subdevNum);
 
-    QVector<CMixerItem> getMixerControls(int cardNum);
-    void setMixerControl(int cardNum, const CMixerItem& item);
-    void deleteMixerControl(int cardNum, const CMixerItem& item);
+    QVector<CMixerItem> getMixerControls(const QString &ctlName) const;
+    void setMixerControl(const QString &ctlName, const CMixerItem& item);
+    void deleteMixerControl(const QString &ctlName, const CMixerItem& item);
+    QStringList getMixerCtls(bool forceReload = false);
+    QString getMixerName(const QString &ctlName) const;
 
     QStringList getAlsaWarnings();
-    bool isWarnings();
+    bool isWarnings() const;
     QStringList getDebugMessages();
 
 Q_SIGNALS:
     void alsaWarningMsg(const QString& message); // cross-thread signal!
     void debugOutputUpdated(); // cross-thread signal!
-    void alsaMixerReconfigured(int cardNum);
-    void alsaMixerValueChanged(int cardNum);
+    void alsaMixerReconfigured(const QString& ctlName);
+    void alsaMixerValueChanged(const QString& ctlName);
 };
 
 #define gAlsa (ZAlsaBackend::instance())

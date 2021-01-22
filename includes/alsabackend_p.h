@@ -33,11 +33,8 @@
 #include <QObject>
 #include <QTimer>
 #include <QMutex>
+#include <QHash>
 #include "alsastructures.h"
-
-extern "C" {
-#include <alsa/asoundlib.h>
-}
 
 class ZAlsaBackend;
 
@@ -50,24 +47,26 @@ private:
     ZAlsaBackend* q_ptr { nullptr };
 
     void addDebugOutputPrivate(const QString& msg);
+    void closeAllMixerCtls();
 
 public:
     explicit ZAlsaBackendPrivate(ZAlsaBackend *parent);
     ~ZAlsaBackendPrivate() override;
 
     QVector<CCardItem> m_cards;
-    QVector<snd_ctl_t *> m_mixerCtl;
+    QVector<CCTLItem> m_mixerCtl;
     QStringList m_alsaWarnings;
     QTimer m_mixerPollTimer;
     QStringList m_debugMessages;
     QMutex m_loggerMutex;
 
-    snd_ctl_t* getMixerCtl(int cardNum);
+    snd_ctl_t* getMixerCtl(const QString &ctlName) const;
     void addAlsaWarning(const QString& msg);
     void enumerateCards();
+    void enumerateMixers();
     static void snd_lib_error_handler(const char *file, int line, const char *function, int err, const char *fmt,...);
     static bool lessThanMixerItem(const CMixerItem &a, const CMixerItem &b);
-    QVector<int> findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items, int *topScore);
+    QVector<int> findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items, int *topScore) const;
 
     static void stdConsoleOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 

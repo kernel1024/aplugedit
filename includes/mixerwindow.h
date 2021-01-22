@@ -18,16 +18,15 @@ public:
     ~ZMixerWindow() override;
 
 public Q_SLOTS:
-    void reloadControls(int cardNum);
-    void updateControlsState(int cardNum);
+    void reloadControls(const QString& ctlName);
+    void updateControlsState(const QString& ctlName);
 
 private:
     Ui::ZMixerWindow *ui;
-    QVector<QVector<CMixerItem> > m_controls;
+    QHash<QString, QVector<CMixerItem> > m_controls;
 
     void addSeparatedWidgetToLayout(QLayout* layout, QWidget* itemWidget);
-    bool getMixerItemIDs(QWidget *widget, int *card, unsigned int *numid);
-    void reloadControlsQueued(int cardNum);
+    void reloadControlsQueued(const QString &ctlName);
 
 protected:
     bool event(QEvent* event) override;

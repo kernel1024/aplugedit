@@ -34,10 +34,6 @@
 #include "includes/alsabackend.h"
 #include "includes/alsabackend_p.h"
 
-extern "C" {
-#include <alsa/asoundlib.h>
-}
-
 const long maxLinearDBScale = 24; // minimal acceptable dB range = 24dB
 
 ZAlsaBackend::ZAlsaBackend(QObject *parent)
@@ -68,6 +64,7 @@ void ZAlsaBackend::initialize()
 {
     Q_D(ZAlsaBackend);
     d->enumerateCards();
+    d->enumerateMixers();
 }
 
 void ZAlsaBackend::reloadGlobalConfig()
@@ -93,7 +90,7 @@ QVector<CPCMItem> ZAlsaBackend::pcmList() const
 
     const char *filter = "Output";
 
-    void **hints;
+    void **hints = nullptr;
     if (snd_device_name_hint(-1, "pcm", &hints) < 0)
         return res;
 
@@ -117,16 +114,16 @@ QVector<CPCMItem> ZAlsaBackend::pcmList() const
 
 bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned int *devNum, unsigned int *subdevNum)
 {
-    int err;
+    int err = 0;
     QByteArray deviceName = name.toUtf8();
-    snd_ctl_t *ctl;
-    snd_ctl_card_info_t *info;
+    snd_ctl_t *ctl = nullptr;
+    snd_ctl_card_info_t *info = nullptr;
     snd_ctl_card_info_alloca(&info);
-    snd_pcm_info_t *pcminfo;
+    snd_pcm_info_t *pcminfo = nullptr;
     snd_pcm_info_alloca(&pcminfo);
 
     err = snd_ctl_open(&ctl, deviceName.constData(), SND_CTL_NONBLOCK);
-    if (err < 0) {
+    if ((err < 0) || (ctl == nullptr)) {
         qWarning() << QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err)));
         return false;
     }
@@ -155,15 +152,15 @@ bool ZAlsaBackend::getCardNumber(const QString& name, QString &cardId, unsigned 
     return true;
 }
 
-QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
+QVector<CMixerItem> ZAlsaBackend::getMixerControls(const QString& ctlName) const
 {
-    Q_D(ZAlsaBackend);
+    Q_D(const ZAlsaBackend);
 
-    int err;
+    int err = 0;
 
     QVector<CMixerItem> res;
 
-    snd_ctl_t* ctl = d->getMixerCtl(cardNum);
+    snd_ctl_t* ctl = d->getMixerCtl(ctlName);
     if (ctl==nullptr) return res;
 
     snd_ctl_elem_list_t *clist = nullptr;
@@ -190,11 +187,11 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
 
     unsigned int controls = snd_ctl_elem_list_get_used(clist);
     for (unsigned int cidx = 0; cidx < controls; cidx++) {
-        snd_ctl_elem_id_t* cid;
+        snd_ctl_elem_id_t* cid = nullptr;
         snd_ctl_elem_id_malloc(&cid);
-        snd_ctl_elem_info_t* cinfo;
+        snd_ctl_elem_info_t* cinfo = nullptr;
         snd_ctl_elem_info_malloc(&cinfo);
-        snd_ctl_elem_value_t* cvalue;
+        snd_ctl_elem_value_t* cvalue = nullptr;
         snd_ctl_elem_value_malloc(&cvalue);
 
         snd_ctl_elem_list_get_id(clist, cidx, cid);
@@ -324,7 +321,7 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(int cardNum)
     return res;
 }
 
-void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
+void ZAlsaBackend::setMixerControl(const QString& ctlName, const CMixerItem &item)
 {
     Q_D(ZAlsaBackend);
 
@@ -332,7 +329,7 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
 
     if (item.isEmpty()) return;
 
-    snd_ctl_t* ctl = d->getMixerCtl(cardNum);
+    snd_ctl_t* ctl = d->getMixerCtl(ctlName);
     if (ctl == nullptr) return;
 
     snd_ctl_elem_id_t* cid;
@@ -426,7 +423,7 @@ void ZAlsaBackend::setMixerControl(int cardNum, const CMixerItem &item)
     }
 }
 
-void ZAlsaBackend::deleteMixerControl(int cardNum, const CMixerItem &item)
+void ZAlsaBackend::deleteMixerControl(const QString &ctlName, const CMixerItem &item)
 {
     Q_D(ZAlsaBackend);
 
@@ -434,7 +431,7 @@ void ZAlsaBackend::deleteMixerControl(int cardNum, const CMixerItem &item)
 
     if (item.isEmpty() || !item.isUser) return;
 
-    snd_ctl_t* ctl = d->getMixerCtl(cardNum);
+    snd_ctl_t* ctl = d->getMixerCtl(ctlName);
     if (ctl == nullptr) return;
 
     snd_ctl_elem_id_t* cid;
@@ -462,6 +459,37 @@ void ZAlsaBackend::deleteMixerControl(int cardNum, const CMixerItem &item)
     }
 }
 
+QStringList ZAlsaBackend::getMixerCtls(bool forceReload)
+{
+    Q_D(ZAlsaBackend);
+
+    if (forceReload || d->m_mixerCtl.isEmpty())
+        d->enumerateMixers();
+
+    QStringList res;
+    for (const auto& ctl : qAsConst(d->m_mixerCtl))
+        res.append(ctl.name);
+
+    return res;
+}
+
+QString ZAlsaBackend::getMixerName(const QString &ctlName) const
+{
+    Q_D(const ZAlsaBackend);
+
+    QString res;
+    for (const auto& ctl : qAsConst(d->m_mixerCtl)) {
+        if (ctl.name == ctlName) {
+            res = ctl.displayName;
+            if (res.isEmpty())
+                res = ctl.name;
+
+            break;
+        }
+    }
+    return res;
+}
+
 QStringList ZAlsaBackend::getAlsaWarnings()
 {
     Q_D(ZAlsaBackend);
@@ -471,9 +499,9 @@ QStringList ZAlsaBackend::getAlsaWarnings()
     return res;
 }
 
-bool ZAlsaBackend::isWarnings()
+bool ZAlsaBackend::isWarnings() const
 {
-    Q_D(ZAlsaBackend);
+    Q_D(const ZAlsaBackend);
     return !d->m_alsaWarnings.isEmpty();
 }
 

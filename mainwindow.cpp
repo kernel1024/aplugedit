@@ -30,6 +30,9 @@ const auto ipcEOF = "\n###";
 const int ipcTimeout = 1000;
 }
 
+// TODO: configurable tray mode
+// TODO: alsaequal module
+
 ZMainWindow::ZMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {

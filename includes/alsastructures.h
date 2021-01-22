@@ -24,6 +24,10 @@
 #include <QVector>
 #include <QStringList>
 
+extern "C" {
+#include <alsa/asoundlib.h>
+}
+
 class CDeviceItem
 {
 public:
@@ -64,6 +68,22 @@ public:
     CPCMItem &operator=(const CPCMItem& other) = default;
     bool operator==(const CPCMItem &s) const;
     bool operator!=(const CPCMItem &s) const;
+};
+
+class CCTLItem
+{
+public:
+    QString name;
+    QString displayName;
+    QStringList description;
+    snd_ctl_t* ctl { nullptr };
+    CCTLItem() = default;
+    ~CCTLItem() = default;
+    CCTLItem(const CCTLItem& other) = default;
+    CCTLItem(const QString& aName, const QStringList& aDescription, const QString& aDisplayName, snd_ctl_t* aCtl);
+    CCTLItem &operator=(const CCTLItem& other) = default;
+    bool operator==(const CCTLItem &s) const;
+    bool operator!=(const CCTLItem &s) const;
 };
 
 class CMixerItem

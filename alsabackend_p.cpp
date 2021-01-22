@@ -46,40 +46,87 @@ ZAlsaBackendPrivate::ZAlsaBackendPrivate(ZAlsaBackend *parent)
 ZAlsaBackendPrivate::~ZAlsaBackendPrivate()
 {
     m_mixerPollTimer.stop();
-    while (!m_mixerCtl.isEmpty()) {
-        auto ctl = m_mixerCtl.takeLast();
-        if (ctl != nullptr)
-            snd_ctl_close(ctl);
-    }
+    closeAllMixerCtls();
 }
 
-snd_ctl_t *ZAlsaBackendPrivate::getMixerCtl(int cardNum)
+void ZAlsaBackendPrivate::closeAllMixerCtls()
 {
-    if (cardNum>=m_mixerCtl.count()) {
-        while (m_mixerCtl.count()<(cardNum+1))
-            m_mixerCtl.append(nullptr);
+    for (const auto &ctl : qAsConst(m_mixerCtl)) {
+        if (ctl.ctl != nullptr)
+            snd_ctl_close(ctl.ctl);
+    }
+    m_mixerCtl.clear();
+}
+
+void ZAlsaBackendPrivate::enumerateMixers()
+{
+    closeAllMixerCtls();
+
+    const QStringList nameBlacklist({ QSL("arcam_av"), QSL("sysdefault") });
+    int err = 0;
+    snd_ctl_t* ctl = nullptr;
+
+    snd_ctl_card_info_t *info = nullptr;
+    snd_ctl_card_info_alloca(&info);
+
+    void **hints = nullptr;
+    if ((err = snd_device_name_hint(-1, "ctl", &hints)) < 0) {
+        qWarning() << QSL("snd_device_name_hint: %1").arg(QString::fromUtf8(snd_strerror(err)));
+        return;
     }
 
-    snd_ctl_t* res = m_mixerCtl.at(cardNum);
+    void **n = hints;
+    QStringList loadedDispNames;
 
-    if (res == nullptr) {
-        int err;
+    while (*n != nullptr) {
+        QScopedPointer<char,QScopedPointerPodDeleter> name(snd_device_name_get_hint(*n, "NAME"));
+        QScopedPointer<char,QScopedPointerPodDeleter> descr(snd_device_name_get_hint(*n, "DESC"));
+        QScopedPointer<char,QScopedPointerPodDeleter> io(snd_device_name_get_hint(*n, "IOID"));
+        const QString name_s = QString::fromUtf8(name.data());
 
-        QString name = QSL("hw:%1").arg(cardNum);
-        if ((err = snd_ctl_open(&res, name.toLatin1().constData(), 0)) < 0) {
-            qWarning() << QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err)));
-            res = nullptr;
+        if (!nameBlacklist.contains(name_s)) {
+            QStringList descList;
+            if (descr != nullptr)
+                descList = QString::fromUtf8(descr.data()).split('\n');
+
+            if ((err = snd_ctl_open(&ctl, name.data(), 0)) < 0) {
+                qWarning() << QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err)));
+                ctl = nullptr;
+            }
+
+            if (ctl) {
+                QString displayName = name_s;
+                if ((err = snd_ctl_card_info(ctl, info)) < 0) {
+                    qWarning() << QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
+                } else {
+                    displayName = QString::fromUtf8(snd_ctl_card_info_get_name(info));
+                }
+
+                if (!loadedDispNames.contains(displayName)) {
+                    if ((err = snd_ctl_subscribe_events(ctl, 1)) < 0) {
+                        qWarning() << QSL("snd_ctl_subscribe_events: %1").arg(QString::fromUtf8(snd_strerror(err)));
+                        snd_ctl_close(ctl);
+                        ctl = nullptr;
+                    }
+                    if (ctl) {
+                        m_mixerCtl.append(CCTLItem(name_s,descList,displayName,ctl));
+                        loadedDispNames.append(displayName);
+                    }
+                }
+            }
         }
-
-        if ((err = snd_ctl_subscribe_events(res, 1)) < 0) {
-            qWarning() << QSL("snd_ctl_subscribe_events: %1").arg(QString::fromUtf8(snd_strerror(err)));
-            snd_ctl_close(res);
-            res = nullptr;
-        }
-        m_mixerCtl[cardNum] = res;
+        n++;
     }
+    snd_device_name_free_hint(hints);
+}
 
-    return res;
+snd_ctl_t *ZAlsaBackendPrivate::getMixerCtl(const QString& ctlName) const
+{
+    for (const auto &ctl : qAsConst(m_mixerCtl)) {
+        if (ctl.name == ctlName)
+            return ctl.ctl;
+    }
+    return nullptr;
 }
 
 void ZAlsaBackendPrivate::enumerateCards()
@@ -103,34 +150,40 @@ void ZAlsaBackendPrivate::enumerateCards()
     }
     // **** List of Hardware Devices ****
     while (card >= 0) {
-        snd_ctl_t *handle = getMixerCtl(card);
-        if (handle) {
-            if ((err = snd_ctl_card_info(handle, info)) < 0) {
-                qWarning() << QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
-            } else {
+        snd_ctl_t *handle = nullptr;
+        const QString cardName = QSL("hw:%1").arg(card);
+        if ((err = snd_ctl_open(&handle, cardName.toLatin1().constData(), 0)) < 0) {
+            qWarning() << QSL("snd_ctl_open: %1").arg(QString::fromUtf8(snd_strerror(err)));
+        } else {
+            if (handle) {
+                if ((err = snd_ctl_card_info(handle, info)) < 0) {
+                    qWarning() << QSL("snd_ctl_card_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
+                } else {
 
-                m_cards << CCardItem(QString::fromUtf8(snd_ctl_card_info_get_id(info)),
-                                     QString::fromUtf8(snd_ctl_card_info_get_name(info)),
-                                     card);
-                dev = -1;
-                while (true) {
-                    unsigned int count;
-                    if (snd_ctl_pcm_next_device(handle, &dev)<0)
-                        qWarning() << QSL("snd_ctl_pcm_next_device: %1").arg(QString::fromUtf8(snd_strerror(err)));
-                    if (dev < 0)
-                        break;
-                    snd_pcm_info_set_device(pcminfo, static_cast<unsigned int>(dev));
-                    snd_pcm_info_set_subdevice(pcminfo, 0);
-                    snd_pcm_info_set_stream(pcminfo, stream);
-                    if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
-                        if (err != -ENOENT)
-                            qWarning() << QSL("snd_ctl_pcm_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
-                        continue;
+                    m_cards << CCardItem(QString::fromUtf8(snd_ctl_card_info_get_id(info)),
+                                         QString::fromUtf8(snd_ctl_card_info_get_name(info)),
+                                         card);
+                    dev = -1;
+                    while (true) {
+                        unsigned int count = 0;
+                        if (snd_ctl_pcm_next_device(handle, &dev)<0)
+                            qWarning() << QSL("snd_ctl_pcm_next_device: %1").arg(QString::fromUtf8(snd_strerror(err)));
+                        if (dev < 0)
+                            break;
+                        snd_pcm_info_set_device(pcminfo, static_cast<unsigned int>(dev));
+                        snd_pcm_info_set_subdevice(pcminfo, 0);
+                        snd_pcm_info_set_stream(pcminfo, stream);
+                        if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
+                            if (err != -ENOENT)
+                                qWarning() << QSL("snd_ctl_pcm_info: %1").arg(QString::fromUtf8(snd_strerror(err)));
+                            continue;
+                        }
+                        count = snd_pcm_info_get_subdevices_count(pcminfo);
+                        m_cards.last().devices << CDeviceItem(dev,static_cast<int>(count),
+                                                              QString::fromUtf8(snd_pcm_info_get_name(pcminfo)));
                     }
-                    count = snd_pcm_info_get_subdevices_count(pcminfo);
-                    m_cards.last().devices << CDeviceItem(dev,static_cast<int>(count),
-                                                          QString::fromUtf8(snd_pcm_info_get_name(pcminfo)));
                 }
+                snd_ctl_close(handle);
             }
         }
         if (snd_card_next(&card) < 0)
@@ -231,7 +284,8 @@ bool ZAlsaBackendPrivate::lessThanMixerItem(const CMixerItem &a, const CMixerIte
     return weightA < weightB;
 }
 
-QVector<int> ZAlsaBackendPrivate::findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items, int* topScore)
+QVector<int> ZAlsaBackendPrivate::findRelatedMixerItems(const CMixerItem &base, const QVector<CMixerItem> &items,
+                                                        int* topScore) const
 {
     QVector<QPair<int,int> > scores;
     int maxScore = 0;
@@ -269,46 +323,35 @@ void ZAlsaBackendPrivate::pollMixerEvents()
 {
     Q_Q(ZAlsaBackend);
 
-    const int ctlCount = m_mixerCtl.count();
     QScopedPointer<pollfd, QScopedPointerArrayDeleter<pollfd> >
-            fds(new pollfd[static_cast<unsigned int>(ctlCount)]);
-    QVector<snd_ctl_t *> ctls;
-    QHash<int,int> ctlIdx;
-    ctls.reserve(m_mixerCtl.count());
+            fds(new pollfd[static_cast<unsigned int>(m_mixerCtl.count())]);
 
-    for (int i=0; i< m_mixerCtl.count(); i++) {
-        const auto ctl = m_mixerCtl.at(i);
-        if (ctl) {
-            snd_ctl_poll_descriptors(ctl, &fds.data()[ctls.count()], 1);
-            ctlIdx[ctls.count()] = i;
-            ctls.append(ctl);
-        }
-    }
-    if (ctls.isEmpty()) return;
+    for (int i = 0; i < m_mixerCtl.count(); i++)
+        snd_ctl_poll_descriptors(m_mixerCtl.at(i).ctl, &fds.data()[i], 1);
 
-    int err = poll(fds.data(), static_cast<nfds_t>(ctls.count()), 0);
+    int err = poll(fds.data(), static_cast<nfds_t>(m_mixerCtl.count()), 0);
     if (err <= 0) return;
 
-    for (int i = 0; i < ctls.count(); i++) {
-        unsigned short revents;
-        snd_ctl_poll_descriptors_revents(ctls.at(i), &fds.data()[i], 1, &revents);
+    for (int i = 0; i < m_mixerCtl.count(); i++) {
+        unsigned short revents = 0;
+        snd_ctl_poll_descriptors_revents(m_mixerCtl.at(i).ctl, &fds.data()[i], 1, &revents);
         if ((revents & POLLIN) != 0) {
-            snd_ctl_event_t *event;
+            snd_ctl_event_t *event = nullptr;
             snd_ctl_event_alloca(&event);
 
-            if (snd_ctl_read(ctls.at(i), event) < 0) continue;
+            if (snd_ctl_read(m_mixerCtl.at(i).ctl, event) < 0) continue;
             if (snd_ctl_event_get_type(event) != SND_CTL_EVENT_ELEM) continue;
 
             unsigned int mask = snd_ctl_event_elem_get_mask(event);
 
             if (mask == SND_CTL_EVENT_MASK_REMOVE) {
-                Q_EMIT q->alsaMixerReconfigured(ctlIdx.value(i));
+                Q_EMIT q->alsaMixerReconfigured(m_mixerCtl.at(i).name);
             } else {
                 if (((mask & SND_CTL_EVENT_MASK_ADD) != 0) ||
                         ((mask & SND_CTL_EVENT_MASK_INFO) != 0)) {
-                    Q_EMIT q->alsaMixerReconfigured(ctlIdx.value(i)); // reconfigure also load all values
+                    Q_EMIT q->alsaMixerReconfigured(m_mixerCtl.at(i).name); // reconfigure also load all values
                 } else if ((mask & SND_CTL_EVENT_MASK_VALUE) != 0) {
-                    Q_EMIT q->alsaMixerValueChanged(ctlIdx.value(i));
+                    Q_EMIT q->alsaMixerValueChanged(m_mixerCtl.at(i).name);
                 }
             }
         }

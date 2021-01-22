@@ -26,27 +26,39 @@ ZMixerWindow::~ZMixerWindow()
     delete ui;
 }
 
-void ZMixerWindow::reloadControls(int cardNum)
+void ZMixerWindow::reloadControls(const QString &ctlName)
 {
-    const auto mixerItems = gAlsa->getMixerControls(cardNum);
-    if (cardNum >= m_controls.count())
-        m_controls.resize(cardNum+1);
-
-    m_controls[cardNum] = mixerItems;
-
-    const auto cards = gAlsa->cards();
-    while (cardNum >= ui->tabWidget->count()) {
-        auto scroller = new QScrollArea();
-        scroller->setObjectName(QSL("scroll#%1").arg(cardNum));
-        scroller->setWidgetResizable(true);
-        ui->tabWidget->addTab(scroller,cards.at(ui->tabWidget->count()).cardName);
+    // prepare tabs with scrollers for all cards
+    const QStringList mixerCtls = gAlsa->getMixerCtls(false);
+    while (ui->tabWidget->count() > mixerCtls.count()) {
+        int idx = ui->tabWidget->count() - 1;
+        QWidget* w = ui->tabWidget->widget(idx);
+        ui->tabWidget->removeTab(idx);
+        w->deleteLater();
+    }
+    for (int idx = 0; idx < mixerCtls.count(); idx++) {
+        const QString &name = mixerCtls.at(idx);
+        const QString displayName = gAlsa->getMixerName(name);
+        if (idx+1 > ui->tabWidget->count()) {
+            auto *scroller = new QScrollArea();
+            scroller->setObjectName(QSL("scroll#%1").arg(name));
+            scroller->setWidgetResizable(true);
+            ui->tabWidget->addTab(scroller,displayName);
+        } else if (ui->tabWidget->tabText(idx) != displayName) {
+            ui->tabWidget->setTabText(idx,displayName);
+        }
     }
 
+    const auto mixerItems = gAlsa->getMixerControls(ctlName);
+    m_controls[ctlName] = mixerItems;
+
+    // prepare control widgets for selected ctl
     QVector<CMixerItem> enums;
     QVector<CMixerItem> switches;
     enums.reserve(mixerItems.count());
     switches.reserve(mixerItems.count());
 
+    // hboxLayout contains all controls for selected ctl
     auto boxLayout = new QHBoxLayout();
 
     for (const auto& item : mixerItems) {
@@ -54,7 +66,7 @@ void ZMixerWindow::reloadControls(int cardNum)
         if ((item.type == CMixerItem::itBoolean) && (!item.isRelated)) switches.append(item);
         if ((item.type != CMixerItem::itInteger) && (item.type != CMixerItem::itInteger64)) continue;
 
-        auto witem = new QWidget;
+        auto witem = new QWidget();
         Ui::ZMixerItem iui;
         iui.setupUi(witem);
 
@@ -69,9 +81,13 @@ void ZMixerWindow::reloadControls(int cardNum)
         if (item.valueStep>0)
             iui.slider->setSingleStep(static_cast<int>(item.valueStep));
         iui.slider->setValue(static_cast<int>(item.values.constFirst()));
-        iui.slider->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(item.numid));
+        iui.slider->setObjectName(QSL("ctl#%1#%2").arg(ctlName).arg(item.numid));
+        iui.slider->setProperty("ctl",ctlName);
+        iui.slider->setProperty("numid",item.numid);
 
-        iui.btnMenu->setObjectName(QSL("btn#%1#%2").arg(cardNum).arg(item.numid));
+        iui.btnMenu->setObjectName(QSL("btn#%1#%2").arg(ctlName).arg(item.numid));
+        iui.btnMenu->setProperty("ctl",ctlName);
+        iui.btnMenu->setProperty("numid",item.numid);
 
         iui.check->setEnabled(false);
         for (const auto& ridx : qAsConst(item.related)) {
@@ -79,7 +95,9 @@ void ZMixerWindow::reloadControls(int cardNum)
             if (ritem.type == CMixerItem::itBoolean) {
                 iui.check->setEnabled(true);
                 iui.check->setChecked(ritem.values.constFirst() == 0L);
-                iui.check->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(ritem.numid));
+                iui.check->setObjectName(QSL("ctl#%1#%2").arg(ctlName).arg(ritem.numid));
+                iui.check->setProperty("ctl",ctlName);
+                iui.check->setProperty("numid",ritem.numid);
                 iui.check->setStatusTip(ritem.name);
                 break;
             }
@@ -94,11 +112,11 @@ void ZMixerWindow::reloadControls(int cardNum)
 
     if (!switches.isEmpty()) {
         auto checkList = new QListWidget();
-        checkList->setObjectName(QSL("sw#%1").arg(cardNum));
+        checkList->setObjectName(QSL("sw#%1").arg(ctlName));
         for (const auto &item : qAsConst(switches)) {
             auto itm = new QListWidgetItem(item.name);
             itm->setData(Qt::UserRole,item.numid);
-            itm->setData(Qt::UserRole+1,cardNum);
+            itm->setData(Qt::UserRole+1,ctlName);
             itm->setFlags(itm->flags() | Qt::ItemIsUserCheckable);
             itm->setCheckState((item.values.constFirst() == 0L) ? Qt::Checked : Qt::Unchecked);
             itm->setStatusTip(item.name);
@@ -119,7 +137,9 @@ void ZMixerWindow::reloadControls(int cardNum)
             auto enList = new QComboBox();
             enList->addItems(item.labels);
             enList->setCurrentIndex(static_cast<int>(item.values.constFirst()));
-            enList->setObjectName(QSL("ctl#%1#%2").arg(cardNum).arg(item.numid));
+            enList->setObjectName(QSL("ctl#%1#%2").arg(ctlName).arg(item.numid));
+            enList->setProperty("ctl",ctlName);
+            enList->setProperty("numid",item.numid);
             enList->setStatusTip(item.name);
 
             auto subLayout = new QVBoxLayout();
@@ -136,13 +156,14 @@ void ZMixerWindow::reloadControls(int cardNum)
         addSeparatedWidgetToLayout(boxLayout,enumsList);
     }
 
-    auto scroller = findChild<QScrollArea *>(QSL("scroll#%1").arg(cardNum));
+    // reallocate scroller widget for ctl, insert hboxLayout to it
+    auto scroller = findChild<QScrollArea *>(QSL("scroll#%1").arg(ctlName));
     if ((scroller != nullptr) && (boxLayout->count() > 0)) {
         if (scroller->widget())
             scroller->takeWidget()->deleteLater();
 
         auto wcontainer = new QWidget();
-        wcontainer->setObjectName(QSL("card#%1").arg(cardNum));
+        wcontainer->setObjectName(QSL("card#%1").arg(ctlName));
         wcontainer->setLayout(boxLayout);
         scroller->setWidget(wcontainer);
     } else {
@@ -150,11 +171,11 @@ void ZMixerWindow::reloadControls(int cardNum)
     }
 }
 
-void ZMixerWindow::reloadControlsQueued(int cardNum)
+void ZMixerWindow::reloadControlsQueued(const QString &ctlName)
 {
-    QTimer::singleShot(0,this,[this,cardNum](){
-        reloadControls(cardNum);
-    });
+    QMetaObject::invokeMethod(this,[this,ctlName](){
+        reloadControls(ctlName);
+    },Qt::QueuedConnection);
 }
 
 bool ZMixerWindow::event(QEvent *event)
@@ -168,25 +189,25 @@ bool ZMixerWindow::event(QEvent *event)
     return QDialog::event(event);
 }
 
-void ZMixerWindow::updateControlsState(int cardNum)
+void ZMixerWindow::updateControlsState(const QString &ctlName)
 {
-    auto tab = findChild<QWidget *>(QSL("card#%1").arg(cardNum));
+    auto tab = findChild<QWidget *>(QSL("card#%1").arg(ctlName));
     if (tab == nullptr) return;
 
-    const auto mixerItems = gAlsa->getMixerControls(cardNum);
-    if (mixerItems.count() != m_controls.at(cardNum).count()) {
-        reloadControlsQueued(cardNum);
+    const auto mixerItems = gAlsa->getMixerControls(ctlName);
+    if (mixerItems.count() != m_controls.value(ctlName).count()) {
+        reloadControlsQueued(ctlName);
         return;
     }
 
     for (int i=0; i<mixerItems.count(); i++) {
 
-        const auto& oldItem = m_controls.at(cardNum).at(i);
+        const auto& oldItem = m_controls.value(ctlName).at(i);
         const auto& newItem = mixerItems.at(i);
         if ((newItem.numid != oldItem.numid) ||
                 (newItem.type != oldItem.type) ||
                 (newItem.values.count() != oldItem.values.count())){
-            reloadControlsQueued(cardNum);
+            reloadControlsQueued(ctlName);
             return;
         }
 
@@ -198,7 +219,7 @@ void ZMixerWindow::updateControlsState(int cardNum)
             }
         }
 
-        const QString objName(QSL("ctl#%1#%2").arg(cardNum).arg(newItem.numid));
+        const QString objName(QSL("ctl#%1#%2").arg(ctlName).arg(newItem.numid));
 
         if (!equal) {
             if ((newItem.type == CMixerItem::itInteger) ||
@@ -220,7 +241,7 @@ void ZMixerWindow::updateControlsState(int cardNum)
                         check->blockSignals(false);
                     }
                 } else {
-                    auto checkList = tab->findChild<QListWidget *>(QSL("sw#%1").arg(cardNum));
+                    auto checkList = tab->findChild<QListWidget *>(QSL("sw#%1").arg(ctlName));
                     if (checkList) {
                         for (int k=0; k<checkList->count(); k++) {
                             bool ok1;
@@ -229,7 +250,7 @@ void ZMixerWindow::updateControlsState(int cardNum)
                             if (clItem) {
                                 unsigned int checkNumid = clItem->data(Qt::UserRole).toUInt(&ok1);
                                 int checkCardNum = clItem->data(Qt::UserRole + 1).toInt(&ok2);
-                                if ((checkCardNum == cardNum) && (checkNumid == newItem.numid)) {
+                                if ((checkCardNum == ctlName) && (checkNumid == newItem.numid)) {
                                     bool oldState = (clItem->checkState() == Qt::Checked);
                                     bool newState = (newItem.values.constFirst() == 0L);
                                     if (oldState != newState) {
@@ -253,7 +274,7 @@ void ZMixerWindow::updateControlsState(int cardNum)
                 }
             }
 
-            m_controls[cardNum][i] = mixerItems.at(i);
+            m_controls[ctlName][i] = mixerItems.at(i);
         }
     }
 }
@@ -273,24 +294,10 @@ void ZMixerWindow::addSeparatedWidgetToLayout(QLayout *layout, QWidget *itemWidg
     layout->addWidget(itemWidget);
 }
 
-bool ZMixerWindow::getMixerItemIDs(QWidget *widget, int *card, unsigned int *numid)
-{
-    static const QStringList validPrefixes({ QSL("ctl"), QSL("btn") });
-
-    const QStringList sl = widget->objectName().split(QChar('#'));
-    if ((sl.count() != 3) || (!validPrefixes.contains(sl.constFirst()))) return false;
-    bool ok1;
-    bool ok2;
-    *card = sl.at(1).toInt(&ok1);
-    *numid = sl.at(2).toUInt(&ok2);
-    return (ok1 && ok2);
-}
-
 void ZMixerWindow::reloadAllCards()
 {
-    const auto cards = gAlsa->cards();
-    for (int card=0; card<cards.count(); card++)
-        reloadControls(card);
+    for (const auto &ctlName : gAlsa->getMixerCtls(true))
+        reloadControls(ctlName);
 }
 
 void ZMixerWindow::volumeChanged(int value)
@@ -298,15 +305,16 @@ void ZMixerWindow::volumeChanged(int value)
     auto w = qobject_cast<QSlider *>(sender());
     if (w == nullptr) return;
 
-    int card;
-    unsigned int numid;
-    if (!getMixerItemIDs(w,&card,&numid)) return;
+    bool ok = false;
+    const QString card = w->property("ctl").toString();
+    unsigned int numid = w->property("numid").toUInt(&ok);
+    if (!ok) return;
 
-    for (int i=0; i<m_controls.at(card).count(); i++) {
-        if (m_controls.at(card).at(i).numid == numid) {
-            for (int k=0; k<m_controls.at(card).at(i).values.count(); k++)
+    for (int i=0; i<m_controls.value(card).count(); i++) {
+        if (m_controls.value(card).at(i).numid == numid) {
+            for (int k=0; k<m_controls.value(card).at(i).values.count(); k++)
                 m_controls[card][i].values[k] = value;
-            gAlsa->setMixerControl(card,m_controls.at(card).at(i));
+            gAlsa->setMixerControl(card,m_controls.value(card).at(i));
             break;
         }
     }
@@ -319,15 +327,16 @@ void ZMixerWindow::switchClicked(bool state)
     auto w = qobject_cast<QCheckBox *>(sender());
     if (w == nullptr) return;
 
-    int card;
-    unsigned int numid;
-    if (!getMixerItemIDs(w,&card,&numid)) return;
+    bool ok = false;
+    const QString card = w->property("ctl").toString();
+    unsigned int numid = w->property("numid").toUInt(&ok);
+    if (!ok) return;
 
-    for (int i=0; i<m_controls.at(card).count(); i++) {
-        if (m_controls.at(card).at(i).numid == numid) {
-            for (int k=0; k<m_controls.at(card).at(i).values.count(); k++)
+    for (int i=0; i<m_controls.value(card).count(); i++) {
+        if (m_controls.value(card).at(i).numid == numid) {
+            for (int k=0; k<m_controls.value(card).at(i).values.count(); k++)
                 m_controls[card][i].values[k] = (state ? 0L : 1L);
-            gAlsa->setMixerControl(card,m_controls.at(card).at(i));
+            gAlsa->setMixerControl(card,m_controls.value(card).at(i));
             break;
         }
     }
@@ -337,21 +346,20 @@ void ZMixerWindow::switchClicked(bool state)
 
 void ZMixerWindow::switchListClicked(QListWidgetItem *item)
 {
-    bool ok1;
-    bool ok2;
-    unsigned int numid = item->data(Qt::UserRole).toUInt(&ok1);
-    int card = item->data(Qt::UserRole+1).toInt(&ok2);
-    if (!ok1 || !ok2) return;
+    bool ok = false;
+    unsigned int numid = item->data(Qt::UserRole).toUInt(&ok);
+    const QString card = item->data(Qt::UserRole+1).toString();
+    if (!ok) return;
 
-    for (int i=0; i<m_controls.at(card).count(); i++) {
-        if (m_controls.at(card).at(i).numid == numid) {
+    for (int i=0; i<m_controls.value(card).count(); i++) {
+        if (m_controls.value(card).at(i).numid == numid) {
             bool oldState = (m_controls[card][i].values.constFirst() == 0L);
             bool newState = (item->checkState() == Qt::CheckState::Checked);
             if (oldState != newState) {
-                for (int k=0; k<m_controls.at(card).at(i).values.count(); k++)
+                for (int k=0; k<m_controls.value(card).at(i).values.count(); k++)
                     m_controls[card][i].values[k] = (newState ? 0L : 1L);
             }
-            gAlsa->setMixerControl(card,m_controls.at(card).at(i));
+            gAlsa->setMixerControl(card,m_controls.value(card).at(i));
             break;
         }
     }
@@ -364,15 +372,16 @@ void ZMixerWindow::enumClicked(int index)
     auto w = qobject_cast<QComboBox *>(sender());
     if (w == nullptr) return;
 
-    int card;
-    unsigned int numid;
-    if (!getMixerItemIDs(w,&card,&numid)) return;
+    bool ok = false;
+    const QString card = w->property("ctl").toString();
+    unsigned int numid = w->property("numid").toUInt(&ok);
+    if (!ok) return;
 
-    for (int i=0; i<m_controls.at(card).count(); i++) {
-        if (m_controls.at(card).at(i).numid == numid) {
-            for (int k=0; k<m_controls.at(card).at(i).values.count(); k++)
+    for (int i=0; i<m_controls.value(card).count(); i++) {
+        if (m_controls.value(card).at(i).numid == numid) {
+            for (int k=0; k<m_controls.value(card).at(i).values.count(); k++)
                 m_controls[card][i].values[k] = index;
-            gAlsa->setMixerControl(card,m_controls.at(card).at(i));
+            gAlsa->setMixerControl(card,m_controls.value(card).at(i));
             break;
         }
     }
@@ -385,12 +394,13 @@ void ZMixerWindow::mixerCtxMenuClicked()
     auto w = qobject_cast<QPushButton *>(sender());
     if (w == nullptr) return;
 
-    int card;
-    unsigned int numid;
-    if (!getMixerItemIDs(w,&card,&numid)) return;
+    bool ok = false;
+    const QString card = w->property("ctl").toString();
+    unsigned int numid = w->property("numid").toUInt(&ok);
+    if (!ok) return;
 
     CMixerItem mxItem;
-    for (const auto& itm : qAsConst(m_controls.at(card))) {
+    for (const auto& itm : m_controls.value(card)) {
         if (itm.numid == numid) {
             mxItem = itm;
             break;
