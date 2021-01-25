@@ -59,14 +59,14 @@ void ZMixerWindow::reloadControls(const QString &ctlName)
     switches.reserve(mixerItems.count());
 
     // hboxLayout contains all controls for selected ctl
-    auto boxLayout = new QHBoxLayout();
+    auto *boxLayout = new QHBoxLayout();
 
     for (const auto& item : mixerItems) {
         if (item.type == CMixerItem::itEnumerated) enums.append(item);
         if ((item.type == CMixerItem::itBoolean) && (!item.isRelated)) switches.append(item);
         if ((item.type != CMixerItem::itInteger) && (item.type != CMixerItem::itInteger64)) continue;
 
-        auto witem = new QWidget();
+        auto *witem = new QWidget();
         Ui::ZMixerItem iui;
         iui.setupUi(witem);
 
@@ -111,10 +111,10 @@ void ZMixerWindow::reloadControls(const QString &ctlName)
     }
 
     if (!switches.isEmpty()) {
-        auto checkList = new QListWidget();
+        auto *checkList = new QListWidget();
         checkList->setObjectName(QSL("sw#%1").arg(ctlName));
         for (const auto &item : qAsConst(switches)) {
-            auto itm = new QListWidgetItem(item.name);
+            auto *itm = new QListWidgetItem(item.name);
             itm->setData(Qt::UserRole,item.numid);
             itm->setData(Qt::UserRole+1,ctlName);
             itm->setFlags(itm->flags() | Qt::ItemIsUserCheckable);
@@ -129,12 +129,12 @@ void ZMixerWindow::reloadControls(const QString &ctlName)
     }
 
     if (!enums.isEmpty()) {
-        auto enumsList = new QWidget();
-        auto enumsLayout = new QVBoxLayout();
+        auto *enumsList = new QWidget();
+        auto *enumsLayout = new QVBoxLayout();
         for (const auto &item : qAsConst(enums)) {
-            auto enFrame = new QWidget();
-            auto enLabel = new QLabel(item.name);
-            auto enList = new QComboBox();
+            auto *enFrame = new QWidget();
+            auto *enLabel = new QLabel(item.name);
+            auto *enList = new QComboBox();
             enList->addItems(item.labels);
             enList->setCurrentIndex(static_cast<int>(item.values.constFirst()));
             enList->setObjectName(QSL("ctl#%1#%2").arg(ctlName).arg(item.numid));
@@ -142,7 +142,7 @@ void ZMixerWindow::reloadControls(const QString &ctlName)
             enList->setProperty("numid",item.numid);
             enList->setStatusTip(item.name);
 
-            auto subLayout = new QVBoxLayout();
+            auto *subLayout = new QVBoxLayout();
             subLayout->setContentsMargins(QMargins());
             subLayout->addWidget(enLabel);
             subLayout->addWidget(enList);
@@ -157,12 +157,12 @@ void ZMixerWindow::reloadControls(const QString &ctlName)
     }
 
     // reallocate scroller widget for ctl, insert hboxLayout to it
-    auto scroller = findChild<QScrollArea *>(QSL("scroll#%1").arg(ctlName));
+    auto *scroller = findChild<QScrollArea *>(QSL("scroll#%1").arg(ctlName));
     if ((scroller != nullptr) && (boxLayout->count() > 0)) {
         if (scroller->widget())
             scroller->takeWidget()->deleteLater();
 
-        auto wcontainer = new QWidget();
+        auto *wcontainer = new QWidget();
         wcontainer->setObjectName(QSL("card#%1").arg(ctlName));
         wcontainer->setLayout(boxLayout);
         scroller->setWidget(wcontainer);
@@ -181,7 +181,7 @@ void ZMixerWindow::reloadControlsQueued(const QString &ctlName)
 bool ZMixerWindow::event(QEvent *event)
 {
     if (event->type() == QEvent::StatusTip) {
-        auto ev = dynamic_cast<QStatusTipEvent *>(event);
+        auto *ev = dynamic_cast<QStatusTipEvent *>(event);
         ui->statusLabel->setText(ev->tip());
         return true;
     }
@@ -191,7 +191,7 @@ bool ZMixerWindow::event(QEvent *event)
 
 void ZMixerWindow::updateControlsState(const QString &ctlName)
 {
-    auto tab = findChild<QWidget *>(QSL("card#%1").arg(ctlName));
+    auto *tab = findChild<QWidget *>(QSL("card#%1").arg(ctlName));
     if (tab == nullptr) return;
 
     const auto mixerItems = gAlsa->getMixerControls(ctlName);
@@ -224,7 +224,7 @@ void ZMixerWindow::updateControlsState(const QString &ctlName)
         if (!equal) {
             if ((newItem.type == CMixerItem::itInteger) ||
                     (newItem.type == CMixerItem::itInteger64)) {
-                auto slider = tab->findChild<QSlider *>(objName);
+                auto *slider = tab->findChild<QSlider *>(objName);
                 if ((slider != nullptr) &&
                         (!(slider->isSliderDown())) &&
                         (slider->value() != newItem.values.constFirst())) {
@@ -233,7 +233,7 @@ void ZMixerWindow::updateControlsState(const QString &ctlName)
                     slider->blockSignals(false);
                 }
             } else if (newItem.type == CMixerItem::itBoolean) {
-                auto check = tab->findChild<QCheckBox *>(objName);
+                auto *check = tab->findChild<QCheckBox *>(objName);
                 if (check) {
                     if (check->isChecked() != (newItem.values.constFirst() == 0L)) {
                         check->blockSignals(true);
@@ -241,12 +241,12 @@ void ZMixerWindow::updateControlsState(const QString &ctlName)
                         check->blockSignals(false);
                     }
                 } else {
-                    auto checkList = tab->findChild<QListWidget *>(QSL("sw#%1").arg(ctlName));
+                    auto *checkList = tab->findChild<QListWidget *>(QSL("sw#%1").arg(ctlName));
                     if (checkList) {
                         for (int k=0; k<checkList->count(); k++) {
-                            bool ok1;
-                            bool ok2;
-                            auto clItem = checkList->item(k);
+                            bool ok1 = 0;
+                            bool ok2 = 0;
+                            auto *clItem = checkList->item(k);
                             if (clItem) {
                                 unsigned int checkNumid = clItem->data(Qt::UserRole).toUInt(&ok1);
                                 int checkCardNum = clItem->data(Qt::UserRole + 1).toInt(&ok2);
@@ -265,7 +265,7 @@ void ZMixerWindow::updateControlsState(const QString &ctlName)
                     }
                 }
             } else if (newItem.type == CMixerItem::itEnumerated) {
-                auto enList = tab->findChild<QComboBox *>(objName);
+                auto *enList = tab->findChild<QComboBox *>(objName);
                 if ((enList != nullptr) &&
                         (enList->currentIndex() != newItem.values.constFirst())) {
                     enList->blockSignals(true);
@@ -282,7 +282,7 @@ void ZMixerWindow::updateControlsState(const QString &ctlName)
 void ZMixerWindow::addSeparatedWidgetToLayout(QLayout *layout, QWidget *itemWidget)
 {
     if (layout->count()>0) {
-        auto line = new QFrame();
+        auto *line = new QFrame();
         if (qobject_cast<QVBoxLayout *>(layout) != nullptr) {
             line->setFrameShape(QFrame::HLine);
         } else {
@@ -296,13 +296,14 @@ void ZMixerWindow::addSeparatedWidgetToLayout(QLayout *layout, QWidget *itemWidg
 
 void ZMixerWindow::reloadAllCards()
 {
-    for (const auto &ctlName : gAlsa->getMixerCtls(true))
+    const QStringList &sl = gAlsa->getMixerCtls(true);
+    for (const auto &ctlName : sl)
         reloadControls(ctlName);
 }
 
 void ZMixerWindow::volumeChanged(int value)
 {
-    auto w = qobject_cast<QSlider *>(sender());
+    auto *w = qobject_cast<QSlider *>(sender());
     if (w == nullptr) return;
 
     bool ok = false;
@@ -324,7 +325,7 @@ void ZMixerWindow::volumeChanged(int value)
 
 void ZMixerWindow::switchClicked(bool state)
 {
-    auto w = qobject_cast<QCheckBox *>(sender());
+    auto *w = qobject_cast<QCheckBox *>(sender());
     if (w == nullptr) return;
 
     bool ok = false;
@@ -369,7 +370,7 @@ void ZMixerWindow::switchListClicked(QListWidgetItem *item)
 
 void ZMixerWindow::enumClicked(int index)
 {
-    auto w = qobject_cast<QComboBox *>(sender());
+    auto *w = qobject_cast<QComboBox *>(sender());
     if (w == nullptr) return;
 
     bool ok = false;
@@ -391,7 +392,7 @@ void ZMixerWindow::enumClicked(int index)
 
 void ZMixerWindow::mixerCtxMenuClicked()
 {
-    auto w = qobject_cast<QPushButton *>(sender());
+    auto *w = qobject_cast<QPushButton *>(sender());
     if (w == nullptr) return;
 
     bool ok = false;
@@ -409,7 +410,7 @@ void ZMixerWindow::mixerCtxMenuClicked()
     if (mxItem.isEmpty()) return;
 
     QMenu menu;
-    auto ac = menu.addAction(tr("Delete control"));
+    auto *ac = menu.addAction(tr("Delete control"));
     ac->setEnabled(mxItem.isUser);
     connect(ac,&QAction::triggered,this,[this,card,mxItem](){
         gAlsa->deleteMixerControl(card,mxItem);

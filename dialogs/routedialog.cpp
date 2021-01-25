@@ -111,10 +111,10 @@ void ZRouteDialog::setParams(int inChannels, const QVector<CRouteItem> &alTable)
 
     for (int i=0;i<alTable.length();i++)
     {
-        auto a = new QTableWidgetItem(tr("%1").arg(alTable.at(i).from));
-        auto b = new QTableWidgetItem(tr("%1").arg(i));
+        auto *a = new QTableWidgetItem(tr("%1").arg(alTable.at(i).from));
+        auto *b = new QTableWidgetItem(tr("%1").arg(i));
         b->setFlags(b->flags() & ~Qt::ItemIsEditable);
-        auto c = new QTableWidgetItem(tr("%1").arg(alTable.at(i).coeff,0,'f',1));
+        auto *c = new QTableWidgetItem(tr("%1").arg(alTable.at(i).coeff,0,'f',1));
         alRouteTable->setItem(i,0,a);
         alRouteTable->setItem(i,1,b);
         alRouteTable->setItem(i,2,c);
@@ -134,16 +134,16 @@ void ZRouteDialog::channelsChanged(int index)
     for (int i=0;i<alChannelsOut;i++)
     {
         if (alRouteTable->item(i,0)==nullptr) {
-            auto a = new QTableWidgetItem(QSL("%1").arg(j));
+            auto *a = new QTableWidgetItem(QSL("%1").arg(j));
             alRouteTable->setItem(i,0,a);
         }
         if (alRouteTable->item(i,1)==nullptr) {
-            auto b = new QTableWidgetItem(QSL("%1").arg(i));
+            auto *b = new QTableWidgetItem(QSL("%1").arg(i));
             b->setFlags(b->flags() & ~Qt::ItemIsEditable);
             alRouteTable->setItem(i,1,b);
         }
         if (alRouteTable->item(i,2)==nullptr) {
-            auto c = new QTableWidgetItem(QSL("1.0"));
+            auto *c = new QTableWidgetItem(QSL("1.0"));
             alRouteTable->setItem(i,2,c);
         }
         j++;

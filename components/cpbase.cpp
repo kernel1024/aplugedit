@@ -58,7 +58,7 @@ void ZCPBase::deleteOutput(int idx)
             }
         }
     }
-    auto out = fOutputs.takeAt(idx);
+    auto *out = fOutputs.takeAt(idx);
     m_owner->repaintConn();
     out->deleteLater();
 }
@@ -354,9 +354,9 @@ void ZCPBase::mousePressEvent(QMouseEvent * event)
         return;
     }
 
-    ZCPBase* dFlt;
-    int pNum;
-    PinType pType;
+    ZCPBase* dFlt = nullptr;
+    int pNum = 0;
+    PinType pType = PinType::ptInput;
     mouseInPin(mx,pNum,pType,dFlt);
     Q_EMIT componentChanged(this);
     if (pNum<0) {
@@ -375,9 +375,9 @@ void ZCPBase::mousePressEvent(QMouseEvent * event)
 void ZCPBase::mouseReleaseEvent(QMouseEvent * event)
 {
     QPoint mx=mapToGlobal(event->pos());
-    ZCPBase* dFlt;
-    int pNum;
-    PinType pType;
+    ZCPBase* dFlt = nullptr;
+    int pNum = 0;
+    PinType pType = PinType::ptInput;
     mouseInPin(mx,pNum,pType,dFlt);
     if (pNum==-1) {
         bool f=m_isDragging;
@@ -455,7 +455,7 @@ ZCPBase *ZCPBase::searchPluginBackward(const char *targetClass, const ZCPBase *n
                     return link.fromFilter; // found
                 }
 
-                if (auto component = searchPluginBackward(targetClass,link.fromFilter,searchStack)) {
+                if (auto *component = searchPluginBackward(targetClass,link.fromFilter,searchStack)) {
                     searchStack->removeLast();
                     return component;
                 }
@@ -484,7 +484,7 @@ ZCPBase *ZCPBase::searchPluginForward(const char *targetClass, const ZCPBase *no
                 return out->toFilter; // found
             }
 
-            if (auto component = searchPluginForward(targetClass,out->toFilter)) {
+            if (auto *component = searchPluginForward(targetClass,out->toFilter)) {
                 searchStack->removeLast();
                 return component;
             }
@@ -527,7 +527,7 @@ QJsonValue ZCPOutput::storeToJson() const
 bool ZCPOutput::postLoadBind()
 {
     if (ffLogic.isEmpty()) return true;
-    auto b = ownerFilter->ownerArea()->findChild<ZCPBase *>(ffLogic);
+    auto *b = ownerFilter->ownerArea()->findChild<ZCPBase *>(ffLogic);
     if (b) {
         toFilter=b;
     } else {
@@ -536,7 +536,7 @@ bool ZCPOutput::postLoadBind()
     return true;
 }
 
-QColor ZCPOutput::getPinColor()
+QColor ZCPOutput::getPinColor() const
 {
     switch (pinClass) {
         case CStructures::PinClass::pcPCM: return Qt::blue;
@@ -591,7 +591,7 @@ bool ZCPInput::postLoadBind()
     bool failed = false;
     for (auto & link : links) {
         if (!(link.ffLogic.isEmpty())) {
-            auto b = ownerFilter->ownerArea()->findChild<ZCPBase *>(link.ffLogic);
+            auto *b = ownerFilter->ownerArea()->findChild<ZCPBase *>(link.ffLogic);
             if (b) {
                 link.fromFilter = b;
             } else {
@@ -602,7 +602,7 @@ bool ZCPInput::postLoadBind()
     return (!failed);
 }
 
-QColor ZCPInput::getPinColor()
+QColor ZCPInput::getPinColor() const
 {
     switch (pinClass) {
         case CStructures::PinClass::pcPCM: return Qt::blue;

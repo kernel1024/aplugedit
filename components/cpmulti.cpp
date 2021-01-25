@@ -200,7 +200,7 @@ void ZCPMulti::regenerateOutputs(int outputsCount)
     }
 
     while ((fOutputs.count() - 1) < outputsCount) {
-        auto out=new ZCPOutput(this, QString());
+        auto *out=new ZCPOutput(this, QString());
         registerOutput(out);
         m_slaveChannels.append(2); // default stereo output
     }

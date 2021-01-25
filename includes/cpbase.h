@@ -57,7 +57,7 @@ public:
     void readFromJson(const QJsonValue& json);
     QJsonValue storeToJson() const;
     bool postLoadBind();
-    QColor getPinColor();
+    QColor getPinColor() const;
 };
 
 class CInpLink
@@ -89,7 +89,7 @@ public:
     void readFromJson(const QJsonValue& json);
     QJsonValue storeToJson() const;
     bool postLoadBind();
-    QColor getPinColor();
+    QColor getPinColor() const;
 };
 
 class ZCPBase : public QWidget

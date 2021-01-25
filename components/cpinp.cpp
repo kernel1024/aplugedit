@@ -55,7 +55,7 @@ void ZCPInp::showSettingsDlg()
         c=items.indexOf(m_dspName);
     }
 
-    bool ok;
+    bool ok = false;
     QString item = QInputDialog::getItem(window(), tr("PCM device"),
                                          tr("Unique ALSA PCM ID number"), items, c, true, &ok);
     if (ok && !item.isEmpty())

@@ -190,8 +190,8 @@ bool ZCPLADSPA::isConverterPresent() const
     if (searchPluginForward(ZCPPlug::staticMetaObject.className()) != nullptr)
         return true;
 
-    if (auto plug = searchPluginForward(ZCPConv::staticMetaObject.className())) {
-        if (auto conv = qobject_cast<ZCPConv*>(plug)) {
+    if (auto *plug = searchPluginForward(ZCPConv::staticMetaObject.className())) {
+        if (auto *conv = qobject_cast<ZCPConv*>(plug)) {
             if (conv->getConverterType() == ZCPConv::ConverterType::alcFloat)
                 return true;
         }

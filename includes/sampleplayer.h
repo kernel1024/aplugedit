@@ -51,7 +51,7 @@ public Q_SLOTS:
     void updateSinkList();
     void updateLevelIndicator(double rmsL, double rmsR, double peakL, double peakR);
     void updatePosition();
-    void updateVolume(int value);
+    void updateVolume(int value) const;
     void getSinkInfo();
     void updateDebugMessages();
     void editMessagesFilter();

@@ -54,7 +54,7 @@ private:
     void refreshConnBuilder(const QPoint& atPos);
     void doneConnBuilder(bool none, int type, int pinNum, ZCPInput* input, ZCPOutput* output,
                          ZCPBase* finishFilter);
-    bool postLoadBinding();
+    bool postLoadBinding() const;
 
 public:
     explicit ZRenderArea(QScrollArea *aScroller = nullptr);
@@ -66,7 +66,7 @@ public:
     QByteArray storeSchematic() const;
 
     void repaintConn();
-    void doGenerate(QTextStream& stream, QStringList& warnings);
+    void doGenerate(QTextStream& stream, QStringList& warnings) const;
 
     QVector<CPCMItem> getAllPCMNames() const;
 

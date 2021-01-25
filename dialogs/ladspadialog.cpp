@@ -35,14 +35,14 @@ ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
 {
     setupUi(this);
 
-    auto alScroller=new QScrollArea(tabSettings);
+    auto *alScroller=new QScrollArea(tabSettings);
     alScroller->setWidgetResizable(true);
 
     m_controls = new ZResizableFrame(alScroller);
     m_controls->setObjectName(QSL("alControls"));
     m_controls->setFrameShape(QFrame::StyledPanel);
     m_controls->setFrameShadow(QFrame::Plain);
-    if (auto vl=qobject_cast<QGridLayout*>(tabSettings->layout()))
+    if (auto *vl=qobject_cast<QGridLayout*>(tabSettings->layout()))
         vl->addWidget(alScroller,0,0,1,1);
     m_controls->setMaximumSize(QSize(5*tabSettings->width()/6,3000));
     alScroller->setWidget(m_controls);
@@ -133,14 +133,14 @@ void ZLADSPADialog::showEvent(QShowEvent * event)
         m_controlItems[i].aasFreq = m_preservedControlItems.at(i).aasFreq;
         m_controlItems[i].aasInt = m_preservedControlItems.at(i).aasInt;
         if (m_controlItems.at(i).aatType==ZLADSPA::aacToggle) {
-            if (auto w=qobject_cast<QCheckBox*>(m_controlItems.at(i).aawControl)) {
+            if (auto *w=qobject_cast<QCheckBox*>(m_controlItems.at(i).aawControl)) {
                 if (m_controlItems.at(i).aasToggle) {
                     w->setCheckState(Qt::Checked);
                 } else {
                     w->setCheckState(Qt::Unchecked);
                 }
             }
-        } else if (auto w=qobject_cast<QDoubleSpinBox*>(m_controlItems.at(i).aawControl)) {
+        } else if (auto *w=qobject_cast<QDoubleSpinBox*>(m_controlItems.at(i).aawControl)) {
             if (m_controlItems.at(i).aatType==ZLADSPA::aacInteger) {
                 w->setValue(m_controlItems.at(i).aasInt);
             } else if (m_controlItems.at(i).aatType==ZLADSPA::aacFreq) {
@@ -253,9 +253,9 @@ void ZLADSPADialog::readInfoFromControls()
     for (int i=0;i<m_controlItems.count();i++) {
         if (m_controlItems.at(i).aawControl==nullptr) continue;
         if (m_controlItems.at(i).aatType==ZLADSPA::aacToggle) {
-            if (auto w=qobject_cast<QCheckBox*>(m_controlItems.at(i).aawControl))
+            if (auto *w=qobject_cast<QCheckBox*>(m_controlItems.at(i).aawControl))
                 m_controlItems[i].aasToggle=(w->checkState()==Qt::Checked);
-        } else if (auto w=qobject_cast<QDoubleSpinBox*>(m_controlItems.at(i).aawControl)) {
+        } else if (auto *w=qobject_cast<QDoubleSpinBox*>(m_controlItems.at(i).aawControl)) {
             if (m_controlItems.at(i).aatType==ZLADSPA::aacInteger) {
                 m_controlItems[i].aasInt=ZGenericFuncs::truncDouble(w->value());
             } else if (m_controlItems.at(i).aatType==ZLADSPA::aacFreq) {
@@ -313,7 +313,7 @@ void ZLADSPADialog::scanPlugins()
             if (plugin.load()) {
                 auto fDescriptorFunction = reinterpret_cast<LADSPA_Descriptor_Function>(plugin.resolve("ladspa_descriptor"));
                 if (fDescriptorFunction) {
-                    const LADSPA_Descriptor * psDescriptor;
+                    const LADSPA_Descriptor * psDescriptor = nullptr;
                     for (unsigned long lIndex=0;(psDescriptor=fDescriptorFunction(lIndex))!=nullptr;lIndex++) {
                         QString pluginName = QString::fromUtf8(psDescriptor->Name);
                         QString pluginLabel = QString::fromUtf8(psDescriptor->Label);
@@ -366,12 +366,12 @@ void ZLADSPADialog::analyzePlugin()
     if (plugin.load()) {
         auto pfDescriptorFunction = reinterpret_cast<LADSPA_Descriptor_Function>(plugin.resolve("ladspa_descriptor"));
         if (pfDescriptorFunction) {
-            const LADSPA_Descriptor * psDescriptor;
-            unsigned long lPluginIndex;
-            unsigned long lPortIndex;
-            LADSPA_PortRangeHintDescriptor iHintDescriptor;
-            LADSPA_Data fBound;
-            LADSPA_Data fDefault;
+            const LADSPA_Descriptor * psDescriptor = nullptr;
+            unsigned long lPluginIndex = 0;
+            unsigned long lPortIndex = 0;
+            LADSPA_PortRangeHintDescriptor iHintDescriptor = 0;
+            LADSPA_Data fBound = NAN;
+            LADSPA_Data fDefault = NAN;
             QString sPluginLabel = m_pluginLabel.value(m_selectedPluginID);
             bool foundPlugin=false;
 
@@ -472,7 +472,7 @@ void ZLADSPADialog::analyzePlugin()
                                         | LADSPA_HINT_DEFAULT_1)) {
                                 pinfo+=tr("<b><font color=\"#8B0000\">ERROR: TOGGLED INCOMPATIBLE WITH OTHER HINT</font></b><br/>");
                             } else {
-                                auto acheckBox = new QCheckBox(QSL("%1").arg(name),m_controls);
+                                auto *acheckBox = new QCheckBox(QSL("%1").arg(name),m_controls);
                                 bool toggledState=false;
                                 if (LADSPA_IS_HINT_DEFAULT_1(iHintDescriptor)) toggledState=true;
                                 m_controlItems << CLADSPAControlItem(
@@ -480,17 +480,17 @@ void ZLADSPADialog::analyzePlugin()
                                                       ZLADSPA::aacToggle,toggledState,0.0,acheckBox,nullptr,nullptr);
                                 acheckBox->setObjectName(tr("checkBox#%1").arg(m_controlItems.size()-1));
                                 m_controls->layout()->addWidget(acheckBox);
-                                connect(acheckBox,SIGNAL(stateChanged(int)),this,SLOT(stateChanged(int)));
+                                connect(acheckBox,&QCheckBox::stateChanged,this,&ZLADSPADialog::stateChanged);
                                 QString tstate = tr("off");
                                 if (toggledState)
                                     tstate = tr("on");
                                 pinfo+=tr("    <b>\"%1\"</b> input, control, toggle, default: %2<br/>").arg(name,tstate);
                             }
                         } else {
-                            auto ahboxLayout = new QHBoxLayout();
+                            auto *ahboxLayout = new QHBoxLayout();
                             ahboxLayout->setSpacing(6);
                             ahboxLayout->setContentsMargins(0,0,0,0);
-                            auto alabel=new QLabel(m_controls);
+                            auto *alabel=new QLabel(m_controls);
                             if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
                                 alabel->setText(tr("%1 (in dB)").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
                             } else if (LADSPA_IS_HINT_SAMPLE_RATE(iHintDescriptor)) {
@@ -498,10 +498,10 @@ void ZLADSPADialog::analyzePlugin()
                             } else {
                                 alabel->setText(QSL("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex])));
                             }
-                            auto aspinBox=new QDoubleSpinBox(m_controls);
+                            auto *aspinBox=new QDoubleSpinBox(m_controls);
                             QString pname=QSL("%1").arg(QString::fromUtf8(psDescriptor->PortNames[lPortIndex]));
 
-                            ZLADSPA::Control ciType;
+                            ZLADSPA::Control ciType = ZLADSPA::Control::aacLinear;
                             if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {
                                 ciType=ZLADSPA::aacInteger;
                             } else if (LADSPA_IS_HINT_LOGARITHMIC(iHintDescriptor)) {
@@ -521,7 +521,8 @@ void ZLADSPADialog::analyzePlugin()
                             ahboxLayout->addWidget(aspinBox);
                             aspinBox->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed));
                             m_vboxLayout->addLayout(ahboxLayout);
-                            connect(aspinBox,SIGNAL(valueChanged(double)),this,SLOT(valueChanged(double)));
+                            connect(aspinBox,qOverload<double>(&QDoubleSpinBox::valueChanged),
+                                    this,&ZLADSPADialog::valueChanged);
 
                             aspinBox->setValue(0.0);
                             if (LADSPA_IS_HINT_INTEGER(iHintDescriptor)) {

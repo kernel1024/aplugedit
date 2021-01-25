@@ -154,7 +154,7 @@ bool ZMultiBindingsModel::setData(const QModelIndex &index, const QVariant &valu
         switch (col) {
             case 1: {
                 s.remove(0,s.indexOf('#')+1);
-                bool ok;
+                bool ok = 0;
                 int outIdx = s.toInt(&ok);
                 if (ok) {
                     m_bindings[row].first = outIdx;
@@ -163,7 +163,7 @@ bool ZMultiBindingsModel::setData(const QModelIndex &index, const QVariant &valu
                 return true;
             }
             case 2: {
-                bool ok;
+                bool ok = 0;
                 int outChannel = s.toInt(&ok);
                 if (ok) {
                     m_bindings[row].second = outChannel;
@@ -332,7 +332,7 @@ bool ZMultiOutputsModel::setData(const QModelIndex &index, const QVariant &value
 
     if (role == Qt::EditRole) {
         if (col == 1) {
-            bool ok;
+            bool ok = 0;
             int outChannels = value.toInt(&ok);
             if (ok) {
                 m_slaveChannels[row] = outChannels;

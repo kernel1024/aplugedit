@@ -240,7 +240,7 @@ QVector<CMixerItem> ZAlsaBackend::getMixerControls(const QString& ctlName) const
                             for (int k = 0; k < count; k++) {
                                 long value = snd_ctl_elem_value_get_integer(cvalue,static_cast<unsigned int>(k));
                                 if ((tlvp != nullptr) && (dBmin < dBmax)) {
-                                    long dBgain;
+                                    long dBgain = 0;
                                     snd_tlv_convert_to_dB(tlvp,rangemin,rangemax,value,&dBgain);
                                     if ((dBmax - dBmin) <= (maxLinearDBScale * 100)) {
                                         // linear scale for small dB range
@@ -325,18 +325,18 @@ void ZAlsaBackend::setMixerControl(const QString& ctlName, const CMixerItem &ite
 {
     Q_D(ZAlsaBackend);
 
-    int err;
+    int err = 0;
 
     if (item.isEmpty()) return;
 
     snd_ctl_t* ctl = d->getMixerCtl(ctlName);
     if (ctl == nullptr) return;
 
-    snd_ctl_elem_id_t* cid;
+    snd_ctl_elem_id_t* cid = nullptr;
     snd_ctl_elem_id_malloc(&cid);
-    snd_ctl_elem_info_t* cinfo;
+    snd_ctl_elem_info_t* cinfo = nullptr;
     snd_ctl_elem_info_alloca(&cinfo);
-    snd_ctl_elem_value_t* cvalue;
+    snd_ctl_elem_value_t* cvalue = nullptr;
     snd_ctl_elem_value_alloca(&cvalue);
 
     snd_ctl_elem_info_set_numid(cinfo,item.numid);
@@ -427,18 +427,18 @@ void ZAlsaBackend::deleteMixerControl(const QString &ctlName, const CMixerItem &
 {
     Q_D(ZAlsaBackend);
 
-    int err;
+    int err = 0;
 
     if (item.isEmpty() || !item.isUser) return;
 
     snd_ctl_t* ctl = d->getMixerCtl(ctlName);
     if (ctl == nullptr) return;
 
-    snd_ctl_elem_id_t* cid;
+    snd_ctl_elem_id_t* cid = nullptr;
     snd_ctl_elem_id_alloca(&cid);
-    snd_ctl_elem_info_t* cinfo;
+    snd_ctl_elem_info_t* cinfo = nullptr;
     snd_ctl_elem_info_alloca(&cinfo);
-    snd_ctl_elem_value_t* cvalue;
+    snd_ctl_elem_value_t* cvalue = nullptr;
     snd_ctl_elem_value_alloca(&cvalue);
 
     snd_ctl_elem_info_set_numid(cinfo,item.numid);
@@ -467,6 +467,7 @@ QStringList ZAlsaBackend::getMixerCtls(bool forceReload)
         d->enumerateMixers();
 
     QStringList res;
+    res.reserve(d->m_mixerCtl.count());
     for (const auto& ctl : qAsConst(d->m_mixerCtl))
         res.append(ctl.name);
 

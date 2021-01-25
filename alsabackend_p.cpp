@@ -31,6 +31,9 @@
 #include "includes/alsabackend_p.h"
 #include "includes/generic.h"
 #include <QDebug>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 ZAlsaBackendPrivate::ZAlsaBackendPrivate(ZAlsaBackend *parent)
     : QObject(parent)
@@ -38,7 +41,7 @@ ZAlsaBackendPrivate::ZAlsaBackendPrivate(ZAlsaBackend *parent)
 {
     qInstallMessageHandler(ZAlsaBackendPrivate::stdConsoleOutput);
 
-    m_mixerPollTimer.setInterval(1000);
+    m_mixerPollTimer.setInterval(1s);
     connect(&m_mixerPollTimer,&QTimer::timeout,this,&ZAlsaBackendPrivate::pollMixerEvents);
     m_mixerPollTimer.start();
 }
@@ -204,7 +207,7 @@ void ZAlsaBackendPrivate::snd_lib_error_handler(const char *file, int line, cons
             .arg(QString::fromUtf8(function),msg,QString::fromUtf8(file))
             .arg(line);
 
-    auto alsa = gAlsa;
+    auto *alsa = gAlsa;
     if (alsa)
         Q_EMIT alsa->alsaWarningMsg(msg);
 }
@@ -395,7 +398,7 @@ void ZAlsaBackendPrivate::stdConsoleOutput(QtMsgType type, const QMessageLogCont
             break;
     }
 
-    auto alsa = gAlsa;
+    auto *alsa = gAlsa;
     if (!lmsg.isEmpty() && (alsa != nullptr)) {
         alsa->d_func()->addDebugOutputPrivate(lmsg);
         QString fmsg = QSL("%1 %2\n").arg(QTime::currentTime()

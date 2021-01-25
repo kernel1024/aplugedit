@@ -156,7 +156,7 @@ void ZCPShare::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
     if (fOut->toFilter) {
         stream << QSL("  slave {") << Qt::endl;
         stream << QSL("    pcm \"") << fOut->toFilter->objectName() << QSL("\"") << Qt::endl;
-        auto hw=qobject_cast<ZCPHW*>(fOut->toFilter);
+        auto *hw = qobject_cast<ZCPHW*>(fOut->toFilter);
         if (hw) {
             if (hw->getChannels()!=-1)
                 stream << QSL("    channels ") << hw->getChannels() << Qt::endl;
@@ -212,7 +212,7 @@ void ZCPShare::showSettingsDlg()
 
 bool ZCPShare::canConnectOut(ZCPBase * toFilter)
 {
-    const auto toHW=qobject_cast<ZCPHW*>(toFilter);
+    const auto *toHW = qobject_cast<ZCPHW*>(toFilter);
     if (m_mode == spDMix)
         return (toHW!=nullptr);
 

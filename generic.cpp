@@ -223,7 +223,7 @@ QWidget *ZValidatedListEditDelegate::createEditor(QWidget *parent, const QStyleO
 
     if (!(index.model()->data(index, Qt::UserRole).canConvert<QStringList>())) return nullptr;
 
-    auto editor = new QComboBox(parent);
+    auto *editor = new QComboBox(parent);
     editor->setFrame(false);
 
     return editor;
@@ -236,7 +236,7 @@ void ZValidatedListEditDelegate::setEditorData(QWidget *editor, const QModelInde
     QString value = index.model()->data(index, Qt::EditRole).toString();
     QStringList items = index.model()->data(index, Qt::UserRole).toStringList();
 
-    auto edit = qobject_cast<QComboBox*>(editor);
+    auto *edit = qobject_cast<QComboBox*>(editor);
     edit->clear();
     edit->addItems(items);
     edit->setCurrentText(value);
@@ -247,7 +247,7 @@ void ZValidatedListEditDelegate::setModelData(QWidget *editor, QAbstractItemMode
 {
     if (!(index.model()->data(index, Qt::UserRole).canConvert<QStringList>())) return;
 
-    auto edit = qobject_cast<QComboBox*>(editor);
+    auto *edit = qobject_cast<QComboBox*>(editor);
     model->setData(index, edit->currentText(), Qt::EditRole);
 }
 
@@ -270,7 +270,7 @@ QWidget *ZValidatedSpinBoxEditDelegate::createEditor(QWidget *parent, const QSty
 
     if (!(index.model()->data(index, Qt::UserRole).canConvert<int>())) return nullptr;
 
-    auto editor = new QSpinBox(parent);
+    auto *editor = new QSpinBox(parent);
     editor->setFrame(false);
 
     return editor;
@@ -280,12 +280,12 @@ void ZValidatedSpinBoxEditDelegate::setEditorData(QWidget *editor, const QModelI
 {
     if (!(index.model()->data(index, Qt::UserRole).canConvert<int>())) return;
 
-    bool ok1;
-    bool ok2;
+    bool ok1 = 0;
+    bool ok2 = 0;
     int value = index.model()->data(index, Qt::EditRole).toInt(&ok1);
     int max = index.model()->data(index, Qt::UserRole).toInt(&ok2);
 
-    auto edit = qobject_cast<QSpinBox*>(editor);
+    auto *edit = qobject_cast<QSpinBox*>(editor);
     edit->setMaximum(max);
     edit->setValue(value);
 }
@@ -295,7 +295,7 @@ void ZValidatedSpinBoxEditDelegate::setModelData(QWidget *editor, QAbstractItemM
 {
     if (!(index.model()->data(index, Qt::UserRole).canConvert<int>())) return;
 
-    auto edit = qobject_cast<QSpinBox*>(editor);
+    auto *edit = qobject_cast<QSpinBox*>(editor);
     model->setData(index, edit->value(), Qt::EditRole);
 }
 

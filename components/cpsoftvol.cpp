@@ -59,7 +59,7 @@ void ZCPSoftvol::doInfoGenerate(QTextStream &stream, QStringList &warnings) cons
         warnings.append(tr("Softvol plugin: slave PCM not connected."));
     }
 
-    auto hwCtl = qobject_cast<ZCPHW *>(fCtlOut->toFilter);
+    auto *hwCtl = qobject_cast<ZCPHW *>(fCtlOut->toFilter);
     if (m_name.isEmpty()) {
         warnings.append(tr("Softvol plugin: volume control not configured - empty control name."));
     } else if (hwCtl==nullptr) {

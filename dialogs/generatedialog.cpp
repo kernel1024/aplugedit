@@ -17,9 +17,12 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <chrono>
 #include <QtWidgets>
 #include "includes/generic.h"
 #include "includes/generatedialog.h"
+
+using namespace std::chrono_literals;
 
 ZGenerateDialog::ZGenerateDialog(QWidget *parent)
     : QDialog(parent)
@@ -52,7 +55,7 @@ void ZGenerateDialog::showEvent(QShowEvent *event)
 
     if (!m_warnings.isEmpty()) {
         QStringList warnings = m_warnings;
-        QTimer::singleShot(1000,this,[this,warnings](){
+        QTimer::singleShot(1s,this,[this,warnings](){
             ZGenericFuncs::showWarningsDialog(this,tr("ALSA config problems"),
                                                   tr("Config was generated with %1 warnings.").arg(warnings.count()),
                                                   warnings);
@@ -85,7 +88,7 @@ void ZGenerateDialog::saveAs()
 
 void ZGenerateDialog::fontDlg()
 {
-    bool ok;
+    bool ok = 0;
     QFont font = QFontDialog::getFont(&ok,configEditor->font(),this,tr("Editor font"),QFontDialog::MonospacedFonts);
     if (ok)
         configEditor->setFont(font);

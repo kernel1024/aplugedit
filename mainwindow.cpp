@@ -17,6 +17,8 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <chrono>
+
 #include "includes/generic.h"
 #include "includes/mainwindow.h"
 #include "includes/generatedialog.h"
@@ -30,7 +32,8 @@ const auto ipcEOF = "\n###";
 const int ipcTimeout = 1000;
 }
 
-// TODO: configurable tray mode
+using namespace std::chrono_literals;
+
 // TODO: alsaequal module
 
 ZMainWindow::ZMainWindow(QWidget *parent)
@@ -47,17 +50,17 @@ ZMainWindow::ZMainWindow(QWidget *parent)
         case ZGenericFuncs::CommandLineError: {
             QString text = QSL("<html><head/><body><h2>%1</h2><pre>%2</pre></body></html>")
                            .arg(errorMsg,parser.helpText());
-            QTimer::singleShot(500,this,[this,text](){
+            QTimer::singleShot(500ms,this,[this,text](){
                 QMessageBox::warning(this, QGuiApplication::applicationDisplayName(),text);
             });
             break;
         }
         case ZGenericFuncs::CommandLineVersionRequested: {
-            QTimer::singleShot(500,this,&ZMainWindow::helpAbout);
+            QTimer::singleShot(500ms,this,&ZMainWindow::helpAbout);
             break;
         }
         case ZGenericFuncs::CommandLineHelpRequested: {
-            QTimer::singleShot(500,this,&ZMainWindow::helpArguments);
+            QTimer::singleShot(500ms,this,&ZMainWindow::helpArguments);
             break;
         }
     }
@@ -70,7 +73,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
 
     if (!fileName.isEmpty()) {
         m_startMinimized = false;
-        QTimer::singleShot(500,this,[this,fileName](){
+        QTimer::singleShot(500ms,this,[this,fileName](){
             loadFile(fileName);
         });
     }
@@ -99,7 +102,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     renderArea = new ZRenderArea(scrollArea);
     scrollArea->setWidget(renderArea);
 
-    m_repaintTimer.setInterval(1000);
+    m_repaintTimer.setInterval(1s);
     m_repaintTimer.setSingleShot(true);
 
     actionEditHW->setData(QSL("ZCPHW"));
@@ -129,6 +132,11 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditALaw->setData(QSL("ZCPConv#ALaw"));
     actionEditMuLaw->setData(QSL("ZCPConv#MuLaw"));
     actionEditImaADPCM->setData(QSL("ZCPConv#IMA"));
+
+    QSettings stg;
+    stg.beginGroup(QSL("mainWindow"));
+    actionToolUseTray->setChecked(stg.value(QSL("useTray"),true).toBool());
+    stg.endGroup();
 
     connect(actionFileNew,&QAction::triggered,this,&ZMainWindow::fileNew);
     connect(actionFileOpen,&QAction::triggered,this,&ZMainWindow::fileOpen);
@@ -167,35 +175,17 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionToolAllocate,&QAction::triggered,this,&ZMainWindow::toolAllocate);
     connect(actionToolSamplePlayer,&QAction::triggered,this,&ZMainWindow::toolSamplePlayer);
     connect(actionToolMixer,&QAction::triggered,this,&ZMainWindow::toolMixer);
+    connect(actionToolUseTray,&QAction::triggered,this,&ZMainWindow::toolUseTray);
 
     connect(actionHelpAbout,&QAction::triggered,this,&ZMainWindow::helpAbout);
     connect(actionHelpAboutQt,&QAction::triggered,qApp,&QApplication::aboutQt); //NOLINT
     connect(actionHelpArguments,&QAction::triggered,this,&ZMainWindow::helpArguments);
 
-
     connect(&m_repaintTimer,&QTimer::timeout,this,&ZMainWindow::repaintWithConnections);
 
     qApp->installEventFilter(this); //NOLINT
 
-    if (QSystemTrayIcon::isSystemTrayAvailable()) {
-        trayIcon.reset(new QSystemTrayIcon(appIcon,this));
-        trayIcon->setToolTip(m_programTitle);
-        trayIcon->show();
-
-        connect(trayIcon.data(),&QSystemTrayIcon::activated,this,&ZMainWindow::systemTrayClicked);
-
-        auto cm = new QMenu(this);
-        auto ac = cm->addAction(tr("Restore"));
-        connect(ac,&QAction::triggered,this,&ZMainWindow::restoreMainWindow);
-        ac = cm->addAction(tr("Show mixer"));
-        connect(ac,&QAction::triggered,this,&ZMainWindow::toolMixer);
-        cm->addSeparator();
-        ac = cm->addAction(tr("Quit"));
-        connect(ac,&QAction::triggered,this,&ZMainWindow::closeApp);
-
-        trayIcon->setContextMenu(cm);
-    }
-
+    setupTrayIcon();
 
 #ifndef WITH_GST
     actionToolSamplePlayer->setEnabled(false);
@@ -205,7 +195,13 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     updateStatus();
 }
 
-ZMainWindow::~ZMainWindow() = default;
+ZMainWindow::~ZMainWindow()
+{
+    QSettings stg;
+    stg.beginGroup(QSL("mainWindow"));
+    stg.setValue(QSL("useTray"),actionToolUseTray->isChecked());
+    stg.endGroup();
+}
 
 void ZMainWindow::updateStatus()
 {
@@ -226,7 +222,7 @@ bool ZMainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::MouseMove)
     {
-        auto mouseEvent = dynamic_cast<QMouseEvent*>(event);
+        auto *mouseEvent = dynamic_cast<QMouseEvent*>(event);
         if (mouseEvent) {
             mouseLabel->setText(tr("X:%1, Y:%2").
                                 arg(mouseEvent->pos().x()).
@@ -433,6 +429,31 @@ void ZMainWindow::ipcMessageReceived()
     }
 }
 
+void ZMainWindow::setupTrayIcon()
+{
+    if (!trayIcon.isNull() && !actionToolUseTray->isChecked()) {
+        trayIcon.reset(nullptr);
+    }
+    if (QSystemTrayIcon::isSystemTrayAvailable() && actionToolUseTray->isChecked()) {
+        trayIcon.reset(new QSystemTrayIcon(windowIcon(),this));
+        trayIcon->setToolTip(m_programTitle);
+        trayIcon->show();
+
+        connect(trayIcon.data(),&QSystemTrayIcon::activated,this,&ZMainWindow::systemTrayClicked);
+
+        auto *cm = new QMenu(this);
+        auto *ac = cm->addAction(tr("Restore"));
+        connect(ac,&QAction::triggered,this,&ZMainWindow::restoreMainWindow);
+        ac = cm->addAction(tr("Show mixer"));
+        connect(ac,&QAction::triggered,this,&ZMainWindow::toolMixer);
+        cm->addSeparator();
+        ac = cm->addAction(tr("Quit"));
+        connect(ac,&QAction::triggered,this,&ZMainWindow::closeApp);
+
+        trayIcon->setContextMenu(cm);
+    }
+}
+
 void ZMainWindow::closeEvent(QCloseEvent *event)
 {
     if (!trayIcon.isNull() && trayIcon->isVisible()) {
@@ -593,7 +614,7 @@ void ZMainWindow::changingComponents(ZCPBase *base)
 
 void ZMainWindow::editComponent()
 {
-    auto action = qobject_cast<QAction *>(sender());
+    auto *action = qobject_cast<QAction *>(sender());
     if (action==nullptr) return;
 
     QString name = action->data().toString();
@@ -619,7 +640,7 @@ void ZMainWindow::editComponent()
     if (cp==nullptr) return;
 
     if (!convMode.isEmpty()) {
-        auto cnv = qobject_cast<ZCPConv *>(cp);
+        auto *cnv = qobject_cast<ZCPConv *>(cp);
         if (convMode==QSL("Linear")) cnv->setConverterType(ZCPConv::alcLinear);
         else if (convMode==QSL("Float")) cnv->setConverterType(ZCPConv::alcFloat);
         else if (convMode==QSL("IEC")) cnv->setConverterType(ZCPConv::alcIEC958);
@@ -628,7 +649,7 @@ void ZMainWindow::editComponent()
         else if (convMode==QSL("IMA")) cnv->setConverterType(ZCPConv::alcImaADPCM);
     }
     if (!dmixMode.isEmpty()) {
-        auto dmix = qobject_cast<ZCPShare *>(cp);
+        auto *dmix = qobject_cast<ZCPShare *>(cp);
         if (dmixMode==QSL("Dmix")) dmix->setPluginMode(ZCPShare::spDMix);
         else if (dmixMode==QSL("Dshare")) dmix->setPluginMode(ZCPShare::spDShare);
         else if (dmixMode==QSL("Dsnoop")) dmix->setPluginMode(ZCPShare::spDSnoop);
@@ -656,7 +677,7 @@ void ZMainWindow::toolSamplePlayer()
 {
 #ifdef WITH_GST
     if (!samplePlayer) {
-        auto dlg = new ZSamplePlayer(this,renderArea);
+        auto *dlg = new ZSamplePlayer(this,renderArea);
         samplePlayer.reset(dlg);
         connect(this,&ZMainWindow::alsaConfigUpdated,dlg,&ZSamplePlayer::updateSinkList);
     }
@@ -693,11 +714,16 @@ void ZMainWindow::toolMixer()
     }
 }
 
+void ZMainWindow::toolUseTray()
+{
+    setupTrayIcon();
+}
+
 void ZMainWindow::helpAbout()
 {
     QMessageBox::about(this,QGuiApplication::applicationDisplayName(),
                        tr("%1 %2\n\n"
-                          "(c) 2006 - 2020 kernelonline@gmail.com\n\n"
+                          "(c) 2006 - 2021 kernelonline@gmail.com\n\n"
                           "This program is provided AS IS with NO WARRANTY OF ANY KIND,\n"
                           "INCLUDING THE WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS\n"
                           "FOR A PARTICULAR PURPOSE.\n\n"

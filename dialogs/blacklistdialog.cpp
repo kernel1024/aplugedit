@@ -46,7 +46,7 @@ void ZBlacklistDialog::setBlacklist(const QVector<CPCMItem> &blacklistPCMs)
 {
     ui->listBlacklist->clear();
     for (const auto& pcm : blacklistPCMs) {
-        auto item = new QListWidgetItem();
+        auto *item = new QListWidgetItem();
         item->setText(pcm.name);
         item->setData(Qt::UserRole,pcm.description);
         ui->listBlacklist->addItem(item);
@@ -58,7 +58,7 @@ QVector<CPCMItem> ZBlacklistDialog::getBlacklist()
     QVector<CPCMItem> res;
     res.reserve(ui->listBlacklist->count());
     for (int i=0;i<ui->listBlacklist->count();i++) {
-        auto item = ui->listBlacklist->item(i);
+        auto *item = ui->listBlacklist->item(i);
         if ((item!=nullptr) && (item->data(Qt::UserRole).canConvert<QStringList>())) {
             res.append(CPCMItem(item->text(),
                                 item->data(Qt::UserRole).toStringList()));
@@ -74,7 +74,7 @@ void ZBlacklistDialog::addPCM()
     if (!pcm.isEmpty() && ui->comboPCMs->currentData().canConvert<QStringList>()) {
         QStringList desc = ui->comboPCMs->currentData().toStringList();
 
-        auto item = new QListWidgetItem();
+        auto *item = new QListWidgetItem();
         item->setText(pcm);
         item->setData(Qt::UserRole,desc);
         ui->listBlacklist->addItem(item);
@@ -85,7 +85,7 @@ void ZBlacklistDialog::deletePCM()
 {
     const auto items = ui->listBlacklist->selectedItems();
     for (const auto &idx : items) {
-        auto item = ui->listBlacklist->takeItem(ui->listBlacklist->row(idx));
+        auto *item = ui->listBlacklist->takeItem(ui->listBlacklist->row(idx));
         delete item;
     }
 }

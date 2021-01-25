@@ -359,7 +359,7 @@ bool ZLADSPABindingsModel::setData(const QModelIndex &index, const QVariant &val
         QString s = value.toString();
         switch (col) {
             case 0: {
-                bool ok;
+                bool ok = 0;
                 int idx = s.toInt(&ok);
                 if (ok)
                     m_bindings[row].first = idx;
@@ -576,7 +576,7 @@ bool ZLADSPAListModel::removeRows(int row, int count, const QModelIndex &parent)
 
 QMimeData *ZLADSPAListModel::mimeData(const QModelIndexList &indexes) const
 {
-    auto mimeData = new QMimeData();
+    auto *mimeData = new QMimeData();
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     for (const QModelIndex& index : indexes) {
@@ -620,7 +620,7 @@ bool ZLADSPAListModel::dropMimeData(const QMimeData *data, Qt::DropAction action
         items.append(item);
     }
 
-    int beginRow;
+    int beginRow = 0;
     if (row != -1) {
         beginRow = row;
     } else {

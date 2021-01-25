@@ -57,6 +57,7 @@ private:
     bool setupIPC(const QString &sendFilename);
     void sendIPCMessage(QLocalSocket *socket, const QString &msg);
     void ipcMessageReceived();
+    void setupTrayIcon();
 
 public:
     explicit ZMainWindow(QWidget *parent = nullptr);
@@ -75,6 +76,7 @@ public Q_SLOTS:
     void toolAllocate();
     void toolSamplePlayer();
     void toolMixer();
+    void toolUseTray();
     void helpAbout();
     void helpArguments();
     void repaintWithConnections();

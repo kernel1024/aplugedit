@@ -65,9 +65,9 @@ void ZShareDialog::setBindings(const QVector<int> &bindings)
     ui->tableBindings->setRowCount(bindings.count());
     ui->tableBindings->setHorizontalHeaderLabels(headers);
     for (int i=0;i<bindings.count();i++) {
-        auto h = new QTableWidgetItem(QSL("%1").arg(i));
+        auto *h = new QTableWidgetItem(QSL("%1").arg(i));
         ui->tableBindings->setVerticalHeaderItem(i,h);
-        auto w = new QTableWidgetItem(QSL("%1").arg(bindings.at(i)));
+        auto *w = new QTableWidgetItem(QSL("%1").arg(bindings.at(i)));
         ui->tableBindings->setItem(i,0,w);
     }
 }
@@ -77,7 +77,7 @@ QVector<int> ZShareDialog::getBindigs() const
     QVector<int> res;
     res.reserve(ui->tableBindings->rowCount());
     for (int i=0;i<ui->tableBindings->rowCount();i++) {
-        bool ok;
+        bool ok = 0;
         int c = ui->tableBindings->item(i,0)->text().toInt(&ok);
         if (ok) {
             res.append(c);
@@ -126,9 +126,9 @@ void ZShareDialog::addBinding()
     int idx = ui->tableBindings->rowCount();
     ui->tableBindings->insertRow(idx);
 
-    auto h = new QTableWidgetItem(QSL("%1").arg(idx));
+    auto *h = new QTableWidgetItem(QSL("%1").arg(idx));
     ui->tableBindings->setVerticalHeaderItem(idx,h);
-    auto w = new QTableWidgetItem(QSL("%1").arg(idx));
+    auto *w = new QTableWidgetItem(QSL("%1").arg(idx));
     ui->tableBindings->setItem(idx,0,w);
 }
 
@@ -151,8 +151,8 @@ QWidget *ZNumberDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
     Q_UNUSED(option)
     Q_UNUSED(index)
 
-    auto lineEdit = new QLineEdit(parent);
-    auto validator = new QIntValidator(0, 99, lineEdit);
+    auto *lineEdit = new QLineEdit(parent);
+    auto *validator = new QIntValidator(0, 99, lineEdit);
     lineEdit->setValidator(validator);
     return lineEdit;
 }

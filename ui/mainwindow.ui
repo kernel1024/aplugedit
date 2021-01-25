@@ -111,6 +111,8 @@
     <addaction name="actionToolAllocate"/>
     <addaction name="actionToolSamplePlayer"/>
     <addaction name="actionToolMixer"/>
+    <addaction name="separator"/>
+    <addaction name="actionToolUseTray"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -611,6 +613,14 @@
   <action name="actionHelpArguments">
    <property name="text">
     <string>Command line arguments...</string>
+   </property>
+  </action>
+  <action name="actionToolUseTray">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Use system tray</string>
    </property>
   </action>
  </widget>

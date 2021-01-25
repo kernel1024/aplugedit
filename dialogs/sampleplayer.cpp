@@ -19,6 +19,8 @@
 
 #ifdef WITH_GST
 
+#include <chrono>
+#include <cmath>
 #include <QtCore>
 #include <QtWidgets>
 #include "includes/generic.h"
@@ -27,6 +29,8 @@
 #include "ui_sampleplayer.h"
 #include "ui_stringlistdialog.h"
 #include <QDebug>
+
+using namespace std::chrono_literals;
 
 ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     QDialog(parent),
@@ -70,7 +74,7 @@ ZSamplePlayer::ZSamplePlayer(QWidget *parent, ZRenderArea *renderArea) :
     ui->labelClock->clear();
     m_positionTimer = new QTimer(this);
     connect(m_positionTimer,&QTimer::timeout,this,&ZSamplePlayer::updatePosition);
-    m_positionTimer->setInterval(500);
+    m_positionTimer->setInterval(500ms);
     m_positionTimer->start();
 
     updateSinkList();
@@ -100,7 +104,7 @@ ZSamplePlayer::~ZSamplePlayer()
 gboolean ZSamplePlayer::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
-    auto dlg = qobject_cast<ZSamplePlayer *>(reinterpret_cast<QObject *>(data));
+    auto *dlg = qobject_cast<ZSamplePlayer *>(reinterpret_cast<QObject *>(data));
 
     gchar  *debug = nullptr;
     GError *error = nullptr;
@@ -123,9 +127,9 @@ gboolean ZSamplePlayer::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
         case GST_MESSAGE_STATE_CHANGED: {
             if (dlg &&
                     (GST_MESSAGE_SRC(msg) == GST_OBJECT(dlg->m_data.pipeline))) {
-                GstState olds;
-                GstState news;
-                GstState pending;
+                GstState olds = GstState::GST_STATE_NULL;
+                GstState news = GstState::GST_STATE_NULL;
+                GstState pending = GstState::GST_STATE_NULL;
                 gst_message_parse_state_changed(msg, &olds, &news, &pending);
                 message = QSL("STATE: Pipeline: %1 -> %2")
                           .arg(QString::fromUtf8(gst_element_state_get_name(olds)),
@@ -141,18 +145,18 @@ gboolean ZSamplePlayer::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
             const gchar *name = gst_structure_get_name(s);
 
             if (strcmp(name, "level") == 0) {
-                guint channels;
-                gdouble rms_dB;
-                gdouble peak_dB;
-                gdouble rmsL;
-                gdouble rmsR;
-                gdouble peakL;
-                gdouble peakR;
-                const GValue *array_val;
-                const GValue *valueRms;
-                const GValue *valuePeak;
-                GValueArray *rms_arr;
-                GValueArray *peak_arr;
+                guint channels = 0;
+                gdouble rms_dB = NAN;
+                gdouble peak_dB = NAN;
+                gdouble rmsL = NAN;
+                gdouble rmsR = NAN;
+                gdouble peakL = NAN;
+                gdouble peakR = NAN;
+                const GValue *array_val = nullptr;
+                const GValue *valueRms = nullptr;
+                const GValue *valuePeak = nullptr;
+                GValueArray *rms_arr = nullptr;
+                GValueArray *peak_arr = nullptr;
 
                 /* the values are packed into GValueArrays with the value per channel */
                 array_val = gst_structure_get_value (s, "rms");
@@ -206,11 +210,11 @@ gboolean ZSamplePlayer::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 
 void ZSamplePlayer::pad_added_handler(GstElement *src, GstPad *new_pad, gpointer *data)
 {
-    auto dlg = qobject_cast<ZSamplePlayer *>(reinterpret_cast<QObject *>(data));
+    auto *dlg = qobject_cast<ZSamplePlayer *>(reinterpret_cast<QObject *>(data));
     if (dlg==nullptr) return;
 
     GstPad *sink_pad = gst_element_get_static_pad(dlg->m_data.audioconvert, "sink");
-    GstPadLinkReturn ret;
+    GstPadLinkReturn ret = GstPadLinkReturn::GST_PAD_LINK_OK;
     GstCaps *new_pad_caps = nullptr;
     GstStructure *new_pad_struct = nullptr;
     const gchar *new_pad_type = nullptr;
@@ -257,7 +261,7 @@ void ZSamplePlayer::debug_logger(GstDebugCategory *category, GstDebugLevel level
 {
     Q_UNUSED(object)
 
-    auto dlg = qobject_cast<ZSamplePlayer *>(reinterpret_cast<QObject *>(user_data));
+    auto *dlg = qobject_cast<ZSamplePlayer *>(reinterpret_cast<QObject *>(user_data));
     if (dlg==nullptr) return;
 
     QString slevel;
@@ -564,7 +568,7 @@ void ZSamplePlayer::updatePosition()
     QString spos;
     if (m_data.pipeline) {
         if (gst_element_query(m_data.pipeline,m_data.positionQuery) == TRUE) {
-            gint64 pos;
+            gint64 pos = 0;
             gst_query_parse_position(m_data.positionQuery,nullptr,&pos);
             if (GST_CLOCK_TIME_IS_VALID(pos)) {
                 gint64 s = (pos / GST_SECOND) % 60;
@@ -578,7 +582,7 @@ void ZSamplePlayer::updatePosition()
     }
 }
 
-void ZSamplePlayer::updateVolume(int value)
+void ZSamplePlayer::updateVolume(int value) const
 {
     if (m_data.volume) {
         gdouble vol = (2.0 - log10(100.0 - static_cast<double>(value))) / 2.0;
@@ -589,9 +593,9 @@ void ZSamplePlayer::updateVolume(int value)
 void ZSamplePlayer::getSinkInfo()
 {
     if (m_data.alsasink) {
-        gchar *card;
-        gchar *deviceName;
-        gchar *device;
+        gchar *card = nullptr;
+        gchar *deviceName = nullptr;
+        gchar *device = nullptr;
         g_object_get(m_data.alsasink,
                      "card-name",&card,
                      "device-name",&deviceName,
@@ -607,8 +611,8 @@ void ZSamplePlayer::getSinkInfo()
 
         // get hw_info
         QString cardId;
-        unsigned int devNum;
-        unsigned int subdevNum;
+        unsigned int devNum = 0;
+        unsigned int subdevNum = 0;
         if (gAlsa->getCardNumber(sdevice,cardId,&devNum,&subdevNum)) {
             QString procName = QSL("/proc/asound/%1/pcm%2p/sub%3/hw_params").arg(cardId).arg(devNum).arg(subdevNum);
             addAuxMessage(tr(R"(APlugEdit: parsed procfs path for device "%1" is "%2".)").arg(sdevice,procName));
