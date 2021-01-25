@@ -274,8 +274,8 @@ void ZCPBase::mouseMoveEvent(QMouseEvent * event)
 {
     if (m_isDragging)
     {
-        move(QPoint(x()+event->x()-m_relCorner.x(),
-                    y()+event->y()-m_relCorner.y()));
+        move(QPoint(x() + event->pos().x() - m_relCorner.x(),
+                    y() + event->pos().y() - m_relCorner.y()));
         m_owner->repaintConn();
         m_owner->resize(m_owner->minimumSizeHint());
         update();
