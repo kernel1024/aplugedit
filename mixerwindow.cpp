@@ -244,13 +244,12 @@ void ZMixerWindow::updateControlsState(const QString &ctlName)
                     auto *checkList = tab->findChild<QListWidget *>(QSL("sw#%1").arg(ctlName));
                     if (checkList) {
                         for (int k=0; k<checkList->count(); k++) {
-                            bool ok1 = 0;
-                            bool ok2 = 0;
+                            bool ok = 0;
                             auto *clItem = checkList->item(k);
                             if (clItem) {
-                                unsigned int checkNumid = clItem->data(Qt::UserRole).toUInt(&ok1);
-                                int checkCardNum = clItem->data(Qt::UserRole + 1).toInt(&ok2);
-                                if ((checkCardNum == ctlName) && (checkNumid == newItem.numid)) {
+                                unsigned int checkNumid = clItem->data(Qt::UserRole).toUInt(&ok);
+                                const QString checkCtlName = clItem->data(Qt::UserRole + 1).toString();
+                                if ((checkCtlName == ctlName) && (checkNumid == newItem.numid)) {
                                     bool oldState = (clItem->checkState() == Qt::Checked);
                                     bool newState = (newItem.values.constFirst() == 0L);
                                     if (oldState != newState) {
