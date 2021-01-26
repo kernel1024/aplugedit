@@ -20,7 +20,6 @@
 #ifndef ZCPBLACKLIST_H
 #define ZCPBLACKLIST_H
 
-#include <QtCore>
 #include "cpbase.h"
 #include "alsabackend.h"
 

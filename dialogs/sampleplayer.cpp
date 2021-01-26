@@ -21,8 +21,9 @@
 
 #include <chrono>
 #include <cmath>
-#include <QtCore>
-#include <QtWidgets>
+#include <QSettings>
+#include <QFileDialog>
+#include <QMessageBox>
 #include "includes/generic.h"
 #include "includes/sampleplayer.h"
 #include "includes/alsabackend.h"

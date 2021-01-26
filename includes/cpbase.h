@@ -20,8 +20,14 @@
 #ifndef CPBASE_H
 #define CPBASE_H 1
 
-#include <QtCore>
-#include <QtWidgets>
+#include <QObject>
+#include <QString>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QJsonArray>
+#include <QWidget>
+#include <QMenu>
+#include <QMouseEvent>
 #include "renderarea.h"
 
 const int zcpPinSize = 8;
@@ -131,6 +137,8 @@ public:
 
 protected:
     int paintBase(QPainter &p, bool isGrowable = false);
+    bool isFloatConverterPresent() const;
+    void doHintGenerate(QTextStream & stream) const;
     void setBaseFont(QPainter& p, FontType type) const;
     void mouseMoveEvent(QMouseEvent * event) override;
     void mousePressEvent(QMouseEvent * event) override;

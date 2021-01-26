@@ -17,6 +17,12 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QMetaEnum>
+#include <QMimeData>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QJsonArray>
+#include <QDoubleSpinBox>
 #include "includes/ladspa_p.h"
 #include "includes/generic.h"
 #include "includes/ladspadialog.h"

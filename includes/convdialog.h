@@ -19,8 +19,8 @@
 
 #ifndef CONVDLG_H
 #define CONVDLG_H
-#include <QtGui>
-#include <QtCore>
+
+#include <QDialog>
 #include "ui_convdlg.h"
 
 class ZConvDialog : public QDialog, public Ui::ZConvDialog

@@ -94,6 +94,7 @@
     <addaction name="actionEditSpeex"/>
     <addaction name="actionEditMeter"/>
     <addaction name="actionEditSoftvol"/>
+    <addaction name="actionEditEqualizer"/>
     <addaction name="separator"/>
     <addaction name="actionEditBlacklist"/>
     <addaction name="separator"/>
@@ -176,6 +177,7 @@
    <addaction name="actionEditSpeex"/>
    <addaction name="actionEditMeter"/>
    <addaction name="actionEditSoftvol"/>
+   <addaction name="actionEditEqualizer"/>
    <addaction name="separator"/>
    <addaction name="actionEditBlacklist"/>
    <addaction name="separator"/>
@@ -621,6 +623,18 @@
    </property>
    <property name="text">
     <string>Use system tray</string>
+   </property>
+  </action>
+  <action name="actionEditEqualizer">
+   <property name="icon">
+    <iconset resource="../aplugedit.qrc">
+     <normaloff>:/images/equalizer.png</normaloff>:/images/equalizer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Equalizer</string>
+   </property>
+   <property name="toolTip">
+    <string>Equalizer (alsaequal plugin)</string>
    </property>
   </action>
  </widget>

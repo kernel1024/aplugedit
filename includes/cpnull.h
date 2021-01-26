@@ -20,8 +20,6 @@
 #ifndef CPNULL_H
 #define CPNULL_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPNull : public ZCPBase

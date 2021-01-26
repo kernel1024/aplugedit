@@ -30,6 +30,8 @@
 #include <algorithm>
 #include <cmath>
 #include <QApplication>
+#include <QPointer>
+#include <QAtomicInteger>
 #include "includes/generic.h"
 #include "includes/alsabackend.h"
 #include "includes/alsabackend_p.h"

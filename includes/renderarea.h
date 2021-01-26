@@ -20,9 +20,12 @@
 #ifndef RENDERAREA_H
 #define RENDERAREA_H 1
 
-#include <QtCore>
-#include <QtGui>
-#include <QtWidgets>
+#include <QByteArray>
+#include <QTextStream>
+#include <QAtomicInteger>
+#include <QFrame>
+#include <QLabel>
+#include <QScrollArea>
 
 class ZCPBase;
 class ZCPInput;

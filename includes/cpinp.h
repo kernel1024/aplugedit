@@ -20,8 +20,6 @@
 #ifndef CPINP_H
 #define CPINP_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPInp : public ZCPBase

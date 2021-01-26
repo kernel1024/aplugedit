@@ -1,6 +1,7 @@
 TEMPLATE += app
 QT += widgets network
 HEADERS       = includes/cpbase.h \
+                includes/equalizerdialog.h \
                 includes/alsabackend.h \
                 includes/alsabackend_p.h \
                 includes/alsastructures.h \
@@ -8,6 +9,7 @@ HEADERS       = includes/cpbase.h \
                 includes/convdialog.h \
                 includes/cpasym.h \
                 includes/cpblacklist.h \
+                includes/cpequal.h \
                 includes/cpmulti.h \
                 includes/cpplug.h \
                 includes/cpshare.h \
@@ -50,6 +52,7 @@ SOURCES       = main.cpp \
                 alsastructures.cpp \
                 components/cpasym.cpp \
                 components/cpblacklist.cpp \
+                components/cpequal.cpp \
                 components/cpmulti.cpp \
                 components/cpplug.cpp \
                 components/cpshare.cpp \
@@ -72,6 +75,7 @@ SOURCES       = main.cpp \
                 dialogs/sharedialog.cpp \
                 dialogs/softvoldialog.cpp \
                 dialogs/speexdialog.cpp \
+                dialogs/equalizerdialog.cpp \
                 generic.cpp \
                 jsedit/jsedit.cpp \
                 ladspa_p.cpp \
@@ -90,6 +94,7 @@ SOURCES       = main.cpp \
                 components/cpladspa.cpp
 RESOURCES     = aplugedit.qrc
 FORMS         = \
+                ui/equalizerdialog.ui \
                 ui/blacklistdialog.ui \
                 ui/convdlg.ui \
                 ui/errorshowdlg.ui \

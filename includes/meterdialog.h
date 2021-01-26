@@ -19,8 +19,8 @@
 
 #ifndef METERDLG_H
 #define METERDLG_H
-#include <QtGui>
-#include <QtCore>
+
+#include <QDialog>
 #include "ui_meterdlg.h"
 
 class ZMeterDialog : public QDialog, public Ui::ZMeterDialog

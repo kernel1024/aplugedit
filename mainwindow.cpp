@@ -18,6 +18,9 @@
 ***************************************************************************/
 
 #include <chrono>
+#include <QSettings>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include "includes/generic.h"
 #include "includes/mainwindow.h"
@@ -33,8 +36,6 @@ const int ipcTimeout = 1000;
 }
 
 using namespace std::chrono_literals;
-
-// TODO: alsaequal module
 
 ZMainWindow::ZMainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -121,6 +122,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     actionEditAsym->setData(QSL("ZCPAsym"));
     actionEditSpeex->setData(QSL("ZCPSpeex"));
     actionEditSoftvol->setData(QSL("ZCPSoftvol"));
+    actionEditEqualizer->setData(QSL("ZCPEqual"));
 
     actionEditDmix->setData(QSL("ZCPShare#Dmix"));
     actionEditDshare->setData(QSL("ZCPShare#Dshare"));
@@ -165,6 +167,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionEditAsym,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditSpeex,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditSoftvol,&QAction::triggered,this,&ZMainWindow::editComponent);
+    connect(actionEditEqualizer,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditLinear,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditFloat,&QAction::triggered,this,&ZMainWindow::editComponent);
     connect(actionEditIEC958,&QAction::triggered,this,&ZMainWindow::editComponent);
@@ -182,6 +185,7 @@ ZMainWindow::ZMainWindow(QWidget *parent)
     connect(actionHelpArguments,&QAction::triggered,this,&ZMainWindow::helpArguments);
 
     connect(&m_repaintTimer,&QTimer::timeout,this,&ZMainWindow::repaintWithConnections);
+    connect(this,&ZMainWindow::alsaConfigUpdated,mixerWindow.data(),&ZMixerWindow::reloadAllCards);
 
     qApp->installEventFilter(this); //NOLINT
 
@@ -257,6 +261,7 @@ void ZMainWindow::loadFile(const QString &fname)
     m_workFile = fname;
 
     m_repaintTimer.start();
+    m_componentCounter = renderArea->componentCount();
 
     updateStatus();
 }
@@ -490,6 +495,7 @@ void ZMainWindow::fileNew()
         m_workFile.clear();
         updateStatus();
         m_repaintTimer.start();
+        m_componentCounter = 0;
     });
 }
 
@@ -635,8 +641,8 @@ void ZMainWindow::editComponent()
     QPoint pos(100,100);
     int dx = renderArea->componentCount()*10;
     pos += QPoint(dx,dx);
-    ZCPBase* cp = renderArea->createCpInstance(name,pos,
-                                               QSL("%1%2").arg(name.toLower()).arg(renderArea->componentCount()));
+    ZCPBase* cp = renderArea->createCpInstance(name,pos,makeUniqueComponentName(name.toLower()));
+
     if (cp==nullptr) return;
 
     if (!convMode.isEmpty()) {
@@ -658,6 +664,15 @@ void ZMainWindow::editComponent()
     connect(cp,&ZCPBase::componentChanged,this,&ZMainWindow::changingComponents);
     changingComponents(cp);
     update();
+}
+
+QString ZMainWindow::makeUniqueComponentName(const QString& base)
+{
+    QString name;
+    do {
+        name = QSL("%1%2").arg(base).arg(m_componentCounter++);
+    } while (renderArea->findChild<ZCPBase *>(name) != nullptr);
+    return name;
 }
 
 void ZMainWindow::toolAllocate()

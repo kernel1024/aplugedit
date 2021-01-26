@@ -19,8 +19,8 @@
 
 #ifndef ROUTEDLG_H
 #define ROUTEDLG_H
-#include <QtGui>
-#include <QtCore>
+
+#include <QDialog>
 #include "includes/cproute.h"
 #include "ui_routedlg.h"
 

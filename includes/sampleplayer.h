@@ -23,8 +23,7 @@
 #ifdef WITH_GST
 
 #include <gst/gst.h>
-#include <QtCore>
-#include <QtWidgets>
+#include <QDialog>
 #include "renderarea.h"
 #include "sampleplayer_p.h"
 

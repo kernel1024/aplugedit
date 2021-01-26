@@ -1,5 +1,5 @@
 /***************************************************************************
-*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
+*   Copyright (C) 2006 - 2021 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
@@ -17,50 +17,42 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef CPROUTE_H
-#define CPROUTE_H 1
+#ifndef CPEQUAL_H
+#define CPEQUAL_H
 
 #include "cpbase.h"
+#include "ladspadialog.h"
 
-class CRouteItem
-{
-public:
-    int from { -1 };
-    double coeff { 0.0 };
-    CRouteItem() = default;
-    ~CRouteItem() = default;
-    CRouteItem(const CRouteItem& other);
-    CRouteItem(int aFrom, double aCoeff);
-    CRouteItem &operator=(const CRouteItem& other) = default;
-};
-
-class ZCPRoute : public ZCPBase
+class ZCPEqual : public ZCPBase
 {
     Q_OBJECT
 private:
-    int m_channelsIn;
-    QVector<CRouteItem> m_routeTable;
     ZCPInput* fInp { nullptr };
+    ZCPInput* fCtlInp { nullptr };
     ZCPOutput* fOut { nullptr };
-    ZCPOutput* fCtlOut { nullptr };
+
+    CLADSPAPlugItem m_plugin;
+    QString m_controls;
+    int m_channels { -1 };
+    void generateCtl(QTextStream & stream, QStringList & warnings) const;
 
 public:
-    ZCPRoute(QWidget *parent, ZRenderArea *aOwner);
-    ~ZCPRoute() override;
+    ZCPEqual(QWidget *parent, ZRenderArea *aOwner);
+    ~ZCPEqual() override;
 
     void readFromJson(const QJsonValue& json) override;
     QJsonValue storeToJson() const override;
 
     QSize minimumSizeHint() const override;
-    int getChannelsOut() const;
 
 protected:
-    void paintEvent ( QPaintEvent * event ) override;
-    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
+    void paintEvent(QPaintEvent * event) override;
     void realignPins() override;
+    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
+    void doCtlGenerate(QTextStream & stream, QStringList & warnings, bool softvol = false) const override;
     void showSettingsDlg() override;
     bool needSettingsDlg() override { return true; }
 
 };
 
-#endif
+#endif // CPEQUAL_H

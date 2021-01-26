@@ -21,6 +21,8 @@
 #include "includes/generic.h"
 #include "includes/renderarea.h"
 #include "includes/cpbase.h"
+#include "includes/cpplug.h"
+#include "includes/cpconv.h"
 #include "ui_hintdlg.h"
 
 ZCPBase::ZCPBase(QWidget *parent, ZRenderArea *aOwner)
@@ -319,6 +321,18 @@ void ZCPBase::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
 {
     Q_UNUSED(warnings)
 
+    doHintGenerate(stream);
+}
+
+void ZCPBase::doCtlGenerate(QTextStream &stream, QStringList &warnings, bool softvol) const
+{
+    Q_UNUSED(stream)
+    Q_UNUSED(warnings)
+    Q_UNUSED(softvol)
+}
+
+void ZCPBase::doHintGenerate(QTextStream &stream) const
+{
     if (!m_hint.isEmpty()) {
         QString opt = QSL("off");
         if (m_hintShow)
@@ -329,13 +343,6 @@ void ZCPBase::doInfoGenerate(QTextStream &stream, QStringList &warnings) const
         stream << QSL("    description \"%1\"").arg(m_hint) << Qt::endl;
         stream << QSL("  }") << Qt::endl;
     }
-}
-
-void ZCPBase::doCtlGenerate(QTextStream &stream, QStringList &warnings, bool softvol) const
-{
-    Q_UNUSED(stream)
-    Q_UNUSED(warnings)
-    Q_UNUSED(softvol)
 }
 
 QString ZCPBase::getHint() const
@@ -429,6 +436,20 @@ QJsonValue ZCPBase::storeToJson() const
     data.insert(QSL("outputs"),outputs);
 
     return data;
+}
+
+bool ZCPBase::isFloatConverterPresent() const
+{
+    if (searchPluginForward(ZCPPlug::staticMetaObject.className()) != nullptr)
+        return true;
+
+    if (auto *plug = searchPluginForward(ZCPConv::staticMetaObject.className())) {
+        if (auto *conv = qobject_cast<ZCPConv*>(plug)) {
+            if (conv->getConverterType() == ZCPConv::ConverterType::alcFloat)
+                return true;
+        }
+    }
+    return false;
 }
 
 QSize ZCPBase::sizeHint() const

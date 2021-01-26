@@ -20,8 +20,7 @@
 #ifndef LADSPALISTDIALOG_H
 #define LADSPALISTDIALOG_H
 
-#include <QtCore>
-#include <QtWidgets>
+#include <QDialog>
 #include "cpbase.h"
 #include "ladspadialog.h"
 #include "ladspa_p.h"

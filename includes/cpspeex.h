@@ -1,8 +1,7 @@
-#ifndef ZCPSPEEX_H
-#define ZCPSPEEX_H
+#ifndef CPSPEEX_H
+#define CPSPEEX_H
 
-#include <QtCore>
-#include <QtWidgets>
+#include <QCheckBox>
 #include "cpbase.h"
 
 namespace CDefaults {
@@ -45,4 +44,4 @@ protected:
     bool needSettingsDlg() override { return true; }
 };
 
-#endif // ZCPSPEEX_H
+#endif // CPSPEEX_H

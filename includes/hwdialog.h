@@ -19,8 +19,8 @@
 
 #ifndef HWDLG_H
 #define HWDLG_H
-#include <QtGui>
-#include <QtCore>
+
+#include <QDialog>
 #include "ui_hwdlg.h"
 
 class CCardItem;

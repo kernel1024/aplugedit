@@ -19,8 +19,8 @@
 
 #ifndef GENERATEDLG_H
 #define GENERATEDLG_H
-#include <QtGui>
-#include <QtCore>
+
+#include <QDialog>
 #include "ui_generatedlg.h"
 
 class ZGenerateDialog : public QDialog, public Ui::ZGenerateDialog

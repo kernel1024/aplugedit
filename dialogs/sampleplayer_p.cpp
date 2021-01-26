@@ -19,6 +19,8 @@
 
 #ifdef WITH_GST
 
+#include <cmath>
+#include <QSettings>
 #include "includes/generic.h"
 #include "includes/sampleplayer_p.h"
 

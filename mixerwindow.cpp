@@ -296,6 +296,7 @@ void ZMixerWindow::addSeparatedWidgetToLayout(QLayout *layout, QWidget *itemWidg
 
 void ZMixerWindow::reloadAllCards()
 {
+    gAlsa->reloadGlobalConfig();
     const QStringList &sl = gAlsa->getMixerCtls(true);
     for (const auto &ctlName : sl)
         reloadControls(ctlName);

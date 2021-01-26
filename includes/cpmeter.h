@@ -20,8 +20,6 @@
 #ifndef CPMETER_H
 #define CPMETER_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPMeter : public ZCPBase

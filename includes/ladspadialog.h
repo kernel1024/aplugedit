@@ -19,8 +19,8 @@
 
 #ifndef LADSPADLG_H
 #define LADSPADLG_H
-#include <QtWidgets>
-#include <QtCore>
+
+#include <QDialog>
 #include "ladspa_p.h"
 #include "ui_ladspadlg.h"
 
@@ -31,6 +31,7 @@ class ZLADSPADialog : public QDialog, public Ui::ZLADSPADialog
 public:
     ZLADSPADialog(QWidget *parent, int channels, int sampleRate);
     ~ZLADSPADialog() override;
+    void setSimpleParamsMode(bool state);
 
     void setPlugItem(const CLADSPAPlugItem& item);
     CLADSPAPlugItem getPlugItem() const;

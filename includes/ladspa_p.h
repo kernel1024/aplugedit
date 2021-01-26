@@ -20,9 +20,14 @@
 #ifndef LADSPA_P_H
 #define LADSPA_P_H
 
-#include <QtCore>
-#include <QtGui>
-#include <QtWidgets>
+#include <QJsonValue>
+#include <QDataStream>
+#include <QScrollArea>
+#include <QWidget>
+#include <QLabel>
+#include <QLayout>
+#include <QAbstractTableModel>
+#include <QAbstractListModel>
 
 namespace ZLADSPA {
 Q_NAMESPACE

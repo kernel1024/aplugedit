@@ -20,8 +20,6 @@
 #ifndef CPLADSPA_H
 #define CPLADSPA_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 #include "ladspalistdialog.h"
 
@@ -33,7 +31,6 @@ private:
     int m_sampleRate { 44100 };
     QVector<CLADSPAPlugItem> m_plugins;
 
-    bool isConverterPresent() const;
     QStringList getPlugNames() const;
 
 public:

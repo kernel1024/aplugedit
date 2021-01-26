@@ -17,6 +17,7 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QLineEdit>
 #include "includes/sharedialog.h"
 #include "includes/generic.h"
 #include "ui_sharedialog.h"

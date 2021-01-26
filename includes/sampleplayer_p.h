@@ -23,9 +23,10 @@
 #ifdef WITH_GST
 
 #include <gst/gst.h>
-#include <QtCore>
-#include <QtGui>
-#include <QtWidgets>
+#include <QTimer>
+#include <QWidget>
+#include <QSyntaxHighlighter>
+#include <QElapsedTimer>
 
 class CStreamerData
 {

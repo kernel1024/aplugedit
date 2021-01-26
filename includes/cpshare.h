@@ -20,8 +20,6 @@
 #ifndef CPDMIX_H
 #define CPDMIX_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPShare : public ZCPBase

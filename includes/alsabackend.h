@@ -30,7 +30,7 @@
 #ifndef ALSABACKEND_H
 #define ALSABACKEND_H
 
-#include <QtCore>
+#include <QObject>
 #include "alsastructures.h"
 
 class ZAlsaBackendPrivate;

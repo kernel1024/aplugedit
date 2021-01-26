@@ -1,9 +1,8 @@
 #ifndef MULTIDLG_H
 #define MULTIDLG_H
 
-#include <QtCore>
-#include <QtGui>
-#include <QtWidgets>
+#include <QDialog>
+#include <QAbstractTableModel>
 #include "cpmulti.h"
 
 class ZMultiDialog;

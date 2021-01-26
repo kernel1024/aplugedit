@@ -26,9 +26,16 @@
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
-#include <ladspa.h>
+#include <QFileInfoList>
+#include <QDir>
+#include <QLibrary>
+#include <QDoubleSpinBox>
 #include "includes/generic.h"
 #include "includes/ladspadialog.h"
+
+extern "C" {
+#include <ladspa.h>
+}
 
 ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
     : QDialog(parent)
@@ -70,6 +77,12 @@ ZLADSPADialog::ZLADSPADialog(QWidget *parent, int channels, int sampleRate)
     connect(buttonAddOutput,&QPushButton::clicked,this,&ZLADSPADialog::addOutputBinding);
     connect(buttonDeleteOutput,&QPushButton::clicked,this,&ZLADSPADialog::deleteOutputBinding);
     connect(checkPolicy,&QCheckBox::clicked,this,&ZLADSPADialog::policyChanged);
+}
+
+void ZLADSPADialog::setSimpleParamsMode(bool state)
+{
+    tabBindings->setEnabled(!state);
+    tabSettings->setEnabled(!state);
 }
 
 ZLADSPADialog::~ZLADSPADialog() = default;

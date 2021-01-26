@@ -20,8 +20,8 @@
 #ifndef SHAREDIALOG_H
 #define SHAREDIALOG_H
 
-#include <QtCore>
-#include <QtWidgets>
+#include <QDialog>
+#include <QStyledItemDelegate>
 #include "cpshare.h"
 
 namespace Ui {

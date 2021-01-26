@@ -20,8 +20,6 @@
 #ifndef CPFILE_H
 #define CPFILE_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPFile : public ZCPBase

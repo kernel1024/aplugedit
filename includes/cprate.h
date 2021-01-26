@@ -20,8 +20,6 @@
 #ifndef CPRATE_H
 #define CPRATE_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPRate : public ZCPBase

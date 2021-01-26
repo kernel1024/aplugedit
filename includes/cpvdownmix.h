@@ -20,8 +20,6 @@
 #ifndef CPVDOWNMIX_H
 #define CPVDOWNMIX_H
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPVDownmix : public ZCPBase

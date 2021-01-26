@@ -20,7 +20,6 @@
 #ifndef CPSOFTVOL_H
 #define CPSOFTVOL_H
 
-#include <QtCore>
 #include "cpbase.h"
 
 class ZCPSoftvol : public ZCPBase

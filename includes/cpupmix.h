@@ -20,8 +20,6 @@
 #ifndef CPUPMIX_H
 #define CPUPMIX_H
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPUpmix : public ZCPBase

@@ -19,8 +19,8 @@
 
 #ifndef RATEDLG_H
 #define RATEDLG_H
-#include <QtGui>
-#include <QtCore>
+
+#include <QDialog>
 #include "ui_ratedlg.h"
 
 class ZRateDialog : public QDialog, public Ui::ZRateDialog

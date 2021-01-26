@@ -20,8 +20,6 @@
 #ifndef CPHW_H
 #define CPHW_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPHW : public ZCPBase

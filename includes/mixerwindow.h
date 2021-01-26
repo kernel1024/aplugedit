@@ -20,6 +20,7 @@ public:
 public Q_SLOTS:
     void reloadControls(const QString& ctlName);
     void updateControlsState(const QString& ctlName);
+    void reloadAllCards();
 
 private:
     Ui::ZMixerWindow *ui;
@@ -32,7 +33,6 @@ protected:
     bool event(QEvent* event) override;
 
 private Q_SLOTS:
-    void reloadAllCards();
     void volumeChanged(int value);
     void switchClicked(bool state);
     void switchListClicked(QListWidgetItem* item);

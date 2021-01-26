@@ -17,10 +17,9 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef ZCPASYM_H
-#define ZCPASYM_H
+#ifndef CPASYM_H
+#define CPASYM_H
 
-#include <QtCore>
 #include "cpbase.h"
 
 class ZCPAsym : public ZCPBase

@@ -17,12 +17,10 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QFileInfo>
 #include "includes/generic.h"
 #include "includes/cpladspa.h"
 #include "includes/cphw.h"
-#include "includes/cprate.h"
-#include "includes/cpplug.h"
-#include "includes/cpconv.h"
 
 ZCPLADSPA::ZCPLADSPA(QWidget *parent, ZRenderArea *aOwner)
     : ZCPBase(parent,aOwner)
@@ -55,7 +53,7 @@ void ZCPLADSPA::realignPins()
 
 void ZCPLADSPA::doInfoGenerate(QTextStream & stream, QStringList &warnings) const
 {
-    if (!isConverterPresent()) {
+    if (!isFloatConverterPresent()) {
         warnings.append(tr("LADSPA plugin: FLOAT converter not connected to the output of LADSPA plugin. "
                            "Consider to use PLUG or FLOAT CONVERTER plugin at the output of LADSPA."));
     }
@@ -183,20 +181,6 @@ QJsonValue ZCPLADSPA::storeToJson() const
     data.insert(QSL("plugins"),plugs);
 
     return data;
-}
-
-bool ZCPLADSPA::isConverterPresent() const
-{
-    if (searchPluginForward(ZCPPlug::staticMetaObject.className()) != nullptr)
-        return true;
-
-    if (auto *plug = searchPluginForward(ZCPConv::staticMetaObject.className())) {
-        if (auto *conv = qobject_cast<ZCPConv*>(plug)) {
-            if (conv->getConverterType() == ZCPConv::ConverterType::alcFloat)
-                return true;
-        }
-    }
-    return false;
 }
 
 QStringList ZCPLADSPA::getPlugNames() const

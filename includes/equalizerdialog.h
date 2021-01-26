@@ -1,5 +1,5 @@
 /***************************************************************************
-*   Copyright (C) 2006 - 2020 by kernelonline@gmail.com                   *
+*   Copyright (C) 2006 - 2021 by kernelonline@gmail.com                   *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
@@ -17,50 +17,39 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#ifndef CPROUTE_H
-#define CPROUTE_H 1
+#ifndef EQUALIZERDIALOG_H
+#define EQUALIZERDIALOG_H
 
-#include "cpbase.h"
+#include <QDialog>
+#include "ladspadialog.h"
 
-class CRouteItem
-{
-public:
-    int from { -1 };
-    double coeff { 0.0 };
-    CRouteItem() = default;
-    ~CRouteItem() = default;
-    CRouteItem(const CRouteItem& other);
-    CRouteItem(int aFrom, double aCoeff);
-    CRouteItem &operator=(const CRouteItem& other) = default;
-};
+namespace Ui {
+class ZEqualizerDialog;
+}
 
-class ZCPRoute : public ZCPBase
+class ZEqualizerDialog : public QDialog
 {
     Q_OBJECT
-private:
-    int m_channelsIn;
-    QVector<CRouteItem> m_routeTable;
-    ZCPInput* fInp { nullptr };
-    ZCPOutput* fOut { nullptr };
-    ZCPOutput* fCtlOut { nullptr };
 
 public:
-    ZCPRoute(QWidget *parent, ZRenderArea *aOwner);
-    ~ZCPRoute() override;
+    explicit ZEqualizerDialog(QWidget *parent = nullptr);
+    ~ZEqualizerDialog() override;
 
-    void readFromJson(const QJsonValue& json) override;
-    QJsonValue storeToJson() const override;
+    void setParams(int channels, const QString& controls, const CLADSPAPlugItem &plugin);
+    void getParams(int &channels, QString& controls, CLADSPAPlugItem &plugin);
 
-    QSize minimumSizeHint() const override;
-    int getChannelsOut() const;
+private:
+    Ui::ZEqualizerDialog *ui;
+    CLADSPAPlugItem m_plugin;
 
-protected:
-    void paintEvent ( QPaintEvent * event ) override;
-    void doInfoGenerate(QTextStream & stream, QStringList & warnings) const override;
-    void realignPins() override;
-    void showSettingsDlg() override;
-    bool needSettingsDlg() override { return true; }
+    void updatePluginLabel();
+    void fixControls();
+
+private Q_SLOTS:
+    void browseControls();
+    void selectPlugin();
+    void resetPlugin();
 
 };
 
-#endif
+#endif // EQUALIZERDIALOG_H

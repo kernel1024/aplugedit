@@ -20,8 +20,6 @@
 #ifndef CPCONV_H
 #define CPCONV_H 1
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPConv : public ZCPBase

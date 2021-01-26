@@ -21,9 +21,12 @@
 #define MAINWINDOW_H 1
 
 #include <functional>
-#include <QtCore>
-#include <QtGui>
-#include <QtNetwork>
+#include <QMainWindow>
+#include <QScopedPointer>
+#include <QScreen>
+#include <QSystemTrayIcon>
+#include <QLocalServer>
+#include <QLocalSocket>
 #include "ui_mainwindow.h"
 #include "renderarea.h"
 #include "sampleplayer.h"
@@ -33,8 +36,9 @@ class ZMainWindow : public QMainWindow, public Ui::MainWindow
 {
     Q_OBJECT
 private:
-    bool m_modified;
-    bool m_startMinimized;
+    bool m_modified { false };
+    bool m_startMinimized { false };
+    int m_componentCounter { 0 };
     QString m_workFile;
     QString m_programTitle;
     QTimer m_repaintTimer;
@@ -58,6 +62,7 @@ private:
     void sendIPCMessage(QLocalSocket *socket, const QString &msg);
     void ipcMessageReceived();
     void setupTrayIcon();
+    QString makeUniqueComponentName(const QString& base);
 
 public:
     explicit ZMainWindow(QWidget *parent = nullptr);

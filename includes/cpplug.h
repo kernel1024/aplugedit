@@ -20,8 +20,6 @@
 #ifndef CPPLUG_H
 #define CPPLUG_H
 
-#include <QtCore>
-#include <QtGui>
 #include "cpbase.h"
 
 class ZCPPlug : public ZCPBase
