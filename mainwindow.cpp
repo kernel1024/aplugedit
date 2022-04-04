@@ -317,16 +317,18 @@ bool ZMainWindow::windowCloseRequested()
     }
     switch (QMessageBox::question(this,tr("Exit ALSA Plugin Editor"),
                                   tr("Current file has been modified and not saved. Save?"),
-                                  QMessageBox::Yes,QMessageBox::No,QMessageBox::Cancel))
+                                  QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel))
     {
-        case QMessageBox::Cancel:
-            return false;
         case QMessageBox::Yes:
             fileSave();
             if (m_modified) {
                 return false;
             }
             break;
+        case QMessageBox::No:
+            return true;
+        default:
+            return false;
     }
 
     return true;
@@ -479,14 +481,16 @@ void ZMainWindow::fileNew()
     if (m_modified)
     {
         switch (QMessageBox::question(this,tr("New file"),tr("Current file has been modified and not saved. Save?"),
-                                      QMessageBox::Yes,QMessageBox::No,QMessageBox::Cancel))
+                                      QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel))
         {
-            case QMessageBox::Cancel:
-                return;
+            case QMessageBox::No:
+                break;
             case QMessageBox::Yes:
                 fileSave();
                 if (m_modified) return;
                 break;
+            default:
+                return;
         }
     }
 
@@ -515,14 +519,16 @@ void ZMainWindow::fileOpen()
     if (m_modified)
     {
         switch (QMessageBox::question(this,tr("Open file"),tr("Current file has been modified and not saved. Save?"),
-                                      QMessageBox::Yes,QMessageBox::No,QMessageBox::Cancel))
+                                      QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel))
         {
-            case QMessageBox::Cancel:
-                return;
+            case QMessageBox::No:
+                break;
             case QMessageBox::Yes:
                 fileSave();
                 if (m_modified) return;
                 break;
+            default:
+                return;
         }
     }
     QString s = QFileDialog::getOpenFileName(this,tr("Choose a file"),QString(),
